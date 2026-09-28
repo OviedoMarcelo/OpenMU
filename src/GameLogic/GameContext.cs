@@ -5,7 +5,6 @@
 namespace MUnique.OpenMU.GameLogic;
 
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Globalization;
 using System.Threading;
@@ -54,6 +53,8 @@ public class GameContext : AsyncDisposable, IGameContext
     private readonly List<Player> _playerList = new();
 
     private readonly IDisposable _configChangeHandlerRegistration;
+
+    private readonly ConcurrentDictionary<Type, string> _lastPeriodicTaskErrors = new();
 
     private int _periodicTasksStopped;
 
@@ -477,16 +478,25 @@ public class GameContext : AsyncDisposable, IGameContext
             return;
         }
 
-        try
+        // Each plugin runs on its own: through the plugin point proxy, one plugin throwing on every
+        // tick silently kept every plugin after it in the list from ever running.
+        foreach (var plugIn in this.PlugInManager.GetActivePlugInsOf<IPeriodicTaskPlugIn>().ToList())
         {
-            if (this.PlugInManager.GetPlugInPoint<IPeriodicTaskPlugIn>() is { } plugInPoint)
+            var plugInType = plugIn.GetType();
+            try
             {
-                await plugInPoint.ExecuteTaskAsync(this).ConfigureAwait(false);
+                await plugIn.ExecuteTaskAsync(this).ConfigureAwait(false);
+                this._lastPeriodicTaskErrors.TryRemove(plugInType, out _);
             }
-        }
-        catch (Exception ex)
-        {
-            Debug.Fail(ex.Message, ex.StackTrace);
+            catch (Exception ex)
+            {
+                // Logged once per distinct error, as a failing task would otherwise log every second.
+                if (!this._lastPeriodicTaskErrors.TryGetValue(plugInType, out var lastError) || lastError != ex.Message)
+                {
+                    this._lastPeriodicTaskErrors[plugInType] = ex.Message;
+                    this.LoggerFactory.CreateLogger<GameContext>().LogError(ex, "Periodic task {plugIn} failed.", plugInType.Name);
+                }
+            }
         }
     }
 
