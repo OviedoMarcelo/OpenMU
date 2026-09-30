@@ -27,7 +27,7 @@ else
     {
         base.OnParametersSet();
         this._elements?.Clear();
-        if (string.IsNullOrEmpty(this.Marked))
+        if (string.IsNullOrEmpty(this.Marked) || string.IsNullOrEmpty(this.Text))
         {
             return;
         }
