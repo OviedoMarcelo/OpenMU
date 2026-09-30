@@ -846,4 +846,16 @@
   <data name="RaklionDurationMinutes" xml:space="preserve">
     <value>{0} minute(s)</value>
   </data>
+  <data name="LearnSkillAlreadyKnown" xml:space="preserve">
+    <value>You already know this skill.</value>
+  </data>
+  <data name="LearnSkillWrongClass" xml:space="preserve">
+    <value>Your class can't learn this skill.</value>
+  </data>
+  <data name="LearnSkillNeedsHeroStatusQuest" xml:space="preserve">
+    <value>To learn this skill you must first complete Marlon's 'Gain Hero Status' quest.</value>
+  </data>
+  <data name="LearnSkillRequirementsNotMet" xml:space="preserve">
+    <value>You don't meet the requirements to learn this skill yet.</value>
+  </data>
 </root>
