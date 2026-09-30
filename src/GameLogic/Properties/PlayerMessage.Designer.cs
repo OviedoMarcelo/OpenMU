@@ -2032,6 +2032,42 @@ namespace MUnique.OpenMU.GameLogic.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to You already know this skill..
+        /// </summary>
+        public static string LearnSkillAlreadyKnown {
+            get {
+                return ResourceManager.GetString("LearnSkillAlreadyKnown", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Your class can't learn this skill..
+        /// </summary>
+        public static string LearnSkillWrongClass {
+            get {
+                return ResourceManager.GetString("LearnSkillWrongClass", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to To learn this skill you must first complete Marlon's 'Gain Hero Status' quest..
+        /// </summary>
+        public static string LearnSkillNeedsHeroStatusQuest {
+            get {
+                return ResourceManager.GetString("LearnSkillNeedsHeroStatusQuest", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to You don't meet the requirements to learn this skill yet..
+        /// </summary>
+        public static string LearnSkillRequirementsNotMet {
+            get {
+                return ResourceManager.GetString("LearnSkillRequirementsNotMet", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Wrong Security Code..
         /// </summary>
         public static string WrongSecurityCode {

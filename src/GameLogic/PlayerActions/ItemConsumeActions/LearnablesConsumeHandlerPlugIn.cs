@@ -5,6 +5,7 @@
 namespace MUnique.OpenMU.GameLogic.PlayerActions.ItemConsumeActions;
 
 using System.Runtime.InteropServices;
+using MUnique.OpenMU.GameLogic.Attributes;
 using MUnique.OpenMU.PlugIns;
 
 /// <summary>
@@ -22,9 +23,14 @@ public class LearnablesConsumeHandlerPlugIn : BaseConsumeHandlerPlugIn
     public override async ValueTask<bool> ConsumeItemAsync(Player player, Item item, Item? targetItem, FruitUsage fruitUsage)
     {
         var skill = this.GetLearnableSkill(item, player.GameContext.Configuration);
-
-        if (skill is null || player.SkillList!.ContainsSkill(skill.Number.ToUnsigned()))
+        if (skill is null || player.PlayerState.CurrentState != PlayerState.EnteredWorld)
         {
+            return false;
+        }
+
+        if (GetRejectionMessage(player, item, skill) is { } messageKey)
+        {
+            await player.ShowLocalizedBlueMessageAsync(messageKey).ConfigureAwait(false);
             return false;
         }
 
@@ -33,7 +39,7 @@ public class LearnablesConsumeHandlerPlugIn : BaseConsumeHandlerPlugIn
             return false;
         }
 
-        await player.SkillList.AddLearnedSkillAsync(skill).ConfigureAwait(false);
+        await player.SkillList!.AddLearnedSkillAsync(skill).ConfigureAwait(false);
         return true;
     }
 
@@ -61,5 +67,35 @@ public class LearnablesConsumeHandlerPlugIn : BaseConsumeHandlerPlugIn
         return item.Definition is { } definition
             ? LearnableSkillRequirements.GetLearnableSkill(definition, item.Level, gameConfiguration)
             : null;
+    }
+
+    /// <summary>
+    /// Gets why the player can't learn the skill of the item, as the key of a <see cref="PlayerMessage"/>.
+    /// Without it, the item was just not consumed and the player got no feedback at all.
+    /// </summary>
+    private static string? GetRejectionMessage(Player player, Item item, Skill skill)
+    {
+        if (player.SkillList!.ContainsSkill(skill.Number.ToUnsigned()))
+        {
+            return nameof(PlayerMessage.LearnSkillAlreadyKnown);
+        }
+
+        if (item.Definition?.QualifiedCharacters.Contains(player.SelectedCharacter!.CharacterClass!) is not true)
+        {
+            return nameof(PlayerMessage.LearnSkillWrongClass);
+        }
+
+        var needsHeroStatus = item.Definition.Requirements.Any(r => r.Attribute?.Id == Stats.GainHeroStatusQuestCompleted.Id);
+        if (needsHeroStatus && player.Attributes![Stats.GainHeroStatusQuestCompleted] < 1)
+        {
+            return nameof(PlayerMessage.LearnSkillNeedsHeroStatusQuest);
+        }
+
+        if (!player.CompliesRequirements(item) || !player.CompliesRequirements(skill))
+        {
+            return nameof(PlayerMessage.LearnSkillRequirementsNotMet);
+        }
+
+        return null;
     }
 }

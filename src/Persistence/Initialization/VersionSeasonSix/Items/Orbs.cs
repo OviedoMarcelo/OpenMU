@@ -49,8 +49,10 @@ public class Orbs : InitializerBase
         this.CreateOrb(19, SkillNumber.DeathStab, 1, "Orb of Death Stab", 72, 160, 0, 0, 0, 0, 85000, 0, 2, 0, 0, 0, 0, 0);
         var strikeOfDestruction = this.CreateOrb(44, SkillNumber.StrikeofDestruction, 1, "Crystal of Destruction", 100, 220, 0, 0, 0, 0, 380000, 0, 2, 0, 0, 0, 0, 0);
         this.CreateItemRequirementIfNeeded(strikeOfDestruction, Stats.GainHeroStatusQuestCompleted, 1);
-        this.CreateOrb(45, SkillNumber.MultiShot, 1, "Crystal of Multi-Shot", 100, 220, 0, 0, 0, 0, 380000, 0, 0, 2, 0, 0, 0, 0);
-        this.CreateOrb(46, SkillNumber.Recovery, 1, "Crystal of Recovery", 100, 220, 37, 0, 0, 0, 250000, 0, 0, 2, 0, 0, 0, 0);
+        var multiShot = this.CreateOrb(45, SkillNumber.MultiShot, 1, "Crystal of Multi-Shot", 100, 220, 0, 0, 0, 0, 380000, 0, 0, 2, 0, 0, 0, 0);
+        this.CreateItemRequirementIfNeeded(multiShot, Stats.GainHeroStatusQuestCompleted, 1);
+        var recovery = this.CreateOrb(46, SkillNumber.Recovery, 1, "Crystal of Recovery", 100, 220, 37, 0, 0, 0, 250000, 0, 0, 2, 0, 0, 0, 0);
+        this.CreateItemRequirementIfNeeded(recovery, Stats.GainHeroStatusQuestCompleted, 1);
         this.CreateOrb(47, SkillNumber.FlameStrike, 1, "Crystal of Flame Strike", 100, 220, 0, 0, 0, 0, 380000, 0, 0, 0, 1, 0, 0, 0);
 
         // The next ones are actually no "Orbs", but are defined in the same group

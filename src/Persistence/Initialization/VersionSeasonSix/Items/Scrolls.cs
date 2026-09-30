@@ -52,7 +52,8 @@ public class Scrolls : InitializerBase
         this.CreateScroll(15, 16, "Scroll of Soul Barrier", 77, 0, 408, 135000, 1, 0, 0, 0, 0, 0, 0);
         this.CreateScroll(16, 38, "Scroll of Decay", 96, 0, 953, 345000, 2, 0, 0, 0, 0, 0, 0);
         this.CreateScroll(17, 39, "Scroll of Ice Storm", 93, 0, 849, 315000, 2, 0, 0, 0, 0, 0, 0);
-        this.CreateScroll(18, 40, "Scroll of Nova", 100, 0, 1052, 410000, 2, 0, 0, 0, 0, 0, 0);
+        var nova = this.CreateScroll(18, 40, "Scroll of Nova", 100, 0, 1052, 410000, 2, 0, 0, 0, 0, 0, 0);
+        this.CreateItemRequirementIfNeeded(nova, Stats.GainHeroStatusQuestCompleted, 1);
         this.CreateScroll(19, 215, "Chain Lightning Parchment", 75, 0, 245, 175000, 0, 0, 0, 0, 0, 1, 0);
         this.CreateScroll(20, 214, "Drain Life Parchment", 35, 0, 150, 100000, 0, 0, 0, 0, 0, 1, 0);
         this.CreateScroll(21, 230, "Lightning Shock Parchment", 93, 0, 823, 315000, 0, 0, 0, 0, 0, 1, 0);
@@ -61,7 +62,8 @@ public class Scrolls : InitializerBase
         this.CreateScroll(24, 219, "Sleep Parchment", 40, 0, 180, 135000, 0, 0, 0, 0, 0, 1, 0);
         this.CreateScroll(26, 221, "Weakness Parchment", 93, 0, 663, 410000, 0, 0, 0, 0, 0, 2, 0);
         this.CreateScroll(27, 222, "Innovation Parchment", 111, 0, 912, 450000, 0, 0, 0, 0, 0, 2, 0);
-        this.CreateScroll(28, 233, "Scroll of Wizardry Enhance", 100, 220, 118, 425000, 2, 0, 0, 0, 0, 0, 0);
+        var wizardryEnhance = this.CreateScroll(28, 233, "Scroll of Wizardry Enhance", 100, 220, 118, 425000, 2, 0, 0, 0, 0, 0, 0);
+        this.CreateItemRequirementIfNeeded(wizardryEnhance, Stats.GainHeroStatusQuestCompleted, 1);
         this.CreateScroll(29, 237, "Scroll of Gigantic Storm", 100, 220, 118, 380000, 0, 0, 0, 1, 0, 0, 0);
         this.CreateScroll(30, 262, "Chain Drive Parchment", 80, 150, 0, 175000, 0, 0, 0, 0, 0, 0, 1);
         this.CreateScroll(31, 263, "Dark Side Parchment", 100, 180, 0, 345000, 0, 0, 0, 0, 0, 0, 1);
@@ -72,7 +74,7 @@ public class Scrolls : InitializerBase
         this.CreateScroll(36, 268, "Increase Block Parchment", 70, 50, 80, 60000, 0, 0, 0, 0, 0, 0, 1);
     }
 
-    private void CreateScroll(byte number, int skillNumber, string name, byte dropLevel, int levelRequirement, int energyRequirement, int money, int darkWizardClassLevel, int darkKnightClassLevel, int elfClassLevel, int magicGladiatorClassLevel, int darkLordClassLevel, int summonerClassLevel, int ragefighterClassLevel)
+    private ItemDefinition CreateScroll(byte number, int skillNumber, string name, byte dropLevel, int levelRequirement, int energyRequirement, int money, int darkWizardClassLevel, int darkKnightClassLevel, int elfClassLevel, int magicGladiatorClassLevel, int darkLordClassLevel, int summonerClassLevel, int ragefighterClassLevel)
     {
         var scroll = this.Context.CreateNew<ItemDefinition>();
         this.GameConfiguration.Items.Add(scroll);
@@ -96,5 +98,7 @@ public class Scrolls : InitializerBase
         {
             scroll.QualifiedCharacters.Add(characterClass);
         }
+
+        return scroll;
     }
 }
