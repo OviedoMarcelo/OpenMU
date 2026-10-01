@@ -1081,12 +1081,12 @@ namespace MUnique.OpenMU.Persistence.EntityFramework.Migrations
                     b.Property<DateTime?>("InstalledAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("Key")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -1098,9 +1098,6 @@ namespace MUnique.OpenMU.Persistence.EntityFramework.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<int>("CurrentInstalledVersion")
-                        .HasColumnType("integer");
 
                     b.Property<string>("InitializationKey")
                         .HasColumnType("text");

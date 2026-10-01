@@ -2725,6 +2725,24 @@ namespace MUnique.OpenMU.GameServer.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Handler for guild role assign packets..
+        /// </summary>
+        public static string GuildRoleAssignHandlerPlugIn_Description {
+            get {
+                return ResourceManager.GetString("GuildRoleAssignHandlerPlugIn_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Guild Role Assign Handler.
+        /// </summary>
+        public static string GuildRoleAssignHandlerPlugIn_Name {
+            get {
+                return ResourceManager.GetString("GuildRoleAssignHandlerPlugIn_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Handler for guild war response packets..
         /// </summary>
         public static string GuildWarResponseHandlerPlugIn_Description {
@@ -2793,6 +2811,60 @@ namespace MUnique.OpenMU.GameServer.Properties {
         public static string HitHandlerPlugIn075_Name {
             get {
                 return ResourceManager.GetString("HitHandlerPlugIn075_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Handles the request to enter the imperial guardian event, which is sent by the window of Jerint..
+        /// </summary>
+        public static string ImperialGuardianEnterRequestHandlerPlugIn_Description {
+            get {
+                return ResourceManager.GetString("ImperialGuardianEnterRequestHandlerPlugIn_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Imperial Guardian Enter Request Handler.
+        /// </summary>
+        public static string ImperialGuardianEnterRequestHandlerPlugIn_Name {
+            get {
+                return ResourceManager.GetString("ImperialGuardianEnterRequestHandlerPlugIn_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Handles the packets of the imperial guardian event (0xF7)..
+        /// </summary>
+        public static string ImperialGuardianGroupHandlerPlugIn_Description {
+            get {
+                return ResourceManager.GetString("ImperialGuardianGroupHandlerPlugIn_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Imperial Guardian Group Handler.
+        /// </summary>
+        public static string ImperialGuardianGroupHandlerPlugIn_Name {
+            get {
+                return ResourceManager.GetString("ImperialGuardianGroupHandlerPlugIn_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sends the enter result, the timer and the result of the imperial guardian event to the client..
+        /// </summary>
+        public static string ImperialGuardianViewPlugIn_Description {
+            get {
+                return ResourceManager.GetString("ImperialGuardianViewPlugIn_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Imperial Guardian View.
+        /// </summary>
+        public static string ImperialGuardianViewPlugIn_Name {
+            get {
+                return ResourceManager.GetString("ImperialGuardianViewPlugIn_Name", resourceCulture);
             }
         }
         
@@ -7241,5 +7313,11 @@ namespace MUnique.OpenMU.GameServer.Properties {
                 return ResourceManager.GetString("MonsterLevelsViewPlugIn_Description", resourceCulture);
             }
         }
+        /// <summary>Gets the localized EnterMarketPlace_Name text.</summary>
+        public static string EnterMarketPlace_Name => ResourceManager.GetString("EnterMarketPlace_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized EnterMarketPlace_Description text.</summary>
+        public static string EnterMarketPlace_Description => ResourceManager.GetString("EnterMarketPlace_Description", resourceCulture)!;
+
     }
 }

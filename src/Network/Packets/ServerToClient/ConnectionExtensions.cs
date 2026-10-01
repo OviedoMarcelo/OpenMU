@@ -2495,6 +2495,54 @@ public static class ConnectionExtensions
     }
 
     /// <summary>
+    /// Sends a <see cref="AddTransformedCharacterToScopeExtended" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="id">The id.</param>
+    /// <param name="currentPositionX">The current position x.</param>
+    /// <param name="currentPositionY">The current position y.</param>
+    /// <param name="skin">The skin.</param>
+    /// <param name="name">The name.</param>
+    /// <param name="targetPositionX">The target position x.</param>
+    /// <param name="targetPositionY">The target position y.</param>
+    /// <param name="rotation">The rotation.</param>
+    /// <param name="heroState">The hero state.</param>
+    /// <param name="appearanceAndEffects">The appearance data, followed by the number of effects and the effect ids.</param>
+    /// <param name="characterCount">The number of characters in this packet. This packet contains only one character, because the size of the appearance data depends on the used appearance serializer.</param>
+    /// <remarks>
+    /// Is sent by the server when: The player wears a monster transformation ring (extended client).
+    /// Causes reaction on client side: The character appears as monster, defined by the Skin property.
+    /// </remarks>
+    public static async ValueTask SendAddTransformedCharacterToScopeExtendedAsync(this IConnection? connection, ushort @id, byte @currentPositionX, byte @currentPositionY, ushort @skin, string @name, byte @targetPositionX, byte @targetPositionY, byte @rotation, CharacterHeroState @heroState, Memory<byte> @appearanceAndEffects, byte @characterCount = 1)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = AddTransformedCharacterToScopeExtendedRef.GetRequiredSize(appearanceAndEffects.Length);
+            var packet = new AddTransformedCharacterToScopeExtendedRef(connection.Output.GetSpan(length)[..length]);
+            packet.CharacterCount = @characterCount;
+            packet.Id = @id;
+            packet.CurrentPositionX = @currentPositionX;
+            packet.CurrentPositionY = @currentPositionY;
+            packet.Skin = @skin;
+            packet.Name = @name;
+            packet.TargetPositionX = @targetPositionX;
+            packet.TargetPositionY = @targetPositionY;
+            packet.Rotation = @rotation;
+            packet.HeroState = @heroState;
+            @appearanceAndEffects.Span.CopyTo(packet.AppearanceAndEffects);
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Sends a <see cref="ShowEffect" /> to this connection.
     /// </summary>
     /// <param name="connection">The connection.</param>
@@ -7979,6 +8027,104 @@ public static class ConnectionExtensions
             packet.SkillNumber = @skillNumber;
             packet.AttackerId = @attackerId;
             packet.TargetId = @targetId;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Sends a <see cref="ImperialGuardianEnterResult" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="result">The result of the request.</param>
+    /// <param name="day">The day of the week, from 1 (monday) to 7 (sunday). The client shows it as the round.</param>
+    /// <param name="zone">The zone, starting at 1.</param>
+    /// <param name="weather">The weather of the map.</param>
+    /// <param name="remainingMilliseconds">The remaining time in milliseconds. When the result is NotOpen, the client shows the minutes until the event can be entered. The field is aligned to 4 bytes, because the client structure is not packed.</param>
+    /// <remarks>
+    /// Is sent by the server when: The player requested to enter the imperial guardian event, or entered the next zone of it.
+    /// Causes reaction on client side: The client shows a message when entering failed. On success, it remembers the day and zone for the timer and the result, and sets the weather of the map.
+    /// </remarks>
+    public static async ValueTask SendImperialGuardianEnterResultAsync(this IConnection? connection, ImperialGuardianEnterResult.EnterResult @result, byte @day, byte @zone, ImperialGuardianEnterResult.WeatherType @weather, uint @remainingMilliseconds)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = ImperialGuardianEnterResultRef.Length;
+            var packet = new ImperialGuardianEnterResultRef(connection.Output.GetSpan(length)[..length]);
+            packet.Result = @result;
+            packet.Day = @day;
+            packet.Zone = @zone;
+            packet.Weather = @weather;
+            packet.RemainingMilliseconds = @remainingMilliseconds;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Sends a <see cref="ImperialGuardianTimer" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="type">The type of the timer.</param>
+    /// <param name="remainingMilliseconds">The remaining time in milliseconds. The field is aligned to 4 bytes, because the client structure is not packed.</param>
+    /// <param name="monsterCount">The number of remaining monsters.</param>
+    /// <remarks>
+    /// Is sent by the server when: Every second during the imperial guardian event.
+    /// Causes reaction on client side: The client shows the timer with the remaining time and the number of remaining monsters. The client doesn't count down the time by itself.
+    /// </remarks>
+    public static async ValueTask SendImperialGuardianTimerAsync(this IConnection? connection, ImperialGuardianTimer.TimerType @type, uint @remainingMilliseconds, byte @monsterCount)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = ImperialGuardianTimerRef.Length;
+            var packet = new ImperialGuardianTimerRef(connection.Output.GetSpan(length)[..length]);
+            packet.Type = @type;
+            packet.RemainingMilliseconds = @remainingMilliseconds;
+            packet.MonsterCount = @monsterCount;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Sends a <see cref="ImperialGuardianResult" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="result">The result.</param>
+    /// <param name="experience">The rewarded experience, when the event has been completed. The field is aligned to 4 bytes, because the client structure is not packed.</param>
+    /// <remarks>
+    /// Is sent by the server when: A zone of the imperial guardian event has been cleared, or the event ended.
+    /// Causes reaction on client side: The client shows the result and hides the timer.
+    /// </remarks>
+    public static async ValueTask SendImperialGuardianResultAsync(this IConnection? connection, ImperialGuardianResult.ResultType @result, uint @experience)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = ImperialGuardianResultRef.Length;
+            var packet = new ImperialGuardianResultRef(connection.Output.GetSpan(length)[..length]);
+            packet.Result = @result;
+            packet.Experience = @experience;
 
             return packet.Header.Length;
         }
