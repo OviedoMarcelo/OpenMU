@@ -48,9 +48,16 @@ public class PersistentObjectsLookupController : ILookupController
             }
 
             var owner = await this._gameConfigurationSource.GetOwnerAsync().ConfigureAwait(true);
+            var configurationContext = await this._gameConfigurationSource.GetContextAsync(default).ConfigureAwait(true);
             IEnumerable<T> values;
+
+            // The pages which edit the game configuration (e.g. the merchants) work on the context of the
+            // configuration source, which already holds all of its objects. Loading them again from the
+            // database on every keystroke took seconds, e.g. for the hundreds of item definitions.
             if (this._gameConfigurationSource.IsSupporting(typeof(T))
-                && persistenceContext?.IsSupporting(typeof(T)) is not true)
+                && (persistenceContext is null
+                    || ReferenceEquals(persistenceContext, configurationContext)
+                    || persistenceContext.IsSupporting(typeof(T)) is not true))
             {
                 values = this._gameConfigurationSource.GetAll<T>();
             }
