@@ -8,10 +8,12 @@ using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MUnique.OpenMU.GameLogic.Attributes;
+using MUnique.OpenMU.GameLogic.PlugIns.Achievements;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 using MUnique.OpenMU.GameServer;
 using MUnique.OpenMU.Interfaces;
 using MUnique.OpenMU.Persistence;
+using MUnique.OpenMU.Persistence.Progression;
 using MUnique.OpenMU.Persistence.WeeklyQuests;
 using MUnique.OpenMU.PlugIns;
 using MUnique.OpenMU.Web.AdminPanel.Auth;
@@ -218,6 +220,89 @@ public class WebsiteController : Controller
         var nextResetUtc = WeeklyPeriod.GetNextPeriodStartUtc(periods.Weekly, context.ServerTimeZone);
         var nextDailyResetUtc = WeeklyPeriod.GetNextDailyPeriodStartUtc(periods.Daily, context.ServerTimeZone);
         return this.Ok(new { enabled = true, nextResetUtc, nextDailyResetUtc, characters });
+    }
+
+    /// <summary>
+    /// Gets the achievements and titles of the characters of an account.
+    /// </summary>
+    /// <param name="login">The login name of the account.</param>
+    /// <returns>
+    /// <c>enabled</c>: whether the achievements plugin is active;
+    /// <c>characters</c>: the achievements and titles per character, like the player sees them with /logros and /titulos.
+    /// </returns>
+    /// <remarks>
+    /// The progress of a character which is in the game is saved every minute, so it may be a bit behind.
+    /// </remarks>
+    [HttpGet]
+    [Route("account/{login}/achievements")]
+    public async Task<IActionResult> GetAchievementsAsync(string login)
+    {
+        var context = this._gameServers.Values.OfType<GameServer>().FirstOrDefault()?.Context;
+        var plugInId = typeof(AchievementsPlugIn).GUID;
+        if (context is null
+            || ProgressionRepositoryRegistry.Current is not { } repository
+            || !context.PlugInManager.IsPlugInActive(plugInId)
+            || context.Configuration.PlugInConfigurations.FirstOrDefault(c => c.TypeId == plugInId)
+                ?.GetConfiguration<AchievementsConfiguration>(context.PlugInManager.CustomConfigReferenceHandler) is not { } configuration)
+        {
+            return this.Ok(new { enabled = false });
+        }
+
+        using var playerContext = this._contextProvider.CreateNewPlayerContext(context.Configuration);
+        var account = await playerContext.GetAccountByLoginNameAsync(login).ConfigureAwait(false);
+        if (account is null)
+        {
+            return this.NotFound();
+        }
+
+        var accountId = account.GetId();
+        var characterIds = account.Characters.Select(c => c.GetId()).ToList();
+        var ownerIds = characterIds.Append(accountId).ToList();
+        var progress = await repository.LoadAchievementsAsync(ownerIds).ConfigureAwait(false);
+        var unlockedTitles = await repository.LoadUnlockedTitlesAsync(ownerIds).ConfigureAwait(false);
+        var activeTitles = (await repository.LoadActiveTitlesAsync(characterIds).ConfigureAwait(false))
+            .ToDictionary(t => t.CharacterId, t => t.TitleId);
+        var titlesById = configuration.Titles
+            .Where(t => !string.IsNullOrWhiteSpace(t.Id))
+            .GroupBy(t => t.Id, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        object? ToJson(string? titleId) => titleId is not null && titlesById.TryGetValue(titleId, out var title)
+            ? new { id = title.Id, text = title.Text, color = title.Color }
+            : null;
+
+        var characters = account.Characters
+            .OrderBy(c => c.CharacterSlot)
+            .Select(character =>
+            {
+                var id = character.GetId();
+                var achievements = AchievementsPlugIn.CreateOverview(configuration, progress, id, accountId)
+                    .Select(e => new
+                    {
+                        id = e.Achievement.Id,
+                        name = e.Achievement.Name,
+                        description = e.Achievement.Description,
+                        count = e.Count,
+                        required = e.Required,
+                        completed = e.IsCompleted,
+                        rewarded = e.IsRewarded,
+                        account = e.Achievement.Scope == AchievementScope.Account,
+                        rewards = e.Achievement.GetRewardsText(WebsiteCulture),
+                        title = ToJson(e.Achievement.TitleId),
+                    })
+                    .ToList();
+                var titles = unlockedTitles
+                    .Where(t => t.OwnerId == id || t.OwnerId == accountId)
+                    .Select(t => t.TitleId)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Select(ToJson)
+                    .OfType<object>()
+                    .ToList();
+                return new { name = character.Name, activeTitle = ToJson(activeTitles.GetValueOrDefault(id)), titles, achievements };
+            })
+            .ToList();
+
+        return this.Ok(new { enabled = true, characters });
     }
 
     private async Task<(bool InGame, string? Character)> FindPlayerAsync(string login)

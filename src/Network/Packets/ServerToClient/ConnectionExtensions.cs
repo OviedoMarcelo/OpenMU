@@ -6563,6 +6563,38 @@ public static class ConnectionExtensions
     }
 
     /// <summary>
+    /// Sends a <see cref="PlayerTitle" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="playerId">The id of the player, as in the AddCharactersToScope message.</param>
+    /// <param name="color">The color of the text, as 32 bit ARGB value.</param>
+    /// <param name="text">The title. An empty text removes the title of the player.</param>
+    /// <remarks>
+    /// Is sent by the server when: When a player with a title came into view, when a player changed its title, and after the client requested the list of available chat commands (for the titles of the players in view).
+    /// Causes reaction on client side: The client shows the title below the name of the player, or removes it when the text is empty.
+    /// </remarks>
+    public static async ValueTask SendPlayerTitleAsync(this IConnection? connection, ushort @playerId, uint @color, string @text)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = PlayerTitleRef.Length;
+            var packet = new PlayerTitleRef(connection.Output.GetSpan(length)[..length]);
+            packet.PlayerId = @playerId;
+            packet.Color = @color;
+            packet.Text = @text;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Sends a <see cref="EventChipRegistrationResult" /> to this connection.
     /// </summary>
     /// <param name="connection">The connection.</param>

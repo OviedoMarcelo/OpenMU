@@ -11935,6 +11935,37 @@
       </Structures>
     </Packet>
     <Packet>
+      <HeaderType>C2HeaderWithSubCode</HeaderType>
+      <Code>F5</Code>
+      <SubCode>07</SubCode>
+      <Name>PlayerTitle</Name>
+      <Length>44</Length>
+      <Direction>ServerToClient</Direction>
+      <SentWhen>When a player with a title came into view, when a player changed its title, and after the client requested the list of available chat commands (for the titles of the players in view).</SentWhen>
+      <CausedReaction>The client shows the title below the name of the player, or removes it when the text is empty.</CausedReaction>
+      <Fields>
+        <Field>
+          <Index>6</Index>
+          <Type>ShortBigEndian</Type>
+          <Name>PlayerId</Name>
+          <Description>The id of the player, as in the AddCharactersToScope message.</Description>
+        </Field>
+        <Field>
+          <Index>8</Index>
+          <Type>IntegerLittleEndian</Type>
+          <Name>Color</Name>
+          <Description>The color of the text, as 32 bit ARGB value.</Description>
+        </Field>
+        <Field>
+          <Index>12</Index>
+          <Type>String</Type>
+          <Name>Text</Name>
+          <Length>32</Length>
+          <Description>The title. An empty text removes the title of the player.</Description>
+        </Field>
+      </Fields>
+    </Packet>
+    <Packet>
       <HeaderType>C1Header</HeaderType>
       <Code>94</Code>
       <Name>EventChipRegistrationResult</Name>

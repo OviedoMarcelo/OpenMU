@@ -41,4 +41,9 @@ internal static class SchemaNames
     /// The schema name for the progress of the weekly quests.
     /// </summary>
     internal const string WeeklyQuests = "weekly";
+
+    /// <summary>
+    /// The schema name for the long term progression: achievements and titles.
+    /// </summary>
+    internal const string Progression = "progression";
 }

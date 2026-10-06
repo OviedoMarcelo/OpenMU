@@ -1469,4 +1469,34 @@
   <data name="SuspiciousScrapOfPaperStackedPlugIn_Description" xml:space="preserve">
     <value>Transforms a full stack of suspicious scraps of paper into a Gaion's Order.</value>
   </data>
+  <data name="AchievementsPlugIn_Name" xml:space="preserve">
+    <value>Achievements</value>
+  </data>
+  <data name="AchievementsPlugIn_Description" xml:space="preserve">
+    <value>Logros (matar monstruos, eventos, items +N, duelos, combinaciones, niveles, resets, PvP) con premios y títulos que se muestran debajo del nombre.</value>
+  </data>
+  <data name="AchievementsChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Achievements chat command</value>
+  </data>
+  <data name="AchievementsChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/logros'. Shows the progress of the achievements.</value>
+  </data>
+  <data name="TitlesChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Titles chat command</value>
+  </data>
+  <data name="TitlesChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/titulos'. Shows the unlocked titles.</value>
+  </data>
+  <data name="TitleChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Title chat command</value>
+  </data>
+  <data name="TitleChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/titulo &lt;id|off&gt;'. Changes the title which is shown below the name.</value>
+  </data>
+  <data name="GiveTitleChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Give title chat command</value>
+  </data>
+  <data name="GiveTitleChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/daretitulo &lt;character&gt; &lt;id&gt;'. Unlocks a title for a character, e.g. as a prize of an event.</value>
+  </data>
 </root>

@@ -4117,5 +4117,35 @@ namespace MUnique.OpenMU.GameLogic.Properties {
         /// <summary>Gets the localized BlessJewelConsumeHandlerPlugInConfiguration_RepairTargetItems_Caption text.</summary>
         public static string BlessJewelConsumeHandlerPlugInConfiguration_RepairTargetItems_Caption => ResourceManager.GetString("BlessJewelConsumeHandlerPlugInConfiguration_RepairTargetItems_Caption", resourceCulture)!;
 
+        /// <summary>Gets the localized AchievementsPlugIn_Name text.</summary>
+        public static string AchievementsPlugIn_Name => ResourceManager.GetString("AchievementsPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized AchievementsPlugIn_Description text.</summary>
+        public static string AchievementsPlugIn_Description => ResourceManager.GetString("AchievementsPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized AchievementsChatCommandPlugIn_Name text.</summary>
+        public static string AchievementsChatCommandPlugIn_Name => ResourceManager.GetString("AchievementsChatCommandPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized AchievementsChatCommandPlugIn_Description text.</summary>
+        public static string AchievementsChatCommandPlugIn_Description => ResourceManager.GetString("AchievementsChatCommandPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized TitlesChatCommandPlugIn_Name text.</summary>
+        public static string TitlesChatCommandPlugIn_Name => ResourceManager.GetString("TitlesChatCommandPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized TitlesChatCommandPlugIn_Description text.</summary>
+        public static string TitlesChatCommandPlugIn_Description => ResourceManager.GetString("TitlesChatCommandPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized TitleChatCommandPlugIn_Name text.</summary>
+        public static string TitleChatCommandPlugIn_Name => ResourceManager.GetString("TitleChatCommandPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized TitleChatCommandPlugIn_Description text.</summary>
+        public static string TitleChatCommandPlugIn_Description => ResourceManager.GetString("TitleChatCommandPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized GiveTitleChatCommandPlugIn_Name text.</summary>
+        public static string GiveTitleChatCommandPlugIn_Name => ResourceManager.GetString("GiveTitleChatCommandPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized GiveTitleChatCommandPlugIn_Description text.</summary>
+        public static string GiveTitleChatCommandPlugIn_Description => ResourceManager.GetString("GiveTitleChatCommandPlugIn_Description", resourceCulture)!;
+
     }
 }

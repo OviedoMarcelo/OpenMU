@@ -6749,6 +6749,32 @@ public class PacketStructureTests
     }
 
     /// <summary>
+    /// Tests the packet size calculation for PlayerTitle.
+    /// </summary>
+    [Test]
+    public void PlayerTitle_PacketSizeValidation()
+    {
+        // Fixed-length packet validation
+        const int expectedLength = 44;
+        var actualLength = PlayerTitleRef.Length;
+        
+        Assert.That(actualLength, Is.EqualTo(expectedLength), 
+            "Packet length mismatch: declared length does not match calculated size");
+        
+        // Validate field 'PlayerId' boundary
+        Assert.That(6 + 2, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'PlayerId' exceeds packet boundary");
+        
+        // Validate field 'Color' boundary
+        Assert.That(8 + 4, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'Color' exceeds packet boundary");
+        
+        // Validate field 'Text' boundary
+        Assert.That(12 + 32, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'Text' exceeds packet boundary");
+    }
+
+    /// <summary>
     /// Tests the packet size calculation for EventChipRegistrationResult.
     /// </summary>
     [Test]

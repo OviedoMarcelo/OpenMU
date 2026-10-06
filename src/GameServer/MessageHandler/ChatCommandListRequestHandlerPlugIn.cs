@@ -6,6 +6,7 @@ namespace MUnique.OpenMU.GameServer.MessageHandler;
 
 using System.Runtime.InteropServices;
 using MUnique.OpenMU.GameLogic;
+using MUnique.OpenMU.GameLogic.PlugIns.Achievements;
 using MUnique.OpenMU.GameLogic.PlugIns.ChatCommands;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 using MUnique.OpenMU.GameLogic.Views;
@@ -47,5 +48,8 @@ internal class ChatCommandListRequestHandlerPlugIn : ISubPacketHandlerPlugIn
         {
             await weeklyQuests.SendListAsync(player).ConfigureAwait(false);
         }
+
+        // ... and the titles of the players it sees.
+        await PlayerTitles.SendVisibleTitlesAsync(player).ConfigureAwait(false);
     }
 }
