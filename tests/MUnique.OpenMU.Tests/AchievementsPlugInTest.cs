@@ -178,6 +178,26 @@ public class AchievementsPlugInTest
     }
 
     /// <summary>
+    /// Tests that the title of an achievement which was completed before its title was configured is unlocked later.
+    /// </summary>
+    [Test]
+    public async Task TitleConfiguredAfterCompletionIsUnlockedAsync()
+    {
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        var plugIn = CreatePlugIn(new InMemoryProgressionRepository());
+        var titles = plugIn.Configuration!.Titles;
+        plugIn.Configuration.Titles = new List<TitleDefinition>();
+
+        await plugIn.ItemCraftedAsync(player, true, null).ConfigureAwait(false);
+        await plugIn.ItemCraftedAsync(player, true, null).ConfigureAwait(false);
+        Assert.That((await plugIn.GetTitlesAsync(player).ConfigureAwait(false))!.Value.Unlocked, Is.Empty);
+
+        plugIn.Configuration.Titles = titles;
+        var unlocked = (await plugIn.GetTitlesAsync(player).ConfigureAwait(false))!.Value.Unlocked;
+        Assert.That(unlocked.Select(t => t.Id), Is.EquivalentTo(new[] { CraftingTitleId }));
+    }
+
+    /// <summary>
     /// Tests that a game master can unlock a title, e.g. as a prize of an event.
     /// </summary>
     [Test]

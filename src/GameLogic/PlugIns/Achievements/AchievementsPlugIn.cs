@@ -148,6 +148,7 @@ public class AchievementsPlugIn :
                 }
 
                 await this.RewardPendingAsync(player, state, true).ConfigureAwait(false);
+                await this.UnlockMissingTitlesAsync(player, state).ConfigureAwait(false);
             }
 
             // Characters which reached a level before the achievement existed get it now.
@@ -385,6 +386,7 @@ public class AchievementsPlugIn :
             return null;
         }
 
+        await this.UnlockMissingTitlesAsync(player, state).ConfigureAwait(false);
         var unlocked = configuration.Titles.Where(t => state.UnlockedTitleIds.Contains(t.Id)).ToList();
         return (unlocked, FindTitle(configuration, state.ActiveTitleId));
     }
@@ -690,8 +692,34 @@ public class AchievementsPlugIn :
         {
             await this.UnlockTitleAsync(player, state, title, progress.OwnerId, achievement.Id).ConfigureAwait(false);
         }
+        else if (!string.IsNullOrWhiteSpace(achievement.TitleId))
+        {
+            player.Logger.LogWarning("The achievement {achievement} refers to the title {title}, which isn't configured.", achievement.Id, achievement.TitleId);
+        }
 
         await this.TryRewardAsync(player, state, achievement, progress, true).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Unlocks the titles of completed achievements which the player doesn't have yet,
+    /// e.g. because the title was assigned to the achievement or configured after it had been completed.
+    /// </summary>
+    private async ValueTask UnlockMissingTitlesAsync(Player player, AchievementPlayerState state)
+    {
+        if (this.Configuration is not { } configuration)
+        {
+            return;
+        }
+
+        foreach (var progress in state.Progress.Values.Where(p => p.CompletedAt is not null).ToList())
+        {
+            if (configuration.Achievements.FirstOrDefault(a => a.Id == progress.AchievementId) is { } achievement
+                && FindTitle(configuration, achievement.TitleId) is { } title
+                && !state.UnlockedTitleIds.Contains(title.Id))
+            {
+                await this.UnlockTitleAsync(player, state, title, progress.OwnerId, achievement.Id).ConfigureAwait(false);
+            }
+        }
     }
 
     private async ValueTask<bool> UnlockTitleAsync(Player player, AchievementPlayerState state, TitleDefinition title, Guid ownerId, string source)
