@@ -35,6 +35,7 @@ public class AchievementsPlugIn :
     IItemConsumedPlugIn,
     IItemCraftedPlugIn,
     IDuelWonPlugIn,
+    IExperienceCalculationPlugIn,
     IPeriodicTaskPlugIn,
     ISupportCustomConfiguration<AchievementsConfiguration>,
     ISupportDefaultCustomConfiguration
@@ -310,6 +311,17 @@ public class AchievementsPlugIn :
     }
 
     /// <inheritdoc />
+    public ValueTask CalculateExperienceAsync(Player player, ExperienceCalculationArgs args)
+    {
+        if (States.TryGetValue(player, out var state) && state.ExperienceBonusPercent > 0)
+        {
+            args.Experience *= 1 + (state.ExperienceBonusPercent / 100);
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    /// <inheritdoc />
     public async ValueTask ExecuteTaskAsync(GameContext gameContext)
     {
         var now = DateTime.UtcNow;
@@ -366,6 +378,16 @@ public class AchievementsPlugIn :
         // The player may have freed some inventory space in the meantime.
         await this.RewardPendingAsync(player, state, false).ConfigureAwait(false);
         return CreateOverview(configuration, state.Progress);
+    }
+
+    /// <summary>
+    /// Gets the experience bonus in percent which the completed achievements of the player give.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <returns>The bonus; 0, if there is none or the achievements aren't loaded.</returns>
+    public double GetExperienceBonusPercent(Player player)
+    {
+        return States.TryGetValue(player, out var state) ? state.ExperienceBonusPercent : 0;
     }
 
     /// <summary>
@@ -613,6 +635,28 @@ public class AchievementsPlugIn :
         return player.InvokeViewPlugInAsync<IShowMessagePlugIn>(p => p.ShowMessageAsync(message, MessageType.GoldenCenter));
     }
 
+    /// <summary>
+    /// Calculates the experience bonus of the completed achievements of the character and its account.
+    /// A change of the configuration applies when the character enters the game the next time.
+    /// </summary>
+    private void UpdateExperienceBonus(AchievementPlayerState state)
+    {
+        if (this.Configuration is not { } configuration)
+        {
+            state.ExperienceBonusPercent = 0;
+            return;
+        }
+
+        var bonus = configuration.Achievements
+            .Where(a => !string.IsNullOrWhiteSpace(a.Id) && a.ExperienceBonusPercent > 0)
+            .DistinctBy(a => a.Id)
+            .Where(a => state.Progress.TryGetValue(a.Id, out var progress) && progress.CompletedAt is not null)
+            .Sum(a => a.ExperienceBonusPercent);
+        state.ExperienceBonusPercent = configuration.MaximumExperienceBonusPercent > 0
+            ? Math.Min(bonus, configuration.MaximumExperienceBonusPercent)
+            : bonus;
+    }
+
     private bool HasAchievements(AchievementObjectiveType type)
     {
         return this.Configuration?.Achievements.Any(a => a.IsActive && a.ObjectiveType == type) is true;
@@ -709,6 +753,7 @@ public class AchievementsPlugIn :
                 {
                     progress.CompletedAt = DateTime.UtcNow;
                     hasCompleted = true;
+                    this.UpdateExperienceBonus(state);
                     await this.CompleteAsync(player, state, configuration, achievement, progress).ConfigureAwait(false);
                 }
             }
@@ -827,6 +872,7 @@ public class AchievementsPlugIn :
             state.ActiveTitleId = activeTitle?.TitleId;
             state.DirtyAchievementIds.Clear();
             state.IsLoaded = true;
+            this.UpdateExperienceBonus(state);
             return true;
         }
         catch (Exception ex)

@@ -19,6 +19,25 @@ public class InMemoryProgressionRepository : IProgressionRepository
     private readonly ConcurrentDictionary<(Guid AccountId, string SeasonId), long> _seasonExperience = new();
     private readonly ConcurrentDictionary<(Guid AccountId, string SeasonId, int Level, bool IsPremium), SeasonClaim> _seasonClaims = new();
     private readonly ConcurrentDictionary<(Guid AccountId, string SeasonId), SeasonPremium> _seasonPremiums = new();
+    private readonly ConcurrentDictionary<Guid, PrestigeProgress> _prestige = new();
+
+    /// <inheritdoc />
+    public ValueTask<IList<PrestigeProgress>> LoadPrestigeAsync(IReadOnlyCollection<Guid> characterIds, CancellationToken cancellationToken = default)
+    {
+        IList<PrestigeProgress> result = characterIds
+            .Select(id => this._prestige.GetValueOrDefault(id))
+            .OfType<PrestigeProgress>()
+            .Select(Clone)
+            .ToList();
+        return ValueTask.FromResult(result);
+    }
+
+    /// <inheritdoc />
+    public ValueTask SavePrestigeAsync(PrestigeProgress prestige, CancellationToken cancellationToken = default)
+    {
+        this._prestige[prestige.CharacterId] = Clone(prestige);
+        return ValueTask.CompletedTask;
+    }
 
     /// <inheritdoc />
     public ValueTask<SeasonPassState> LoadSeasonPassAsync(Guid accountId, string seasonId, CancellationToken cancellationToken = default)
@@ -138,6 +157,15 @@ public class InMemoryProgressionRepository : IProgressionRepository
 
         return ValueTask.CompletedTask;
     }
+
+    private static PrestigeProgress Clone(PrestigeProgress prestige) => new()
+    {
+        CharacterId = prestige.CharacterId,
+        AccountId = prestige.AccountId,
+        Level = prestige.Level,
+        Points = prestige.Points,
+        LastPrestigeAt = prestige.LastPrestigeAt,
+    };
 
     private static SeasonClaim Clone(SeasonClaim claim) => new()
     {

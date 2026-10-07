@@ -111,4 +111,19 @@ public interface IProgressionRepository
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns><c>true</c>, if it has been activated; <c>false</c>, if it already was.</returns>
     ValueTask<bool> AddSeasonPremiumAsync(SeasonPremium premium, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Loads the prestige of the specified characters, with one query.
+    /// </summary>
+    /// <param name="characterIds">The identifiers of the characters.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The prestige of the characters which have one.</returns>
+    ValueTask<IList<PrestigeProgress>> LoadPrestigeAsync(IReadOnlyCollection<Guid> characterIds, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Inserts or updates the prestige of a character.
+    /// </summary>
+    /// <param name="prestige">The prestige.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    ValueTask SavePrestigeAsync(PrestigeProgress prestige, CancellationToken cancellationToken = default);
 }

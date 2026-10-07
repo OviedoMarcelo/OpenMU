@@ -110,6 +110,14 @@ public class AchievementDefinition
     public string? TitleId { get; set; }
 
     /// <summary>
+    /// Gets or sets the permanent experience bonus in percent which the achievement gives once it's completed.
+    /// For achievements of the account, all characters of the account get it.
+    /// </summary>
+    [Display(Name = "Bonus de XP (%)", Description = "Bonus permanente de experiencia al completarlo, p. ej. 1 = +1%. Si el logro es de la cuenta, lo tienen todos sus personajes. La suma tiene el tope \"Bonus de XP máximo\" del plugin.")]
+    [Range(0, 100)]
+    public double ExperienceBonusPercent { get; set; }
+
+    /// <summary>
     /// Gets or sets the rewards.
     /// </summary>
     [Display(Name = "Premios")]

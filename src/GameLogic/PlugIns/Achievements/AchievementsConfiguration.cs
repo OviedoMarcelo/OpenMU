@@ -25,6 +25,11 @@ public class AchievementsConfiguration
             new() { Id = "lord-arena", Text = "Lord of Arena", Color = "#FFD700" },
             new() { Id = "chaos-master", Text = "Chaos Master", Color = "#C080FF" },
             new() { Id = "legend", Text = "Leyenda", Color = "#00E5FF" },
+
+            // Unlocked by the prestige levels of the Prestige plugin.
+            new() { Id = "prestige-1", Text = "Prestigio I", Color = "#E0E0E0" },
+            new() { Id = "prestige-2", Text = "Prestigio II", Color = "#FFB347" },
+            new() { Id = "prestige-3", Text = "Prestigio III", Color = "#FF6EC7" },
         },
         Achievements = new List<AchievementDefinition>
         {
@@ -95,6 +100,16 @@ public class AchievementsConfiguration
     /// </summary>
     [Display(Name = "Kills compartidos en party", Description = "Los kills de monstruos cuentan para los miembros de la party que estén cerca, igual que la experiencia.")]
     public bool ShareKillsWithParty { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum of the summed experience bonus of the completed achievements, in percent.
+    /// </summary>
+    /// <remarks>
+    /// 0 means no limit, which is also what configurations read which were created before this setting existed.
+    /// </remarks>
+    [Display(Name = "Bonus de XP máximo (%)", Description = "Tope de la suma de los \"Bonus de XP\" de los logros completados de un personaje y su cuenta. 0 = sin tope.")]
+    [Range(0, 1000)]
+    public double MaximumExperienceBonusPercent { get; set; } = 10;
 
     /// <summary>
     /// Gets or sets the message which is shown when an achievement has been completed and rewarded.

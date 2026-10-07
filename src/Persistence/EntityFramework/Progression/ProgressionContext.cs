@@ -48,6 +48,11 @@ public class ProgressionContext : DbContext
     /// </summary>
     public DbSet<SeasonPremium> SeasonPremiums { get; set; } = null!;
 
+    /// <summary>
+    /// Gets or sets the prestige of the characters.
+    /// </summary>
+    public DbSet<PrestigeProgress> Prestige { get; set; } = null!;
+
     /// <inheritdoc />
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -102,6 +107,12 @@ public class ProgressionContext : DbContext
             entity.HasKey(p => new { p.AccountId, p.SeasonId });
             entity.Property(p => p.SeasonId).IsRequired().HasMaxLength(64);
             entity.Property(p => p.GrantedBy).HasMaxLength(64);
+        });
+        modelBuilder.Entity<PrestigeProgress>(entity =>
+        {
+            entity.ToTable(nameof(PrestigeProgress), SchemaNames.Progression);
+            entity.HasKey(p => p.CharacterId);
+            entity.HasIndex(p => p.Level);
         });
     }
 }

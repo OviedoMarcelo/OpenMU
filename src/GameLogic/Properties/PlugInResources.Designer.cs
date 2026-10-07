@@ -4165,5 +4165,17 @@ namespace MUnique.OpenMU.GameLogic.Properties {
         /// <summary>Gets the localized SeasonPremiumChatCommandPlugIn_Description text.</summary>
         public static string SeasonPremiumChatCommandPlugIn_Description => ResourceManager.GetString("SeasonPremiumChatCommandPlugIn_Description", resourceCulture)!;
 
+        /// <summary>Gets the localized PrestigePlugIn_Name text.</summary>
+        public static string PrestigePlugIn_Name => ResourceManager.GetString("PrestigePlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized PrestigePlugIn_Description text.</summary>
+        public static string PrestigePlugIn_Description => ResourceManager.GetString("PrestigePlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized PrestigeChatCommandPlugIn_Name text.</summary>
+        public static string PrestigeChatCommandPlugIn_Name => ResourceManager.GetString("PrestigeChatCommandPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized PrestigeChatCommandPlugIn_Description text.</summary>
+        public static string PrestigeChatCommandPlugIn_Description => ResourceManager.GetString("PrestigeChatCommandPlugIn_Description", resourceCulture)!;
+
     }
 }

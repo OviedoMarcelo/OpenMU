@@ -221,6 +221,42 @@ public class AchievementsPlugInTest
     }
 
     /// <summary>
+    /// Tests that completed achievements give their experience bonus, up to the maximum.
+    /// </summary>
+    [Test]
+    public async Task CompletedAchievementsGiveExperienceBonusAsync()
+    {
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        var plugIn = CreatePlugIn(new InMemoryProgressionRepository());
+        plugIn.Configuration!.MaximumExperienceBonusPercent = 5;
+        plugIn.Configuration.Achievements.Single().ExperienceBonusPercent = 3;
+        plugIn.Configuration.Achievements.Add(new AchievementDefinition
+        {
+            Id = "resets-1",
+            Name = "Resets",
+            ObjectiveType = AchievementObjectiveType.ReachResets,
+            ExperienceBonusPercent = 4,
+        });
+
+        var args = new GameLogic.PlugIns.ExperienceCalculationArgs(player, false, 1000);
+        await plugIn.ItemCraftedAsync(player, true, null).ConfigureAwait(false);
+        await plugIn.CalculateExperienceAsync(player, args).ConfigureAwait(false);
+        Assert.That(args.Experience, Is.EqualTo(1000));
+
+        await plugIn.ItemCraftedAsync(player, true, null).ConfigureAwait(false);
+        args.Experience = 1000;
+        await plugIn.CalculateExperienceAsync(player, args).ConfigureAwait(false);
+        Assert.That(args.Experience, Is.EqualTo(1030).Within(0.001));
+
+        // 3% + 4% would be 7%, but the maximum is 5%.
+        await plugIn.CharacterResetAsync(player, 1).ConfigureAwait(false);
+        args.Experience = 1000;
+        await plugIn.CalculateExperienceAsync(player, args).ConfigureAwait(false);
+        Assert.That(args.Experience, Is.EqualTo(1050).Within(0.001));
+        Assert.That(plugIn.GetExperienceBonusPercent(player), Is.EqualTo(5));
+    }
+
+    /// <summary>
     /// Tests that a game master can unlock a title, e.g. as a prize of an event.
     /// </summary>
     [Test]

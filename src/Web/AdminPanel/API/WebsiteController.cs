@@ -229,7 +229,7 @@ public class WebsiteController : Controller
     /// <param name="login">The login name of the account.</param>
     /// <returns>
     /// <c>enabled</c>: whether the achievements plugin is active;
-    /// <c>characters</c>: the achievements and titles per character, like the player sees them with /logros and /titulos.
+    /// <c>characters</c>: the achievements, titles and prestige per character, like the player sees them with /logros, /titulos and /prestigio.
     /// </returns>
     /// <remarks>
     /// The progress of a character which is in the game is saved every minute, so it may be a bit behind.
@@ -261,6 +261,8 @@ public class WebsiteController : Controller
         var ownerIds = characterIds.Append(accountId).ToList();
         var progress = await repository.LoadAchievementsAsync(ownerIds).ConfigureAwait(false);
         var unlockedTitles = await repository.LoadUnlockedTitlesAsync(ownerIds).ConfigureAwait(false);
+        var prestige = (await repository.LoadPrestigeAsync(characterIds).ConfigureAwait(false))
+            .ToDictionary(p => p.CharacterId);
         var activeTitles = (await repository.LoadActiveTitlesAsync(characterIds).ConfigureAwait(false))
             .ToDictionary(t => t.CharacterId, t => t.TitleId);
         var titlesById = configuration.Titles
@@ -299,7 +301,15 @@ public class WebsiteController : Controller
                     .Select(ToJson)
                     .OfType<object>()
                     .ToList();
-                return new { name = character.Name, activeTitle = ToJson(activeTitles.GetValueOrDefault(id)), titles, achievements };
+                var characterPrestige = prestige.GetValueOrDefault(id);
+                return new
+                {
+                    name = character.Name,
+                    activeTitle = ToJson(activeTitles.GetValueOrDefault(id)),
+                    titles,
+                    achievements,
+                    prestige = new { level = characterPrestige?.Level ?? 0, points = characterPrestige?.Points ?? 0 },
+                };
             })
             .ToList();
 

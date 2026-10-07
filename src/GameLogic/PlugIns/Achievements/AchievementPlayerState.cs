@@ -71,6 +71,12 @@ internal sealed class AchievementPlayerState
     public string? ActiveTitleId { get; set; }
 
     /// <summary>
+    /// Gets or sets the experience bonus in percent of the completed achievements, already limited to the maximum.
+    /// It's read for every kill, so it's calculated when the achievements are loaded or completed.
+    /// </summary>
+    public double ExperienceBonusPercent { get; set; }
+
+    /// <summary>
     /// Gets the identifier of the owner of the progress of an achievement.
     /// </summary>
     /// <param name="scope">The scope of the achievement.</param>

@@ -273,6 +273,39 @@ public sealed class ProgressionRepository : IProgressionRepository, IDisposable
         return added > 0;
     }
 
+    /// <inheritdoc />
+    public async ValueTask<IList<PrestigeProgress>> LoadPrestigeAsync(IReadOnlyCollection<Guid> characterIds, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        var ids = characterIds.ToArray();
+        await using var context = new ProgressionContext();
+        return await context.Prestige
+            .AsNoTracking()
+            .Where(p => ids.Contains(p.CharacterId))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask SavePrestigeAsync(PrestigeProgress prestige, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        await context.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO progression."PrestigeProgress" ("CharacterId", "AccountId", "Level", "Points", "LastPrestigeAt")
+            VALUES ({prestige.CharacterId}, {prestige.AccountId}, {prestige.Level}, {prestige.Points}, {prestige.LastPrestigeAt})
+            ON CONFLICT ("CharacterId") DO UPDATE SET
+                "AccountId" = EXCLUDED."AccountId",
+                "Level" = EXCLUDED."Level",
+                "Points" = EXCLUDED."Points",
+                "LastPrestigeAt" = EXCLUDED."LastPrestigeAt"
+            """,
+            cancellationToken).ConfigureAwait(false);
+    }
+
     private async ValueTask EnsureAvailableStorageAsync(CancellationToken cancellationToken)
     {
         if (this._isStorageReady)

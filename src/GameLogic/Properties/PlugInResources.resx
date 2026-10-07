@@ -1517,4 +1517,16 @@
   <data name="SeasonPremiumChatCommandPlugIn_Description" xml:space="preserve">
     <value>Handles the chat command '/pasepremium &lt;login&gt;'. Activates the premium season pass of the running season for an account.</value>
   </data>
+  <data name="PrestigePlugIn_Name" xml:space="preserve">
+    <value>Prestige</value>
+  </data>
+  <data name="PrestigePlugIn_Description" xml:space="preserve">
+    <value>Prestigio: con nivel y nivel master máximos, el personaje vuelve a empezar su nivel master (los resets no cambian) a cambio de puntos, premios, títulos y un bonus de XP permanente.</value>
+  </data>
+  <data name="PrestigeChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Prestige chat command</value>
+  </data>
+  <data name="PrestigeChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/prestigio [confirmar]'. Shows the prestige of the character and does it.</value>
+  </data>
 </root>

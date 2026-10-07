@@ -59,5 +59,9 @@ public class AchievementsChatCommandPlugIn : ChatCommandPlugInBase<EmptyChatComm
 
         var completed = entries.Count(e => e.IsCompleted);
         await player.ShowBlueMessageAsync($"Completaste {completed} de {entries.Count} logros. Con /titulos ves tus títulos.").ConfigureAwait(false);
+        if (plugIn.GetExperienceBonusPercent(player) is > 0 and var bonus)
+        {
+            await player.ShowBlueMessageAsync($"Tus logros te dan +{bonus.ToString("0.##", player.Culture)}% de experiencia.").ConfigureAwait(false);
+        }
     }
 }
