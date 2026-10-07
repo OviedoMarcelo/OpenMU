@@ -188,6 +188,91 @@ public sealed class ProgressionRepository : IProgressionRepository, IDisposable
             cancellationToken).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
+    public async ValueTask<SeasonPassState> LoadSeasonPassAsync(Guid accountId, string seasonId, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        var experience = await context.SeasonProgress
+            .AsNoTracking()
+            .Where(p => p.AccountId == accountId && p.SeasonId == seasonId)
+            .Select(p => p.Experience)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var claims = await context.SeasonClaims
+            .AsNoTracking()
+            .Where(c => c.AccountId == accountId && c.SeasonId == seasonId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var isPremium = await context.SeasonPremiums
+            .AnyAsync(p => p.AccountId == accountId && p.SeasonId == seasonId, cancellationToken)
+            .ConfigureAwait(false);
+        return new SeasonPassState(experience, claims, isPremium);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<long> AddSeasonExperienceAsync(Guid accountId, string seasonId, long experience, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        var result = await context.Database.SqlQuery<long>(
+            $"""
+            INSERT INTO progression."SeasonProgress" ("AccountId", "SeasonId", "Experience")
+            VALUES ({accountId}, {seasonId}, {experience})
+            ON CONFLICT ("AccountId", "SeasonId") DO UPDATE SET "Experience" = progression."SeasonProgress"."Experience" + EXCLUDED."Experience"
+            RETURNING "Experience" AS "Value"
+            """).ToListAsync(cancellationToken).ConfigureAwait(false);
+        return result.FirstOrDefault();
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<bool> AddSeasonClaimAsync(SeasonClaim claim, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+
+        // The database decides, so that a reward can never be handed out twice.
+        var added = await context.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO progression."SeasonClaim" ("AccountId", "SeasonId", "Level", "IsPremium", "ClaimedAt", "CharacterId")
+            VALUES ({claim.AccountId}, {claim.SeasonId}, {claim.Level}, {claim.IsPremium}, {claim.ClaimedAt}, {claim.CharacterId})
+            ON CONFLICT DO NOTHING
+            """,
+            cancellationToken).ConfigureAwait(false);
+        return added > 0;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask RemoveSeasonClaimAsync(SeasonClaim claim, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        await context.SeasonClaims
+            .Where(c => c.AccountId == claim.AccountId && c.SeasonId == claim.SeasonId && c.Level == claim.Level && c.IsPremium == claim.IsPremium)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<bool> AddSeasonPremiumAsync(SeasonPremium premium, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        var added = await context.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO progression."SeasonPremium" ("AccountId", "SeasonId", "GrantedAt", "GrantedBy")
+            VALUES ({premium.AccountId}, {premium.SeasonId}, {premium.GrantedAt}, {premium.GrantedBy})
+            ON CONFLICT DO NOTHING
+            """,
+            cancellationToken).ConfigureAwait(false);
+        return added > 0;
+    }
+
     private async ValueTask EnsureAvailableStorageAsync(CancellationToken cancellationToken)
     {
         if (this._isStorageReady)

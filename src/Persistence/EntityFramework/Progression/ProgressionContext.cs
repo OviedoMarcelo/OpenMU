@@ -33,6 +33,21 @@ public class ProgressionContext : DbContext
     /// </summary>
     public DbSet<ActiveTitle> ActiveTitles { get; set; } = null!;
 
+    /// <summary>
+    /// Gets or sets the experience of the season passes.
+    /// </summary>
+    public DbSet<SeasonProgress> SeasonProgress { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the rewards of the season passes which have been handed out.
+    /// </summary>
+    public DbSet<SeasonClaim> SeasonClaims { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the activated premium tracks of the season passes.
+    /// </summary>
+    public DbSet<SeasonPremium> SeasonPremiums { get; set; } = null!;
+
     /// <inheritdoc />
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -68,6 +83,25 @@ public class ProgressionContext : DbContext
             entity.ToTable(nameof(ActiveTitle), SchemaNames.Progression);
             entity.HasKey(t => t.CharacterId);
             entity.Property(t => t.TitleId).IsRequired().HasMaxLength(64);
+        });
+        modelBuilder.Entity<SeasonProgress>(entity =>
+        {
+            entity.ToTable(nameof(SeasonProgress), SchemaNames.Progression);
+            entity.HasKey(p => new { p.AccountId, p.SeasonId });
+            entity.Property(p => p.SeasonId).IsRequired().HasMaxLength(64);
+        });
+        modelBuilder.Entity<SeasonClaim>(entity =>
+        {
+            entity.ToTable(nameof(SeasonClaim), SchemaNames.Progression);
+            entity.HasKey(c => new { c.AccountId, c.SeasonId, c.Level, c.IsPremium });
+            entity.Property(c => c.SeasonId).IsRequired().HasMaxLength(64);
+        });
+        modelBuilder.Entity<SeasonPremium>(entity =>
+        {
+            entity.ToTable(nameof(SeasonPremium), SchemaNames.Progression);
+            entity.HasKey(p => new { p.AccountId, p.SeasonId });
+            entity.Property(p => p.SeasonId).IsRequired().HasMaxLength(64);
+            entity.Property(p => p.GrantedBy).HasMaxLength(64);
         });
     }
 }

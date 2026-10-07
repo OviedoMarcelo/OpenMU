@@ -4147,5 +4147,23 @@ namespace MUnique.OpenMU.GameLogic.Properties {
         /// <summary>Gets the localized GiveTitleChatCommandPlugIn_Description text.</summary>
         public static string GiveTitleChatCommandPlugIn_Description => ResourceManager.GetString("GiveTitleChatCommandPlugIn_Description", resourceCulture)!;
 
+        /// <summary>Gets the localized SeasonPassPlugIn_Name text.</summary>
+        public static string SeasonPassPlugIn_Name => ResourceManager.GetString("SeasonPassPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized SeasonPassPlugIn_Description text.</summary>
+        public static string SeasonPassPlugIn_Description => ResourceManager.GetString("SeasonPassPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized SeasonPassChatCommandPlugIn_Name text.</summary>
+        public static string SeasonPassChatCommandPlugIn_Name => ResourceManager.GetString("SeasonPassChatCommandPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized SeasonPassChatCommandPlugIn_Description text.</summary>
+        public static string SeasonPassChatCommandPlugIn_Description => ResourceManager.GetString("SeasonPassChatCommandPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized SeasonPremiumChatCommandPlugIn_Name text.</summary>
+        public static string SeasonPremiumChatCommandPlugIn_Name => ResourceManager.GetString("SeasonPremiumChatCommandPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized SeasonPremiumChatCommandPlugIn_Description text.</summary>
+        public static string SeasonPremiumChatCommandPlugIn_Description => ResourceManager.GetString("SeasonPremiumChatCommandPlugIn_Description", resourceCulture)!;
+
     }
 }

@@ -11966,6 +11966,111 @@
       </Fields>
     </Packet>
     <Packet>
+      <HeaderType>C2HeaderWithSubCode</HeaderType>
+      <Code>F5</Code>
+      <SubCode>08</SubCode>
+      <Name>SeasonPassState</Name>
+      <Direction>ServerToClient</Direction>
+      <SentWhen>After the client requested the list of available chat commands, and when the season pass of the account changed: experience, claimed rewards or the premium track.</SentWhen>
+      <CausedReaction>The client shows the season pass in the quests window. Without a running season, the name is empty and there are no levels.</CausedReaction>
+      <Fields>
+        <Field>
+          <Index>5</Index>
+          <Type>Boolean</Type>
+          <Name>IsPremium</Name>
+          <Description>The premium track is active for the account.</Description>
+        </Field>
+        <Field>
+          <Index>6</Index>
+          <Type>ShortLittleEndian</Type>
+          <Name>Level</Name>
+          <Description>The reached level of the pass.</Description>
+        </Field>
+        <Field>
+          <Index>8</Index>
+          <Type>ShortLittleEndian</Type>
+          <Name>MaximumLevel</Name>
+        </Field>
+        <Field>
+          <Index>10</Index>
+          <Type>ShortLittleEndian</Type>
+          <Name>LevelCount</Name>
+        </Field>
+        <Field>
+          <Index>12</Index>
+          <Type>IntegerLittleEndian</Type>
+          <Name>ExperienceInLevel</Name>
+          <Description>The experience towards the next level.</Description>
+        </Field>
+        <Field>
+          <Index>16</Index>
+          <Type>IntegerLittleEndian</Type>
+          <Name>ExperiencePerLevel</Name>
+        </Field>
+        <Field>
+          <Index>20</Index>
+          <Type>IntegerLittleEndian</Type>
+          <Name>SecondsUntilEnd</Name>
+          <Description>The seconds until the season ends.</Description>
+        </Field>
+        <Field>
+          <Index>24</Index>
+          <Type>String</Type>
+          <Name>SeasonName</Name>
+          <Length>32</Length>
+          <Description>The name of the season; empty, if no season is running.</Description>
+        </Field>
+        <Field>
+          <Index>56</Index>
+          <Type>Structure[]</Type>
+          <TypeName>SeasonPassLevel</TypeName>
+          <Name>Levels</Name>
+          <ItemCountField>LevelCount</ItemCountField>
+          <Description>The levels with their rewards, ordered by level.</Description>
+        </Field>
+      </Fields>
+      <Structures>
+        <Structure>
+          <Name>SeasonPassLevel</Name>
+          <Description>A level of the season pass with its rewards.</Description>
+          <Length>132</Length>
+          <Fields>
+            <Field>
+              <Index>0</Index>
+              <Type>ShortLittleEndian</Type>
+              <Name>Level</Name>
+            </Field>
+            <Field>
+              <Index>2</Index>
+              <Type>Boolean</Type>
+              <Name>IsFreeClaimed</Name>
+              <Description>The rewards of the free track have been handed out.</Description>
+            </Field>
+            <Field>
+              <Index>3</Index>
+              <Type>Boolean</Type>
+              <Name>IsPremiumClaimed</Name>
+              <Description>The rewards of the premium track have been handed out.</Description>
+            </Field>
+            <Field>
+              <Index>4</Index>
+              <Type>String</Type>
+              <Name>FreeRewards</Name>
+              <Length>64</Length>
+              <Description>The rewards of the free track as text, in the language of the player; empty, if there are none.</Description>
+            </Field>
+            <Field>
+              <Index>68</Index>
+              <Type>String</Type>
+              <Name>PremiumRewards</Name>
+              <Length>64</Length>
+              <Description>The rewards of the premium track as text, in the language of the player; empty, if there are none.</Description>
+            </Field>
+          </Fields>
+        </Structure>
+      </Structures>
+    </Packet>
+    <Packet>
       <HeaderType>C1Header</HeaderType>
       <Code>94</Code>
       <Name>EventChipRegistrationResult</Name>

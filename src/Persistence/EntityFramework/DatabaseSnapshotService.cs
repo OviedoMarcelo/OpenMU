@@ -135,7 +135,7 @@ public class DatabaseSnapshotService : IDatabaseSnapshotService
         // they have to be added to the manifest like the ones of the admin panel.
         await MigrateToAsync<WeeklyQuestContext>(null, cancellationToken).ConfigureAwait(false);
 
-        // Same for the progression (achievements, titles), which also has only its initial migration yet.
+        // The progression (achievements, titles, season pass) is migrated to the current state like the weekly quests.
         await MigrateToAsync<ProgressionContext>(null, cancellationToken).ConfigureAwait(false);
 
         await using var connection = await CreateConnectionAsync(cancellationToken).ConfigureAwait(false);

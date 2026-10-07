@@ -1499,4 +1499,22 @@
   <data name="GiveTitleChatCommandPlugIn_Description" xml:space="preserve">
     <value>Handles the chat command '/daretitulo &lt;character&gt; &lt;id&gt;'. Unlocks a title for a character, e.g. as a prize of an event.</value>
   </data>
+  <data name="SeasonPassPlugIn_Name" xml:space="preserve">
+    <value>Season Pass</value>
+  </data>
+  <data name="SeasonPassPlugIn_Description" xml:space="preserve">
+    <value>Pase de temporada: XP del pase por completar quests y por jugar, niveles con premios gratis y premium. El premium se activa por cuenta con /pasepremium.</value>
+  </data>
+  <data name="SeasonPassChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Season pass chat command</value>
+  </data>
+  <data name="SeasonPassChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/pase [reclamar]'. Shows the season pass and hands out its rewards.</value>
+  </data>
+  <data name="SeasonPremiumChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Season premium chat command</value>
+  </data>
+  <data name="SeasonPremiumChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/pasepremium &lt;login&gt;'. Activates the premium season pass of the running season for an account.</value>
+  </data>
 </root>

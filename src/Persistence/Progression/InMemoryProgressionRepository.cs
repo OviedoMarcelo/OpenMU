@@ -16,6 +16,48 @@ public class InMemoryProgressionRepository : IProgressionRepository
     private readonly ConcurrentDictionary<(Guid OwnerId, string AchievementId), AchievementProgress> _achievements = new();
     private readonly ConcurrentDictionary<(Guid OwnerId, string TitleId), UnlockedTitle> _titles = new();
     private readonly ConcurrentDictionary<Guid, string> _activeTitles = new();
+    private readonly ConcurrentDictionary<(Guid AccountId, string SeasonId), long> _seasonExperience = new();
+    private readonly ConcurrentDictionary<(Guid AccountId, string SeasonId, int Level, bool IsPremium), SeasonClaim> _seasonClaims = new();
+    private readonly ConcurrentDictionary<(Guid AccountId, string SeasonId), SeasonPremium> _seasonPremiums = new();
+
+    /// <inheritdoc />
+    public ValueTask<SeasonPassState> LoadSeasonPassAsync(Guid accountId, string seasonId, CancellationToken cancellationToken = default)
+    {
+        var claims = this._seasonClaims.Values
+            .Where(c => c.AccountId == accountId && c.SeasonId == seasonId)
+            .Select(Clone)
+            .ToList();
+        return ValueTask.FromResult(new SeasonPassState(
+            this._seasonExperience.GetValueOrDefault((accountId, seasonId)),
+            claims,
+            this._seasonPremiums.ContainsKey((accountId, seasonId))));
+    }
+
+    /// <inheritdoc />
+    public ValueTask<long> AddSeasonExperienceAsync(Guid accountId, string seasonId, long experience, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(this._seasonExperience.AddOrUpdate((accountId, seasonId), experience, (_, current) => current + experience));
+    }
+
+    /// <inheritdoc />
+    public ValueTask<bool> AddSeasonClaimAsync(SeasonClaim claim, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(this._seasonClaims.TryAdd((claim.AccountId, claim.SeasonId, claim.Level, claim.IsPremium), Clone(claim)));
+    }
+
+    /// <inheritdoc />
+    public ValueTask RemoveSeasonClaimAsync(SeasonClaim claim, CancellationToken cancellationToken = default)
+    {
+        this._seasonClaims.TryRemove((claim.AccountId, claim.SeasonId, claim.Level, claim.IsPremium), out _);
+        return ValueTask.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public ValueTask<bool> AddSeasonPremiumAsync(SeasonPremium premium, CancellationToken cancellationToken = default)
+    {
+        var copy = new SeasonPremium { AccountId = premium.AccountId, SeasonId = premium.SeasonId, GrantedAt = premium.GrantedAt, GrantedBy = premium.GrantedBy };
+        return ValueTask.FromResult(this._seasonPremiums.TryAdd((premium.AccountId, premium.SeasonId), copy));
+    }
 
     /// <inheritdoc />
     public ValueTask<IList<AchievementProgress>> LoadAchievementsAsync(IReadOnlyCollection<Guid> ownerIds, CancellationToken cancellationToken = default)
@@ -96,4 +138,14 @@ public class InMemoryProgressionRepository : IProgressionRepository
 
         return ValueTask.CompletedTask;
     }
+
+    private static SeasonClaim Clone(SeasonClaim claim) => new()
+    {
+        AccountId = claim.AccountId,
+        SeasonId = claim.SeasonId,
+        Level = claim.Level,
+        IsPremium = claim.IsPremium,
+        ClaimedAt = claim.ClaimedAt,
+        CharacterId = claim.CharacterId,
+    };
 }

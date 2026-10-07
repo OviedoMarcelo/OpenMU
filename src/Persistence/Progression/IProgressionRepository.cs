@@ -66,4 +66,49 @@ public interface IProgressionRepository
     /// <param name="titleId">The identifier of the title; <c>null</c> to show none.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     ValueTask SetActiveTitleAsync(Guid characterId, string? titleId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Loads the state of the pass of a season for an account, with one round trip per table.
+    /// </summary>
+    /// <param name="accountId">The identifier of the account.</param>
+    /// <param name="seasonId">The identifier of the season.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The state; an empty one, if the account has none yet.</returns>
+    ValueTask<SeasonPassState> LoadSeasonPassAsync(Guid accountId, string seasonId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds experience to the pass of a season of an account.
+    /// </summary>
+    /// <remarks>
+    /// The experience is added in the database, so that it can't get lost when two servers add some at the same time.
+    /// </remarks>
+    /// <param name="accountId">The identifier of the account.</param>
+    /// <param name="seasonId">The identifier of the season.</param>
+    /// <param name="experience">The experience which is added.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The experience of the pass after adding it.</returns>
+    ValueTask<long> AddSeasonExperienceAsync(Guid accountId, string seasonId, long experience, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Records that a reward of the pass has been handed out, if it hasn't been yet.
+    /// </summary>
+    /// <param name="claim">The claim.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns><c>true</c>, if the claim has been added; <c>false</c>, if the reward was already handed out.</returns>
+    ValueTask<bool> AddSeasonClaimAsync(SeasonClaim claim, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes a claim again, e.g. when the reward couldn't be handed out after all.
+    /// </summary>
+    /// <param name="claim">The claim.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    ValueTask RemoveSeasonClaimAsync(SeasonClaim claim, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Activates the premium track of the pass of a season for an account.
+    /// </summary>
+    /// <param name="premium">The activation.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns><c>true</c>, if it has been activated; <c>false</c>, if it already was.</returns>
+    ValueTask<bool> AddSeasonPremiumAsync(SeasonPremium premium, CancellationToken cancellationToken = default);
 }

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MUnique.OpenMU.GameLogic.Attributes;
 using MUnique.OpenMU.GameLogic.PlugIns.Achievements;
+using MUnique.OpenMU.GameLogic.PlugIns.SeasonPass;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 using MUnique.OpenMU.GameServer;
 using MUnique.OpenMU.Interfaces;
@@ -303,6 +304,114 @@ public class WebsiteController : Controller
             .ToList();
 
         return this.Ok(new { enabled = true, characters });
+    }
+
+    /// <summary>
+    /// Gets the running season of the season pass, with the rewards of its levels.
+    /// </summary>
+    /// <returns>
+    /// <c>enabled</c>: whether the season pass plugin is active;
+    /// <c>season</c>: the running season, or <c>null</c> if none is running.
+    /// </returns>
+    [HttpGet]
+    [Route("season-pass")]
+    public IActionResult GetSeasonPass()
+    {
+        if (this.GetRunningSeason() is not { } running)
+        {
+            return this.Ok(new { enabled = false, season = (object?)null });
+        }
+
+        return this.Ok(new { enabled = true, season = running.Season is null ? null : ToJson(running.Season, running.EndUtc) });
+    }
+
+    /// <summary>
+    /// Gets the season pass of an account in the running season.
+    /// </summary>
+    /// <param name="login">The login name of the account.</param>
+    /// <returns>
+    /// <c>enabled</c>: whether the season pass plugin is active;
+    /// <c>season</c>: the running season, or <c>null</c> if none is running;
+    /// <c>experience</c>, <c>level</c>, <c>premium</c> and <c>claims</c>: the progress of the account.
+    /// </returns>
+    /// <remarks>
+    /// The experience of an account which is in the game is saved every minute, so it may be a bit behind.
+    /// </remarks>
+    [HttpGet]
+    [Route("account/{login}/season-pass")]
+    public async Task<IActionResult> GetAccountSeasonPassAsync(string login)
+    {
+        if (this.GetRunningSeason() is not { } running || ProgressionRepositoryRegistry.Current is not { } repository)
+        {
+            return this.Ok(new { enabled = false, season = (object?)null });
+        }
+
+        if (running.Season is not { } season)
+        {
+            return this.Ok(new { enabled = true, season = (object?)null });
+        }
+
+        var context = this._gameServers.Values.OfType<GameServer>().First().Context;
+        using var playerContext = this._contextProvider.CreateNewPlayerContext(context.Configuration);
+        var account = await playerContext.GetAccountByLoginNameAsync(login).ConfigureAwait(false);
+        if (account is null)
+        {
+            return this.NotFound();
+        }
+
+        var state = await repository.LoadSeasonPassAsync(account.GetId(), season.Id).ConfigureAwait(false);
+        return this.Ok(new
+        {
+            enabled = true,
+            season = ToJson(season, running.EndUtc),
+            experience = state.Experience,
+            level = season.GetLevel(state.Experience),
+            premium = state.IsPremium,
+            claims = state.Claims.Select(c => new { level = c.Level, premium = c.IsPremium }).ToList(),
+        });
+    }
+
+    private static object ToJson(SeasonDefinition season, DateTime endUtc) => new
+    {
+        id = season.Id,
+        name = season.Name,
+        endsUtc = endUtc,
+        experiencePerLevel = season.ExperiencePerLevel,
+        maximumLevel = season.GetMaximumLevel(),
+        levels = season.Levels
+            .Where(l => l.Level is >= 1 and <= SeasonDefinition.MaximumLevel)
+            .DistinctBy(l => l.Level)
+            .OrderBy(l => l.Level)
+            .Select(l => new
+            {
+                level = l.Level,
+                free = l.GetRewardsText(false, WebsiteCulture),
+                premium = l.GetRewardsText(true, WebsiteCulture),
+            })
+            .ToList(),
+    };
+
+    /// <summary>
+    /// Gets the running season of the season pass.
+    /// </summary>
+    /// <returns><c>null</c>, if the season pass plugin is not active; otherwise the running season (which may be <c>null</c>) and its end.</returns>
+    private (SeasonDefinition? Season, DateTime EndUtc)? GetRunningSeason()
+    {
+        var context = this._gameServers.Values.OfType<GameServer>().FirstOrDefault()?.Context;
+        var plugInId = typeof(SeasonPassPlugIn).GUID;
+        if (context is null
+            || !context.PlugInManager.IsPlugInActive(plugInId)
+            || context.Configuration.PlugInConfigurations.FirstOrDefault(c => c.TypeId == plugInId)
+                ?.GetConfiguration<SeasonPassConfiguration>(context.PlugInManager.CustomConfigReferenceHandler) is not { } configuration)
+        {
+            return null;
+        }
+
+        var season = configuration.GetRunningSeason(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, context.ServerTimeZone));
+        var endUtc = season is null
+            ? DateTime.MinValue
+            : TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(season.End, DateTimeKind.Unspecified), context.ServerTimeZone);
+        return (season, endUtc);
     }
 
     private async Task<(bool InGame, string? Character)> FindPlayerAsync(string login)

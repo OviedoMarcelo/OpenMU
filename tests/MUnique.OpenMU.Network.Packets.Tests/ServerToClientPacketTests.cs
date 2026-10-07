@@ -6775,6 +6775,48 @@ public class PacketStructureTests
     }
 
     /// <summary>
+    /// Tests the packet size calculation for SeasonPassState.
+    /// </summary>
+    [Test]
+    public void SeasonPassState_PacketSizeValidation()
+    {
+        // Basic packet validation
+        // Validate header type and field boundaries
+        
+        // Field 'IsPremium' starts at index 5 with size 1
+        Assert.That(5, Is.GreaterThanOrEqualTo(0), 
+            "Field 'IsPremium' has invalid negative index");
+        
+        // Field 'Level' starts at index 6 with size 2
+        Assert.That(6, Is.GreaterThanOrEqualTo(0), 
+            "Field 'Level' has invalid negative index");
+        
+        // Field 'MaximumLevel' starts at index 8 with size 2
+        Assert.That(8, Is.GreaterThanOrEqualTo(0), 
+            "Field 'MaximumLevel' has invalid negative index");
+        
+        // Field 'LevelCount' starts at index 10 with size 2
+        Assert.That(10, Is.GreaterThanOrEqualTo(0), 
+            "Field 'LevelCount' has invalid negative index");
+        
+        // Field 'ExperienceInLevel' starts at index 12 with size 4
+        Assert.That(12, Is.GreaterThanOrEqualTo(0), 
+            "Field 'ExperienceInLevel' has invalid negative index");
+        
+        // Field 'ExperiencePerLevel' starts at index 16 with size 4
+        Assert.That(16, Is.GreaterThanOrEqualTo(0), 
+            "Field 'ExperiencePerLevel' has invalid negative index");
+        
+        // Field 'SecondsUntilEnd' starts at index 20 with size 4
+        Assert.That(20, Is.GreaterThanOrEqualTo(0), 
+            "Field 'SecondsUntilEnd' has invalid negative index");
+        
+        // Field 'SeasonName' starts at index 24 with size 32
+        Assert.That(24, Is.GreaterThanOrEqualTo(0), 
+            "Field 'SeasonName' has invalid negative index");
+    }
+
+    /// <summary>
     /// Tests the packet size calculation for EventChipRegistrationResult.
     /// </summary>
     [Test]

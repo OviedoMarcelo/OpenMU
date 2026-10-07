@@ -31132,6 +31132,230 @@ public readonly ref struct PlayerTitleRef
 
 
 /// <summary>
+/// Is sent by the server when: After the client requested the list of available chat commands, and when the season pass of the account changed: experience, claimed rewards or the premium track.
+/// Causes reaction on client side: The client shows the season pass in the quests window. Without a running season, the name is empty and there are no levels.
+/// </summary>
+public readonly ref struct SeasonPassStateRef
+{
+    private readonly Span<byte> _data;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SeasonPassStateRef"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    public SeasonPassStateRef(Span<byte> data)
+        : this(data, true)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SeasonPassStateRef"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    /// <param name="initialize">If set to <c>true</c>, the header data is automatically initialized and written to the underlying span.</param>
+    private SeasonPassStateRef(Span<byte> data, bool initialize)
+    {
+        this._data = data;
+        if (initialize)
+        {
+            var header = this.Header;
+            header.Type = HeaderType;
+            header.Code = Code;
+            header.Length = (ushort)data.Length;
+            header.SubCode = SubCode;
+        }
+    }
+
+    /// <summary>
+    /// Gets the header type of this data packet.
+    /// </summary>
+    public static byte HeaderType => 0xC2;
+
+    /// <summary>
+    /// Gets the operation code of this data packet.
+    /// </summary>
+    public static byte Code => 0xF5;
+
+    /// <summary>
+    /// Gets the operation sub-code of this data packet.
+    /// The <see cref="Code" /> is used as a grouping key.
+    /// </summary>
+    public static byte SubCode => 0x08;
+
+    /// <summary>
+    /// Gets the header of this packet.
+    /// </summary>
+    public C2HeaderWithSubCodeRef Header => new (this._data);
+
+    /// <summary>
+    /// Gets or sets the premium track is active for the account.
+    /// </summary>
+    public bool IsPremium
+    {
+        get => this._data[5..].GetBoolean();
+        set => this._data[5..].SetBoolean(value);
+    }
+
+    /// <summary>
+    /// Gets or sets the reached level of the pass.
+    /// </summary>
+    public ushort Level
+    {
+        get => ReadUInt16LittleEndian(this._data[6..]);
+        set => WriteUInt16LittleEndian(this._data[6..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the maximum level.
+    /// </summary>
+    public ushort MaximumLevel
+    {
+        get => ReadUInt16LittleEndian(this._data[8..]);
+        set => WriteUInt16LittleEndian(this._data[8..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the level count.
+    /// </summary>
+    public ushort LevelCount
+    {
+        get => ReadUInt16LittleEndian(this._data[10..]);
+        set => WriteUInt16LittleEndian(this._data[10..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the experience towards the next level.
+    /// </summary>
+    public uint ExperienceInLevel
+    {
+        get => ReadUInt32LittleEndian(this._data[12..]);
+        set => WriteUInt32LittleEndian(this._data[12..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the experience per level.
+    /// </summary>
+    public uint ExperiencePerLevel
+    {
+        get => ReadUInt32LittleEndian(this._data[16..]);
+        set => WriteUInt32LittleEndian(this._data[16..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the seconds until the season ends.
+    /// </summary>
+    public uint SecondsUntilEnd
+    {
+        get => ReadUInt32LittleEndian(this._data[20..]);
+        set => WriteUInt32LittleEndian(this._data[20..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the name of the season; empty, if no season is running.
+    /// </summary>
+    public string SeasonName
+    {
+        get => this._data.ExtractString(24, 32, System.Text.Encoding.UTF8);
+        set => this._data.Slice(24, 32).WriteString(value, System.Text.Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Gets the <see cref="SeasonPassLevelRef"/> of the specified index.
+    /// </summary>
+        public SeasonPassLevelRef this[int index] => new (this._data[(56 + index * SeasonPassLevelRef.Length)..]);
+
+    /// <summary>
+    /// Performs an implicit conversion from a Span of bytes to a <see cref="SeasonPassState"/>.
+    /// </summary>
+    /// <param name="packet">The packet as span.</param>
+    /// <returns>The packet as struct.</returns>
+    public static implicit operator SeasonPassStateRef(Span<byte> packet) => new (packet, false);
+
+    /// <summary>
+    /// Performs an implicit conversion from <see cref="SeasonPassState"/> to a Span of bytes.
+    /// </summary>
+    /// <param name="packet">The packet as struct.</param>
+    /// <returns>The packet as byte span.</returns>
+    public static implicit operator Span<byte>(SeasonPassStateRef packet) => packet._data; 
+
+    /// <summary>
+    /// Calculates the size of the packet for the specified count of <see cref="SeasonPassLevelRef"/>.
+    /// </summary>
+    /// <param name="levelsCount">The count of <see cref="SeasonPassLevelRef"/> from which the size will be calculated.</param>
+        
+    public static int GetRequiredSize(int levelsCount) => levelsCount * SeasonPassLevelRef.Length + 56;
+
+
+/// <summary>
+/// A level of the season pass with its rewards..
+/// </summary>
+public readonly ref struct SeasonPassLevelRef
+{
+    private readonly Span<byte> _data;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SeasonPassLevelRef"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    public SeasonPassLevelRef(Span<byte> data)
+    {
+        this._data = data;
+    }
+
+    /// <summary>
+    /// Gets the initial length of this data packet. When the size is dynamic, this value may be bigger than actually needed.
+    /// </summary>
+    public static int Length => 132;
+
+    /// <summary>
+    /// Gets or sets the level.
+    /// </summary>
+    public ushort Level
+    {
+        get => ReadUInt16LittleEndian(this._data);
+        set => WriteUInt16LittleEndian(this._data, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the rewards of the free track have been handed out.
+    /// </summary>
+    public bool IsFreeClaimed
+    {
+        get => this._data[2..].GetBoolean();
+        set => this._data[2..].SetBoolean(value);
+    }
+
+    /// <summary>
+    /// Gets or sets the rewards of the premium track have been handed out.
+    /// </summary>
+    public bool IsPremiumClaimed
+    {
+        get => this._data[3..].GetBoolean();
+        set => this._data[3..].SetBoolean(value);
+    }
+
+    /// <summary>
+    /// Gets or sets the rewards of the free track as text, in the language of the player; empty, if there are none.
+    /// </summary>
+    public string FreeRewards
+    {
+        get => this._data.ExtractString(4, 64, System.Text.Encoding.UTF8);
+        set => this._data.Slice(4, 64).WriteString(value, System.Text.Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Gets or sets the rewards of the premium track as text, in the language of the player; empty, if there are none.
+    /// </summary>
+    public string PremiumRewards
+    {
+        get => this._data.ExtractString(68, 64, System.Text.Encoding.UTF8);
+        set => this._data.Slice(68, 64).WriteString(value, System.Text.Encoding.UTF8);
+    }
+}
+}
+
+
+/// <summary>
 /// Is sent by the server when: The player receives the result of registering Rena or Event Chips at the Golden Archer NPC.
 /// Causes reaction on client side: The client updates the Golden Archer interface with total registered count and remaining count in inventory.
 /// </summary>
