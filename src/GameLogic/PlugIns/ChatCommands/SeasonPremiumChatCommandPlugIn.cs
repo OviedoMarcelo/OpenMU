@@ -16,7 +16,7 @@ using MUnique.OpenMU.PlugIns;
 [PlugIn]
 [Display(Name = nameof(PlugInResources.SeasonPremiumChatCommandPlugIn_Name), Description = nameof(PlugInResources.SeasonPremiumChatCommandPlugIn_Description), ResourceType = typeof(PlugInResources))]
 [ChatCommandHelp(Command, typeof(SeasonPremiumChatCommandArgs), CharacterStatus.GameMaster)]
-public class SeasonPremiumChatCommandPlugIn : ChatCommandPlugInBase<SeasonPremiumChatCommandArgs>
+public class SeasonPremiumChatCommandPlugIn : ChatCommandPlugInBase<SeasonPremiumChatCommandArgs>, IDisabledByDefault
 {
     private const string Command = "/pasepremium";
 

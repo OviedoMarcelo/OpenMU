@@ -16,7 +16,7 @@ using MUnique.OpenMU.PlugIns;
 [PlugIn]
 [Display(Name = nameof(PlugInResources.SeasonPassChatCommandPlugIn_Name), Description = nameof(PlugInResources.SeasonPassChatCommandPlugIn_Description), ResourceType = typeof(PlugInResources))]
 [ChatCommandHelp(Command, typeof(SeasonPassChatCommandArgs), CharacterStatus.Normal)]
-public class SeasonPassChatCommandPlugIn : ChatCommandPlugInBase<SeasonPassChatCommandArgs>
+public class SeasonPassChatCommandPlugIn : ChatCommandPlugInBase<SeasonPassChatCommandArgs>, IDisabledByDefault
 {
     private const string Command = "/pase";
 
