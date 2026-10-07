@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using MUnique.OpenMU.DataModel.Entities;
 using MUnique.OpenMU.Persistence;
+using MUnique.OpenMU.Web.AdminPanel.Components;
 using MUnique.OpenMU.Web.AdminPanel.Properties;
 using MUnique.OpenMU.Web.Shared.Components.Form;
 using MUnique.OpenMU.Web.Shared.Components.ItemEdit;
@@ -57,6 +58,15 @@ public partial class EditAccount : EditBase
             builder.AddAttribute(++currentSequence, nameof(AutoForm<object>.Model), this.Model);
             builder.AddAttribute(++currentSequence, nameof(AutoForm<object>.OnValidSubmit), EventCallback.Factory.Create(this, this.SaveChangesAsync));
             builder.AddAttribute(++currentSequence, nameof(AutoForm<object>.OnRefresh), EventCallback.Factory.Create(this, this.RefreshAsync));
+            builder.CloseComponent();
+        }
+
+        // The titles aren't part of the character data, so they're managed below the form.
+        if (this.Model is Character character)
+        {
+            builder.OpenComponent<CharacterTitles>(++currentSequence);
+            builder.AddAttribute(++currentSequence, nameof(CharacterTitles.Character), character);
+            builder.AddAttribute(++currentSequence, nameof(CharacterTitles.AccountId), this.AccountId);
             builder.CloseComponent();
         }
     }

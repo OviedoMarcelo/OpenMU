@@ -32,7 +32,9 @@ using MUnique.OpenMU.Persistence.AdminAuth;
 using MUnique.OpenMU.Persistence.EntityFramework;
 using MUnique.OpenMU.Persistence.EntityFramework.AdminAuth;
 using MUnique.OpenMU.Persistence.EntityFramework.Json;
+using MUnique.OpenMU.Persistence.EntityFramework.Progression;
 using MUnique.OpenMU.Persistence.EntityFramework.WeeklyQuests;
+using MUnique.OpenMU.Persistence.Progression;
 using MUnique.OpenMU.Persistence.WeeklyQuests;
 using MUnique.OpenMU.Persistence.Initialization.Version075;
 using MUnique.OpenMU.Persistence.InMemory;
@@ -283,8 +285,9 @@ internal sealed class Program : IDisposable
 
         if (!args.Contains("-demo"))
         {
-            // Without it, the weekly quests plugin keeps the progress in memory only.
+            // Without them, the weekly quests and progression plugins keep the progress in memory only.
             builder.Services.AddWeeklyQuestProgressRepository();
+            builder.Services.AddProgressionRepository();
         }
 
         builder.Services.AddSingleton(this._servers)
@@ -359,6 +362,7 @@ internal sealed class Program : IDisposable
 
         var host = builder.Build();
         WeeklyQuestProgressRepositoryRegistry.Current = host.Services.GetService<IWeeklyQuestProgressRepository>();
+        ProgressionRepositoryRegistry.Current = host.Services.GetService<IProgressionRepository>();
 
         // NpgsqlLoggingConfiguration.InitializeLogging(host.Services.GetRequiredService<ILoggerFactory>())
         this._logger.Information("Host created");

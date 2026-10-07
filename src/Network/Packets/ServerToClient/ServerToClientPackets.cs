@@ -32779,6 +32779,334 @@ public readonly struct MonsterLevel
 
 
 /// <summary>
+/// Is sent by the server when: When a player with a title came into view, when a player changed its title, and after the client requested the list of available chat commands (for the titles of the players in view).
+/// Causes reaction on client side: The client shows the title below the name of the player, or removes it when the text is empty.
+/// </summary>
+public readonly struct PlayerTitle
+{
+    private readonly Memory<byte> _data;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PlayerTitle"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    public PlayerTitle(Memory<byte> data)
+        : this(data, true)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PlayerTitle"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    /// <param name="initialize">If set to <c>true</c>, the header data is automatically initialized and written to the underlying span.</param>
+    private PlayerTitle(Memory<byte> data, bool initialize)
+    {
+        this._data = data;
+        if (initialize)
+        {
+            var header = this.Header;
+            header.Type = HeaderType;
+            header.Code = Code;
+            header.Length = (ushort)Math.Min(data.Length, Length);
+            header.SubCode = SubCode;
+        }
+    }
+
+    /// <summary>
+    /// Gets the header type of this data packet.
+    /// </summary>
+    public static byte HeaderType => 0xC2;
+
+    /// <summary>
+    /// Gets the operation code of this data packet.
+    /// </summary>
+    public static byte Code => 0xF5;
+
+    /// <summary>
+    /// Gets the operation sub-code of this data packet.
+    /// The <see cref="Code" /> is used as a grouping key.
+    /// </summary>
+    public static byte SubCode => 0x07;
+
+    /// <summary>
+    /// Gets the initial length of this data packet. When the size is dynamic, this value may be bigger than actually needed.
+    /// </summary>
+    public static int Length => 44;
+
+    /// <summary>
+    /// Gets the header of this packet.
+    /// </summary>
+    public C2HeaderWithSubCode Header => new (this._data);
+
+    /// <summary>
+    /// Gets or sets the id of the player, as in the AddCharactersToScope message.
+    /// </summary>
+    public ushort PlayerId
+    {
+        get => ReadUInt16BigEndian(this._data.Span[6..]);
+        set => WriteUInt16BigEndian(this._data.Span[6..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the color of the text, as 32 bit ARGB value.
+    /// </summary>
+    public uint Color
+    {
+        get => ReadUInt32LittleEndian(this._data.Span[8..]);
+        set => WriteUInt32LittleEndian(this._data.Span[8..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the title. An empty text removes the title of the player.
+    /// </summary>
+    public string Text
+    {
+        get => this._data.Span.ExtractString(12, 32, System.Text.Encoding.UTF8);
+        set => this._data.Slice(12, 32).Span.WriteString(value, System.Text.Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Performs an implicit conversion from a Memory of bytes to a <see cref="PlayerTitle"/>.
+    /// </summary>
+    /// <param name="packet">The packet as span.</param>
+    /// <returns>The packet as struct.</returns>
+    public static implicit operator PlayerTitle(Memory<byte> packet) => new (packet, false);
+
+    /// <summary>
+    /// Performs an implicit conversion from <see cref="PlayerTitle"/> to a Memory of bytes.
+    /// </summary>
+    /// <param name="packet">The packet as struct.</param>
+    /// <returns>The packet as byte span.</returns>
+    public static implicit operator Memory<byte>(PlayerTitle packet) => packet._data; 
+}
+
+
+/// <summary>
+/// Is sent by the server when: After the client requested the list of available chat commands, and when the season pass of the account changed: experience, claimed rewards or the premium track.
+/// Causes reaction on client side: The client shows the season pass in the quests window. Without a running season, the name is empty and there are no levels.
+/// </summary>
+public readonly struct SeasonPassState
+{
+    private readonly Memory<byte> _data;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SeasonPassState"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    public SeasonPassState(Memory<byte> data)
+        : this(data, true)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SeasonPassState"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    /// <param name="initialize">If set to <c>true</c>, the header data is automatically initialized and written to the underlying span.</param>
+    private SeasonPassState(Memory<byte> data, bool initialize)
+    {
+        this._data = data;
+        if (initialize)
+        {
+            var header = this.Header;
+            header.Type = HeaderType;
+            header.Code = Code;
+            header.Length = (ushort)data.Length;
+            header.SubCode = SubCode;
+        }
+    }
+
+    /// <summary>
+    /// Gets the header type of this data packet.
+    /// </summary>
+    public static byte HeaderType => 0xC2;
+
+    /// <summary>
+    /// Gets the operation code of this data packet.
+    /// </summary>
+    public static byte Code => 0xF5;
+
+    /// <summary>
+    /// Gets the operation sub-code of this data packet.
+    /// The <see cref="Code" /> is used as a grouping key.
+    /// </summary>
+    public static byte SubCode => 0x08;
+
+    /// <summary>
+    /// Gets the header of this packet.
+    /// </summary>
+    public C2HeaderWithSubCode Header => new (this._data);
+
+    /// <summary>
+    /// Gets or sets the premium track is active for the account.
+    /// </summary>
+    public bool IsPremium
+    {
+        get => this._data.Span[5..].GetBoolean();
+        set => this._data.Span[5..].SetBoolean(value);
+    }
+
+    /// <summary>
+    /// Gets or sets the reached level of the pass.
+    /// </summary>
+    public ushort Level
+    {
+        get => ReadUInt16LittleEndian(this._data.Span[6..]);
+        set => WriteUInt16LittleEndian(this._data.Span[6..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the maximum level.
+    /// </summary>
+    public ushort MaximumLevel
+    {
+        get => ReadUInt16LittleEndian(this._data.Span[8..]);
+        set => WriteUInt16LittleEndian(this._data.Span[8..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the level count.
+    /// </summary>
+    public ushort LevelCount
+    {
+        get => ReadUInt16LittleEndian(this._data.Span[10..]);
+        set => WriteUInt16LittleEndian(this._data.Span[10..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the experience towards the next level.
+    /// </summary>
+    public uint ExperienceInLevel
+    {
+        get => ReadUInt32LittleEndian(this._data.Span[12..]);
+        set => WriteUInt32LittleEndian(this._data.Span[12..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the experience per level.
+    /// </summary>
+    public uint ExperiencePerLevel
+    {
+        get => ReadUInt32LittleEndian(this._data.Span[16..]);
+        set => WriteUInt32LittleEndian(this._data.Span[16..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the seconds until the season ends.
+    /// </summary>
+    public uint SecondsUntilEnd
+    {
+        get => ReadUInt32LittleEndian(this._data.Span[20..]);
+        set => WriteUInt32LittleEndian(this._data.Span[20..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the name of the season; empty, if no season is running.
+    /// </summary>
+    public string SeasonName
+    {
+        get => this._data.Span.ExtractString(24, 32, System.Text.Encoding.UTF8);
+        set => this._data.Slice(24, 32).Span.WriteString(value, System.Text.Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Gets the <see cref="SeasonPassLevel"/> of the specified index.
+    /// </summary>
+        public SeasonPassLevel this[int index] => new (this._data.Slice(56 + index * SeasonPassLevel.Length));
+
+    /// <summary>
+    /// Performs an implicit conversion from a Memory of bytes to a <see cref="SeasonPassState"/>.
+    /// </summary>
+    /// <param name="packet">The packet as span.</param>
+    /// <returns>The packet as struct.</returns>
+    public static implicit operator SeasonPassState(Memory<byte> packet) => new (packet, false);
+
+    /// <summary>
+    /// Performs an implicit conversion from <see cref="SeasonPassState"/> to a Memory of bytes.
+    /// </summary>
+    /// <param name="packet">The packet as struct.</param>
+    /// <returns>The packet as byte span.</returns>
+    public static implicit operator Memory<byte>(SeasonPassState packet) => packet._data; 
+
+    /// <summary>
+    /// Calculates the size of the packet for the specified count of <see cref="SeasonPassLevel"/>.
+    /// </summary>
+    /// <param name="levelsCount">The count of <see cref="SeasonPassLevel"/> from which the size will be calculated.</param>
+        
+    public static int GetRequiredSize(int levelsCount) => levelsCount * SeasonPassLevel.Length + 56;
+
+
+/// <summary>
+/// A level of the season pass with its rewards..
+/// </summary>
+public readonly struct SeasonPassLevel
+{
+    private readonly Memory<byte> _data;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SeasonPassLevel"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    public SeasonPassLevel(Memory<byte> data)
+    {
+        this._data = data;
+    }
+
+    /// <summary>
+    /// Gets the initial length of this data packet. When the size is dynamic, this value may be bigger than actually needed.
+    /// </summary>
+    public static int Length => 132;
+
+    /// <summary>
+    /// Gets or sets the level.
+    /// </summary>
+    public ushort Level
+    {
+        get => ReadUInt16LittleEndian(this._data.Span);
+        set => WriteUInt16LittleEndian(this._data.Span, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the rewards of the free track have been handed out.
+    /// </summary>
+    public bool IsFreeClaimed
+    {
+        get => this._data.Span[2..].GetBoolean();
+        set => this._data.Span[2..].SetBoolean(value);
+    }
+
+    /// <summary>
+    /// Gets or sets the rewards of the premium track have been handed out.
+    /// </summary>
+    public bool IsPremiumClaimed
+    {
+        get => this._data.Span[3..].GetBoolean();
+        set => this._data.Span[3..].SetBoolean(value);
+    }
+
+    /// <summary>
+    /// Gets or sets the rewards of the free track as text, in the language of the player; empty, if there are none.
+    /// </summary>
+    public string FreeRewards
+    {
+        get => this._data.Span.ExtractString(4, 64, System.Text.Encoding.UTF8);
+        set => this._data.Slice(4, 64).Span.WriteString(value, System.Text.Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Gets or sets the rewards of the premium track as text, in the language of the player; empty, if there are none.
+    /// </summary>
+    public string PremiumRewards
+    {
+        get => this._data.Span.ExtractString(68, 64, System.Text.Encoding.UTF8);
+        set => this._data.Slice(68, 64).Span.WriteString(value, System.Text.Encoding.UTF8);
+    }
+}
+}
+
+
+/// <summary>
 /// Is sent by the server when: The player receives the result of registering Rena or Event Chips at the Golden Archer NPC.
 /// Causes reaction on client side: The client updates the Golden Archer interface with total registered count and remaining count in inventory.
 /// </summary>

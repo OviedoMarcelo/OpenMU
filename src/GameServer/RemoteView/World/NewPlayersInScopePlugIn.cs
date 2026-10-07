@@ -7,6 +7,7 @@ namespace MUnique.OpenMU.GameServer.RemoteView.World;
 using System.Runtime.InteropServices;
 using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.Attributes;
+using MUnique.OpenMU.GameLogic.PlugIns.Achievements;
 using MUnique.OpenMU.GameLogic.Views;
 using MUnique.OpenMU.GameLogic.Views.Guild;
 using MUnique.OpenMU.GameLogic.Views.PlayerShop;
@@ -55,6 +56,14 @@ public class NewPlayersInScopePlugIn : INewPlayersInScopePlugIn
         if (guildPlayers != null)
         {
             await this.Player.InvokeViewPlugInAsync<IAssignPlayersToGuildPlugIn>(p => p.AssignPlayersToGuildAsync(guildPlayers, true)).ConfigureAwait(false);
+        }
+
+        foreach (var newPlayer in newPlayers)
+        {
+            if (PlayerTitles.Get(newPlayer) is { } title)
+            {
+                await this.Player.InvokeViewPlugInAsync<IPlayerTitleViewPlugIn>(p => p.ShowTitleAsync(newPlayer, title)).ConfigureAwait(false);
+            }
         }
     }
 

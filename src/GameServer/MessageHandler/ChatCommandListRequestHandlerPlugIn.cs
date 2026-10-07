@@ -6,7 +6,10 @@ namespace MUnique.OpenMU.GameServer.MessageHandler;
 
 using System.Runtime.InteropServices;
 using MUnique.OpenMU.GameLogic;
+using MUnique.OpenMU.GameLogic.PlugIns;
+using MUnique.OpenMU.GameLogic.PlugIns.Achievements;
 using MUnique.OpenMU.GameLogic.PlugIns.ChatCommands;
+using MUnique.OpenMU.GameLogic.PlugIns.SeasonPass;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 using MUnique.OpenMU.GameLogic.Views;
 using MUnique.OpenMU.Network.Packets.ClientToServer;
@@ -46,6 +49,15 @@ internal class ChatCommandListRequestHandlerPlugIn : ISubPacketHandlerPlugIn
             && WeeklyQuestsPlugIn.GetTrackingPlugIn(player) is { } weeklyQuests)
         {
             await weeklyQuests.SendListAsync(player).ConfigureAwait(false);
+        }
+
+        // ... and the titles of the players it sees.
+        await PlayerTitles.SendVisibleTitlesAsync(player).ConfigureAwait(false);
+
+        // ... and the season pass.
+        if (player.GameContext.PlugInManager.GetActivePlugInsOf<IQuestCompletedPlugIn>().OfType<SeasonPassPlugIn>().FirstOrDefault() is { } seasonPass)
+        {
+            await seasonPass.SendAsync(player).ConfigureAwait(false);
         }
     }
 }

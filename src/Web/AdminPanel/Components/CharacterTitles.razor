@@ -1,0 +1,70 @@
+@* <copyright file="CharacterTitles.razor" company="MUnique">
+   Licensed under the MIT License. See LICENSE file in the project root for full license information.
+   </copyright> *@
+
+@using MUnique.OpenMU.Web.AdminPanel.Properties
+
+<div class="card mt-4">
+    <div class="card-body">
+        <h4 class="card-title">@Resources.CharacterTitles</h4>
+        @if (this._configuration is null || this._repository is null)
+        {
+            <p class="text-muted">@Resources.CharacterTitlesUnavailable</p>
+        }
+        else
+        {
+            <p class="text-muted small">@(this._isOnline ? Resources.CharacterTitlesOnlineHint : Resources.CharacterTitlesOfflineHint)</p>
+
+            @if (this._unlocked.Count == 0)
+            {
+                <p>@Resources.CharacterTitlesNone</p>
+            }
+            else
+            {
+                <table class="table table-sm align-middle">
+                    <tbody>
+                        @foreach (var entry in this._unlocked)
+                        {
+                            <tr>
+                                <td>
+                                    <span style="color: @entry.Color; font-weight: 600">« @entry.Text »</span>
+                                    @if (entry.IsActive)
+                                    {
+                                        <span class="badge bg-success ms-2">@Resources.CharacterTitleActive</span>
+                                    }
+                                </td>
+                                <td class="text-muted">@(entry.IsAccount ? Resources.CharacterTitleScopeAccount : Resources.CharacterTitleScopeCharacter)</td>
+                                <td class="text-end">
+                                    @if (!entry.IsActive)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary me-1" disabled="@this._isBusy" @onclick="@(() => this.SetActiveAsync(entry.Id))">@Resources.CharacterTitleShow</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-secondary me-1" disabled="@this._isBusy" @onclick="@(() => this.SetActiveAsync(null))">@Resources.CharacterTitleHide</button>
+                                    }
+                                    <button type="button" class="btn btn-sm btn-outline-danger" disabled="@this._isBusy" @onclick="@(() => this.RevokeAsync(entry.Id))">@Resources.CharacterTitleRemove</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <select class="form-select w-auto" @bind="this._selectedTitleId">
+                    <option value="">@Resources.CharacterTitleSelect</option>
+                    @foreach (var title in this.GetGrantableTitles())
+                    {
+                        <option value="@title.Id">@title.Text (@title.Id)</option>
+                    }
+                </select>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="title-for-account" @bind="this._forAccount" />
+                    <label class="form-check-label" for="title-for-account">@Resources.CharacterTitleForAccount</label>
+                </div>
+                <button type="button" class="btn btn-primary" disabled="@(this._isBusy || string.IsNullOrEmpty(this._selectedTitleId))" @onclick="this.GrantAsync">@Resources.CharacterTitleGrant</button>
+            </div>
+        }
+    </div>
+</div>

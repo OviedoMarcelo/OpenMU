@@ -7319,5 +7319,17 @@ namespace MUnique.OpenMU.GameServer.Properties {
         /// <summary>Gets the localized EnterMarketPlace_Description text.</summary>
         public static string EnterMarketPlace_Description => ResourceManager.GetString("EnterMarketPlace_Description", resourceCulture)!;
 
+        /// <summary>Gets the localized PlayerTitleViewPlugIn_Name text.</summary>
+        public static string PlayerTitleViewPlugIn_Name => ResourceManager.GetString("PlayerTitleViewPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized PlayerTitleViewPlugIn_Description text.</summary>
+        public static string PlayerTitleViewPlugIn_Description => ResourceManager.GetString("PlayerTitleViewPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized SeasonPassViewPlugIn_Name text.</summary>
+        public static string SeasonPassViewPlugIn_Name => ResourceManager.GetString("SeasonPassViewPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized SeasonPassViewPlugIn_Description text.</summary>
+        public static string SeasonPassViewPlugIn_Description => ResourceManager.GetString("SeasonPassViewPlugIn_Description", resourceCulture)!;
+
     }
 }

@@ -511,6 +511,14 @@ public class WeeklyQuestsPlugIn :
         }
     }
 
+    private static async ValueTask NotifyCompletedAsync(Player player, WeeklyQuestDefinition quest)
+    {
+        if (player.GameContext.PlugInManager.GetPlugInPoint<IQuestCompletedPlugIn>() is { } plugInPoint)
+        {
+            await plugInPoint.QuestCompletedAsync(player, quest).ConfigureAwait(false);
+        }
+    }
+
     private static ValueTask ShowGoldenMessageAsync(Player player, string message)
     {
         return player.InvokeViewPlugInAsync<IShowMessagePlugIn>(p => p.ShowMessageAsync(message, MessageType.GoldenCenter));
@@ -670,6 +678,7 @@ public class WeeklyQuestsPlugIn :
                         // The completed quest may be the prerequisite of another one.
                         state.InvalidateAvailableQuests();
                         await this.TryRewardAsync(player, quest, progress, true).ConfigureAwait(false);
+                        await NotifyCompletedAsync(player, quest).ConfigureAwait(false);
                     }
                     else if (GetNextObjective(objectives, progress) is { } next)
                     {
@@ -734,6 +743,7 @@ public class WeeklyQuestsPlugIn :
         {
             progress.CompletedAt = DateTime.UtcNow;
             await this.TryRewardAsync(player, bonusQuest, progress, true).ConfigureAwait(false);
+            await NotifyCompletedAsync(player, bonusQuest).ConfigureAwait(false);
             await this.SaveAsync(player, state).ConfigureAwait(false);
         }
 

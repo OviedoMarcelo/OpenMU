@@ -55,6 +55,7 @@ public abstract class BaseItemCraftingHandler : IItemCraftingHandler
                 // So the best solution is to just clear it and rely on the restore mechanism for the temporary storage.
                 player.BackupInventory = null;
 
+                await NotifyCraftedAsync(player, true, item).ConfigureAwait(false);
                 return (CraftingResult.Success, item);
             }
 
@@ -71,6 +72,7 @@ public abstract class BaseItemCraftingHandler : IItemCraftingHandler
             await this.RequiredItemChangeAsync(player, i, false).ConfigureAwait(false);
         }
 
+        await NotifyCraftedAsync(player, false, null).ConfigureAwait(false);
         return (CraftingResult.Failed, null);
     }
 
@@ -94,6 +96,20 @@ public abstract class BaseItemCraftingHandler : IItemCraftingHandler
     /// <param name="successRate">The success rate of the combination.</param>
     /// <returns>The created or modified items.</returns>
     protected abstract ValueTask<List<Item>> CreateOrModifyResultItemsAsync(IList<CraftingRequiredItemLink> requiredItems, Player player, byte socketSlot, byte successRate);
+
+    /// <summary>
+    /// Notifies the plugins about the finished crafting.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <param name="success">If set to <c>true</c>, the crafting succeeded.</param>
+    /// <param name="resultItem">The resulting item.</param>
+    private static async ValueTask NotifyCraftedAsync(Player player, bool success, Item? resultItem)
+    {
+        if (player.GameContext.PlugInManager.GetPlugInPoint<IItemCraftedPlugIn>() is { } plugInPoint)
+        {
+            await plugInPoint.ItemCraftedAsync(player, success, resultItem).ConfigureAwait(false);
+        }
+    }
 
     /// <summary>
     /// Performs the crafting with the specified items.

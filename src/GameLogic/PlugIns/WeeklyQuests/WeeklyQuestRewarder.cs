@@ -22,14 +22,26 @@ public static class WeeklyQuestRewarder
     /// <param name="player">The player.</param>
     /// <param name="quest">The quest.</param>
     /// <returns><c>true</c>, if all rewards have been given; <c>false</c>, if nothing has been given.</returns>
-    public static async ValueTask<bool> TryGiveRewardsAsync(Player player, WeeklyQuestDefinition quest)
+    public static ValueTask<bool> TryGiveRewardsAsync(Player player, WeeklyQuestDefinition quest)
+    {
+        return TryGiveRewardsAsync(player, quest.Rewards, quest.Id);
+    }
+
+    /// <summary>
+    /// Tries to give all of the specified rewards to the player.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <param name="rewards">The rewards.</param>
+    /// <param name="sourceId">The identifier of what is rewarded, e.g. a quest or an achievement, for the log.</param>
+    /// <returns><c>true</c>, if all rewards have been given; <c>false</c>, if nothing has been given.</returns>
+    public static async ValueTask<bool> TryGiveRewardsAsync(Player player, ICollection<WeeklyQuestReward> rewards, string sourceId)
     {
         if (player.Inventory is null || player.SelectedCharacter is null)
         {
             return false;
         }
 
-        var money = quest.Rewards
+        var money = rewards
             .Where(r => r.RewardType == WeeklyQuestRewardType.Money)
             .Sum(r => (long)r.Amount);
         if (money > 0 && player.Money + money > player.GameContext.Configuration.MaximumInventoryMoney)
@@ -38,11 +50,11 @@ public static class WeeklyQuestRewarder
         }
 
         var addedItems = new List<Item>();
-        foreach (var reward in quest.Rewards.Where(r => r.RewardType == WeeklyQuestRewardType.Item))
+        foreach (var reward in rewards.Where(r => r.RewardType == WeeklyQuestRewardType.Item))
         {
             if (ResolveItemDefinition(player, reward) is not { } itemDefinition)
             {
-                player.Logger.LogWarning("Weekly quest {quest} has an item reward without a valid item.", quest.Id);
+                player.Logger.LogWarning("{source} has an item reward without a valid item.", sourceId);
                 continue;
             }
 
@@ -70,7 +82,7 @@ public static class WeeklyQuestRewarder
             player.TryAddMoney((int)money);
         }
 
-        foreach (var reward in quest.Rewards)
+        foreach (var reward in rewards)
         {
             switch (reward.RewardType)
             {

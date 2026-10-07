@@ -5,6 +5,7 @@
 namespace MUnique.OpenMU.GameLogic;
 
 using System.Threading;
+using MUnique.OpenMU.GameLogic.PlugIns;
 using MUnique.OpenMU.GameLogic.Views.Duel;
 using Nito.AsyncEx;
 
@@ -455,6 +456,10 @@ public sealed class DuelRoom : AsyncDisposable
         var winner = this.ScoreRequester > this.ScoreOpponent ? this.Requester : this.Opponent;
         var loser = this.Requester == winner ? this.Opponent : this.Requester;
         await this.AllPlayers.ForEachAsync(player => player.InvokeViewPlugInAsync<IDuelFinishedPlugIn>(p => p.DuelFinishedAsync(winner, loser))).ConfigureAwait(false);
+        if (winner.GameContext.PlugInManager.GetPlugInPoint<IDuelWonPlugIn>() is { } plugInPoint)
+        {
+            await plugInPoint.DuelWonAsync(winner, loser).ConfigureAwait(false);
+        }
     }
 
     private async ValueTask SendCurrentStateToAllPlayersAsync()

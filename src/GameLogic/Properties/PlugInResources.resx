@@ -1469,4 +1469,64 @@
   <data name="SuspiciousScrapOfPaperStackedPlugIn_Description" xml:space="preserve">
     <value>Transforms a full stack of suspicious scraps of paper into a Gaion's Order.</value>
   </data>
+  <data name="AchievementsPlugIn_Name" xml:space="preserve">
+    <value>Achievements</value>
+  </data>
+  <data name="AchievementsPlugIn_Description" xml:space="preserve">
+    <value>Logros (matar monstruos, eventos, items +N, duelos, combinaciones, niveles, resets, PvP) con premios y títulos que se muestran debajo del nombre.</value>
+  </data>
+  <data name="AchievementsChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Achievements chat command</value>
+  </data>
+  <data name="AchievementsChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/logros'. Shows the progress of the achievements.</value>
+  </data>
+  <data name="TitlesChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Titles chat command</value>
+  </data>
+  <data name="TitlesChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/titulos'. Shows the unlocked titles.</value>
+  </data>
+  <data name="TitleChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Title chat command</value>
+  </data>
+  <data name="TitleChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/titulo &lt;id|off&gt;'. Changes the title which is shown below the name.</value>
+  </data>
+  <data name="GiveTitleChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Give title chat command</value>
+  </data>
+  <data name="GiveTitleChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/daretitulo &lt;character&gt; &lt;id&gt;'. Unlocks a title for a character, e.g. as a prize of an event.</value>
+  </data>
+  <data name="SeasonPassPlugIn_Name" xml:space="preserve">
+    <value>Season Pass</value>
+  </data>
+  <data name="SeasonPassPlugIn_Description" xml:space="preserve">
+    <value>Pase de temporada: XP del pase por completar quests y por jugar, niveles con premios gratis y premium. El premium se activa por cuenta con /pasepremium.</value>
+  </data>
+  <data name="SeasonPassChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Season pass chat command</value>
+  </data>
+  <data name="SeasonPassChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/pase [reclamar]'. Shows the season pass and hands out its rewards.</value>
+  </data>
+  <data name="SeasonPremiumChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Season premium chat command</value>
+  </data>
+  <data name="SeasonPremiumChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/pasepremium &lt;login&gt;'. Activates the premium season pass of the running season for an account.</value>
+  </data>
+  <data name="PrestigePlugIn_Name" xml:space="preserve">
+    <value>Prestige</value>
+  </data>
+  <data name="PrestigePlugIn_Description" xml:space="preserve">
+    <value>Prestigio: con nivel y nivel master máximos, el personaje vuelve a empezar su nivel master (los resets no cambian) a cambio de puntos, premios, títulos y un bonus de XP permanente.</value>
+  </data>
+  <data name="PrestigeChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Prestige chat command</value>
+  </data>
+  <data name="PrestigeChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/prestigio [confirmar]'. Shows the prestige of the character and does it.</value>
+  </data>
 </root>
