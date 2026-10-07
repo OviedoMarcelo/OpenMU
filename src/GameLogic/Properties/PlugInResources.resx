@@ -1529,4 +1529,16 @@
   <data name="PrestigeChatCommandPlugIn_Description" xml:space="preserve">
     <value>Handles the chat command '/prestigio [confirmar]'. Shows the prestige of the character and does it.</value>
   </data>
+  <data name="BossEncounterPlugIn_Name" xml:space="preserve">
+    <value>Boss encounters</value>
+  </data>
+  <data name="BossEncounterPlugIn_Description" xml:space="preserve">
+    <value>Bosses with phases which appear on a configurable map, at configurable times: pillars, shields, telegraphed area attacks, summons and an enrage. The default configuration contains Kundun Reborn in Kalima 7.</value>
+  </data>
+  <data name="BossEncounterChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Boss encounter chat command</value>
+  </data>
+  <data name="BossEncounterChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/boss [iniciar|terminar name]'. Shows the boss encounters, starts one or lets its boss retreat.</value>
+  </data>
 </root>
