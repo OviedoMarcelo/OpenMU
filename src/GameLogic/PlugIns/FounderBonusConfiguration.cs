@@ -19,6 +19,7 @@ public class FounderBonusConfiguration
     {
         CutoffDate = new DateTime(2026, 10, 12, 13, 0, 0, DateTimeKind.Utc),
         BonusMultiplier = 1.05f,
+        TitleId = "fundador",
     };
 
     /// <summary>
@@ -33,4 +34,11 @@ public class FounderBonusConfiguration
     /// </summary>
     [Display(Name = "Bonus Multiplier", Description = "Cuánta experiencia extra reciben las cuentas Fundadoras. 1.05 = +5%. 1.00 desactiva el bonus sin apagar el plugin.")]
     public float BonusMultiplier { get; set; } = 1.05f;
+
+    /// <summary>
+    /// Gets or sets the id of the title (of the Achievements plugin) which Founder characters get when they enter the game.
+    /// Empty: no title.
+    /// </summary>
+    [Display(Name = "Title Id", Description = "Id del título que reciben los personajes de cuentas Fundadoras al entrar al juego (no los GM). Tiene que existir en los títulos del plugin Achievements. Vacío: sin título.")]
+    public string TitleId { get; set; } = string.Empty;
 }
