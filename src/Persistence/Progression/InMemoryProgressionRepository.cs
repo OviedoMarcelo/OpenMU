@@ -56,6 +56,18 @@ public class InMemoryProgressionRepository : IProgressionRepository
     }
 
     /// <inheritdoc />
+    public ValueTask<bool> RemoveUnlockedTitleAsync(IReadOnlyCollection<Guid> ownerIds, string titleId, CancellationToken cancellationToken = default)
+    {
+        var removed = false;
+        foreach (var ownerId in ownerIds)
+        {
+            removed |= this._titles.TryRemove((ownerId, titleId), out _);
+        }
+
+        return ValueTask.FromResult(removed);
+    }
+
+    /// <inheritdoc />
     public ValueTask<IList<ActiveTitle>> LoadActiveTitlesAsync(IReadOnlyCollection<Guid> characterIds, CancellationToken cancellationToken = default)
     {
         var result = new List<ActiveTitle>();

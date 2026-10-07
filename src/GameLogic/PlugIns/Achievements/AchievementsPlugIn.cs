@@ -449,8 +449,9 @@ public class AchievementsPlugIn :
     /// <param name="player">The player.</param>
     /// <param name="titleId">The id of the title.</param>
     /// <param name="source">Where the title came from, e.g. "gm".</param>
+    /// <param name="forAccount">If set to <c>true</c>, the title is unlocked for all characters of the account.</param>
     /// <returns>The title, if it exists and could be unlocked.</returns>
-    public async ValueTask<TitleDefinition?> GrantTitleAsync(Player player, string titleId, string source)
+    public async ValueTask<TitleDefinition?> GrantTitleAsync(Player player, string titleId, string source, bool forAccount = false)
     {
         if (this.Configuration is not { } configuration
             || FindTitle(configuration, titleId) is not { } title
@@ -465,7 +466,46 @@ public class AchievementsPlugIn :
             return null;
         }
 
-        return await this.UnlockTitleAsync(player, state, title, state.CharacterId, source).ConfigureAwait(false) ? title : null;
+        var ownerId = forAccount && state.AccountId is { } accountId ? accountId : state.CharacterId;
+        return await this.UnlockTitleAsync(player, state, title, ownerId, source).ConfigureAwait(false) ? title : null;
+    }
+
+    /// <summary>
+    /// Removes an unlocked title from the character of the player and its account, e.g. when it was given by mistake.
+    /// If the character shows it, it shows none afterwards.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <param name="titleId">The id of the title.</param>
+    /// <returns><c>true</c>, if the title has been removed.</returns>
+    public async ValueTask<bool> RevokeTitleAsync(Player player, string titleId)
+    {
+        if (this.GetOrCreateState(player) is not { } state)
+        {
+            return false;
+        }
+
+        bool removed;
+        using (await state.Lock.LockAsync().ConfigureAwait(false))
+        {
+            if (!await this.EnsureLoadedAsync(player, state).ConfigureAwait(false))
+            {
+                return false;
+            }
+
+            var ownerIds = state.AccountId is { } accountId ? new[] { state.CharacterId, accountId } : new[] { state.CharacterId };
+            removed = await this.Repository.RemoveUnlockedTitleAsync(ownerIds, titleId).ConfigureAwait(false);
+            state.UnlockedTitleIds.RemoveWhere(id => string.Equals(id, titleId, StringComparison.OrdinalIgnoreCase));
+            if (!string.Equals(state.ActiveTitleId, titleId, StringComparison.OrdinalIgnoreCase))
+            {
+                return removed;
+            }
+
+            await this.Repository.SetActiveTitleAsync(state.CharacterId, null).ConfigureAwait(false);
+            state.ActiveTitleId = null;
+        }
+
+        await this.ShowActiveTitleAsync(player, state).ConfigureAwait(false);
+        return removed;
     }
 
     /// <summary>

@@ -198,6 +198,29 @@ public class AchievementsPlugInTest
     }
 
     /// <summary>
+    /// Tests that a title can be given to the whole account, and that removing it also hides it when it's shown.
+    /// </summary>
+    [Test]
+    public async Task TitleCanBeGivenToTheAccountAndRemovedAsync()
+    {
+        var repository = new InMemoryProgressionRepository();
+        var accountId = Guid.NewGuid();
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        player.Account = new Persistence.BasicModel.Account { Id = accountId, LoginName = "test" };
+        var plugIn = CreatePlugIn(repository);
+
+        Assert.That(await plugIn.GrantTitleAsync(player, CraftingTitleId, "admin", forAccount: true).ConfigureAwait(false), Is.Not.Null);
+        Assert.That((await repository.LoadUnlockedTitlesAsync([accountId]).ConfigureAwait(false)).Single().TitleId, Is.EqualTo(CraftingTitleId));
+        Assert.That(await plugIn.SetActiveTitleAsync(player, CraftingTitleId).ConfigureAwait(false), Is.EqualTo(TitleChangeResult.Changed));
+
+        Assert.That(await plugIn.RevokeTitleAsync(player, CraftingTitleId).ConfigureAwait(false), Is.True);
+        Assert.That(PlayerTitles.Get(player), Is.Null);
+        Assert.That((await plugIn.GetTitlesAsync(player).ConfigureAwait(false))!.Value.Unlocked, Is.Empty);
+        Assert.That(await repository.LoadUnlockedTitlesAsync([accountId]).ConfigureAwait(false), Is.Empty);
+        Assert.That(await plugIn.SetActiveTitleAsync(player, CraftingTitleId).ConfigureAwait(false), Is.EqualTo(TitleChangeResult.NotUnlocked));
+    }
+
+    /// <summary>
     /// Tests that a game master can unlock a title, e.g. as a prize of an event.
     /// </summary>
     [Test]

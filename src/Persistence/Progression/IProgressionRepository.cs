@@ -43,6 +43,15 @@ public interface IProgressionRepository
     ValueTask<bool> AddUnlockedTitleAsync(UnlockedTitle title, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Removes an unlocked title of the specified owners, e.g. of a character and its account.
+    /// </summary>
+    /// <param name="ownerIds">The identifiers of the owners.</param>
+    /// <param name="titleId">The identifier of the title.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns><c>true</c>, if a title has been removed.</returns>
+    ValueTask<bool> RemoveUnlockedTitleAsync(IReadOnlyCollection<Guid> ownerIds, string titleId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Loads the active titles of the specified characters, with one query.
     /// </summary>
     /// <param name="characterIds">The identifiers of the characters.</param>

@@ -1650,4 +1650,58 @@
   <data name="MonsterDropChanceOverviewDescription" xml:space="preserve">
     <value>The drop chances of each monster which is spawned on a map, considering the monster level restrictions of the map drop groups and the monster specific drop groups. The chances apply to each drop roll, a monster rolls up to its maximum item drops. Quest item drops are not included. If the total chance exceeds 100 %, the chances are scaled down proportionally and there is no chance for no drop.</value>
   </data>
+  <data name="CharacterTitles" xml:space="preserve">
+    <value>Titles</value>
+  </data>
+  <data name="CharacterTitlesUnavailable" xml:space="preserve">
+    <value>The titles are not available. Activate the Achievements plugin.</value>
+  </data>
+  <data name="CharacterTitlesOnlineHint" xml:space="preserve">
+    <value>The character is in the game: changes apply immediately.</value>
+  </data>
+  <data name="CharacterTitlesOfflineHint" xml:space="preserve">
+    <value>The character is not in the game: changes apply when it enters the game.</value>
+  </data>
+  <data name="CharacterTitlesNone" xml:space="preserve">
+    <value>No titles unlocked yet.</value>
+  </data>
+  <data name="CharacterTitleActive" xml:space="preserve">
+    <value>Shown</value>
+  </data>
+  <data name="CharacterTitleScopeCharacter" xml:space="preserve">
+    <value>Character</value>
+  </data>
+  <data name="CharacterTitleScopeAccount" xml:space="preserve">
+    <value>Whole account</value>
+  </data>
+  <data name="CharacterTitleShow" xml:space="preserve">
+    <value>Show</value>
+  </data>
+  <data name="CharacterTitleHide" xml:space="preserve">
+    <value>Hide</value>
+  </data>
+  <data name="CharacterTitleRemove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="CharacterTitleSelect" xml:space="preserve">
+    <value>Choose a title...</value>
+  </data>
+  <data name="CharacterTitleForAccount" xml:space="preserve">
+    <value>For the whole account</value>
+  </data>
+  <data name="CharacterTitleGrant" xml:space="preserve">
+    <value>Give title</value>
+  </data>
+  <data name="CharacterTitleGranted" xml:space="preserve">
+    <value>Title given.</value>
+  </data>
+  <data name="CharacterTitleRemoved" xml:space="preserve">
+    <value>Title removed.</value>
+  </data>
+  <data name="CharacterTitleActiveChanged" xml:space="preserve">
+    <value>Shown title changed.</value>
+  </data>
+  <data name="CharacterTitleChangeFailed" xml:space="preserve">
+    <value>The titles couldn't be changed.</value>
+  </data>
 </root>

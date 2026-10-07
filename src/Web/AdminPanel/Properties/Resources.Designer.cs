@@ -4466,5 +4466,59 @@ namespace MUnique.OpenMU.Web.AdminPanel.Properties {
         /// <summary>Gets the localized RoleViewer text.</summary>
         public static string RoleViewer => ResourceManager.GetString("RoleViewer", resourceCulture);
 
+        /// <summary>Gets the localized CharacterTitles text.</summary>
+        public static string CharacterTitles => ResourceManager.GetString("CharacterTitles", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitlesUnavailable text.</summary>
+        public static string CharacterTitlesUnavailable => ResourceManager.GetString("CharacterTitlesUnavailable", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitlesOnlineHint text.</summary>
+        public static string CharacterTitlesOnlineHint => ResourceManager.GetString("CharacterTitlesOnlineHint", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitlesOfflineHint text.</summary>
+        public static string CharacterTitlesOfflineHint => ResourceManager.GetString("CharacterTitlesOfflineHint", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitlesNone text.</summary>
+        public static string CharacterTitlesNone => ResourceManager.GetString("CharacterTitlesNone", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitleActive text.</summary>
+        public static string CharacterTitleActive => ResourceManager.GetString("CharacterTitleActive", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitleScopeCharacter text.</summary>
+        public static string CharacterTitleScopeCharacter => ResourceManager.GetString("CharacterTitleScopeCharacter", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitleScopeAccount text.</summary>
+        public static string CharacterTitleScopeAccount => ResourceManager.GetString("CharacterTitleScopeAccount", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitleShow text.</summary>
+        public static string CharacterTitleShow => ResourceManager.GetString("CharacterTitleShow", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitleHide text.</summary>
+        public static string CharacterTitleHide => ResourceManager.GetString("CharacterTitleHide", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitleRemove text.</summary>
+        public static string CharacterTitleRemove => ResourceManager.GetString("CharacterTitleRemove", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitleSelect text.</summary>
+        public static string CharacterTitleSelect => ResourceManager.GetString("CharacterTitleSelect", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitleForAccount text.</summary>
+        public static string CharacterTitleForAccount => ResourceManager.GetString("CharacterTitleForAccount", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitleGrant text.</summary>
+        public static string CharacterTitleGrant => ResourceManager.GetString("CharacterTitleGrant", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitleGranted text.</summary>
+        public static string CharacterTitleGranted => ResourceManager.GetString("CharacterTitleGranted", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitleRemoved text.</summary>
+        public static string CharacterTitleRemoved => ResourceManager.GetString("CharacterTitleRemoved", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitleActiveChanged text.</summary>
+        public static string CharacterTitleActiveChanged => ResourceManager.GetString("CharacterTitleActiveChanged", resourceCulture)!;
+
+        /// <summary>Gets the localized CharacterTitleChangeFailed text.</summary>
+        public static string CharacterTitleChangeFailed => ResourceManager.GetString("CharacterTitleChangeFailed", resourceCulture)!;
+
     }
 }

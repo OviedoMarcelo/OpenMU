@@ -137,6 +137,20 @@ public sealed class ProgressionRepository : IProgressionRepository, IDisposable
     }
 
     /// <inheritdoc />
+    public async ValueTask<bool> RemoveUnlockedTitleAsync(IReadOnlyCollection<Guid> ownerIds, string titleId, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        var ids = ownerIds.ToArray();
+        await using var context = new ProgressionContext();
+        var removed = await context.UnlockedTitles
+            .Where(t => ids.Contains(t.OwnerId) && t.TitleId == titleId)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return removed > 0;
+    }
+
+    /// <inheritdoc />
     public async ValueTask<IList<ActiveTitle>> LoadActiveTitlesAsync(IReadOnlyCollection<Guid> characterIds, CancellationToken cancellationToken = default)
     {
         await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
