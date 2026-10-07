@@ -18,6 +18,7 @@ using MUnique.OpenMU.PlugIns;
 /// The season pass: an account gains experience of the pass by completing quests and by playing,
 /// and receives the rewards of each reached level. The premium track has additional rewards and
 /// is activated per account and season, by a game master or (later) the shop.
+/// It's disabled by default: a server owner activates it together with its chat commands when a season is ready.
 /// </summary>
 [PlugIn]
 [Display(Name = nameof(PlugInResources.SeasonPassPlugIn_Name), Description = nameof(PlugInResources.SeasonPassPlugIn_Description), ResourceType = typeof(PlugInResources))]
@@ -28,7 +29,8 @@ public class SeasonPassPlugIn :
     IAttackableGotKilledPlugIn,
     IPeriodicTaskPlugIn,
     ISupportCustomConfiguration<SeasonPassConfiguration>,
-    ISupportDefaultCustomConfiguration
+    ISupportDefaultCustomConfiguration,
+    IDisabledByDefault
 {
     /// <summary>
     /// The interval in which the experience of the players is saved.
