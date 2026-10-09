@@ -264,6 +264,11 @@ internal sealed class Program : IDisposable
             // The storage of the admin panel users has to be registered before the panel itself,
             // which only adds a fallback when nothing else is registered.
             builder.Services.AddAdminUserRepository();
+            if (!args.Contains("-demo"))
+            {
+                builder.Services.AddSingleton<IServerStatisticsProvider, ServerStatisticsProvider>();
+            }
+
             builder.Services.AddSingleton<IBackupService>(s =>
             {
                 var contextProvider = s.GetRequiredService<IMigratableDatabaseContextProvider>();

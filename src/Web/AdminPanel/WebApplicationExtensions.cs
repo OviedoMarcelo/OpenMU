@@ -17,6 +17,7 @@ using MUnique.OpenMU.Persistence;
 using MUnique.OpenMU.Persistence.AdminAuth;
 using MUnique.OpenMU.Persistence.Initialization.Updates;
 using MUnique.OpenMU.Persistence.Initialization.VersionSeasonSix;
+using MUnique.OpenMU.Web.AdminPanel.AdminApi;
 using MUnique.OpenMU.Web.AdminPanel.Auth;
 using MUnique.OpenMU.Web.AdminPanel.Components;
 using MUnique.OpenMU.Web.AdminPanel.Services;
@@ -78,6 +79,7 @@ public static class WebApplicationExtensions
         services.AddScoped<CreationPanelService>();
 
         services.AddAdminPanelAuth(builder.Configuration);
+        services.AddAdminApi();
 
         services.AddSingleton<IDataSource<GameConfiguration>, GameConfigurationDataSource>();
         services.AddSingleton<IDataSource<Account>, AccountDataSource>();
