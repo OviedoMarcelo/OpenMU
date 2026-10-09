@@ -6817,6 +6817,36 @@ public class PacketStructureTests
     }
 
     /// <summary>
+    /// Tests the packet size calculation for MonsterAppearance.
+    /// </summary>
+    [Test]
+    public void MonsterAppearance_PacketSizeValidation()
+    {
+        // Fixed-length packet validation
+        const int expectedLength = 44;
+        var actualLength = MonsterAppearanceRef.Length;
+        
+        Assert.That(actualLength, Is.EqualTo(expectedLength), 
+            "Packet length mismatch: declared length does not match calculated size");
+        
+        // Validate field 'Glow' boundary
+        Assert.That(5 + 1, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'Glow' exceeds packet boundary");
+        
+        // Validate field 'ObjectId' boundary
+        Assert.That(6 + 2, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'ObjectId' exceeds packet boundary");
+        
+        // Validate field 'ScalePercent' boundary
+        Assert.That(8 + 2, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'ScalePercent' exceeds packet boundary");
+        
+        // Validate field 'Name' boundary
+        Assert.That(12 + 32, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'Name' exceeds packet boundary");
+    }
+
+    /// <summary>
     /// Tests the packet size calculation for EventChipRegistrationResult.
     /// </summary>
     [Test]

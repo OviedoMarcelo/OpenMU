@@ -5,138 +5,183 @@
 namespace MUnique.OpenMU.GameLogic.PlugIns.BossEncounters;
 
 using MUnique.OpenMU.DataModel.Composition;
+using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.Interfaces;
 
 /// <summary>
 /// A boss encounter: which monster is the boss, where and when it appears, and its phases.
 /// </summary>
+/// <remarks>
+/// The <see cref="DisplayAttribute.Order"/> of the properties groups them on the admin panel:
+/// general, boss, place, schedule, duration, messages and phases.
+/// </remarks>
 public class BossEncounterDefinition
 {
     /// <summary>
     /// Gets or sets the name of the encounter, which is shown in the messages.
     /// </summary>
-    [Display(Name = "Nombre", Description = "P. ej. \"Kundun Reborn\". Se usa en los mensajes y en el comando /boss; tiene que ser único.")]
+    [Display(Name = "Nombre", Description = "P. ej. \"Kundun Reborn\". Se usa en los mensajes y en el comando /boss; tiene que ser único.", Order = 1)]
     [Required]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets a value indicating whether this encounter is active.
     /// </summary>
-    [Display(Name = "Activo")]
+    [Display(Name = "Activo", Description = "Un encuentro inactivo no empieza por horario, pero se puede iniciar a mano con /boss iniciar.", Order = 2)]
     public bool IsActive { get; set; } = true;
 
     /// <summary>
     /// Gets or sets the number of the monster which is the boss.
     /// </summary>
-    [Display(Name = "Número de monstruo del boss")]
+    [Display(Name = "Boss: monstruo", Order = 10)]
+    [MonsterNumber]
     public short MonsterNumber { get; set; }
 
     /// <summary>
     /// Gets or sets the multiplier of the health of the boss.
     /// </summary>
-    [Display(Name = "Multiplicador de vida", Description = "Sobre la vida del monstruo. 1 = sin cambios.")]
+    [Display(Name = "Boss: multiplicador de vida", Description = "Sobre la vida del monstruo. 1 = sin cambios.", Order = 11)]
     [Range(0.1, 1000)]
     public double HealthMultiplier { get; set; } = 1;
 
     /// <summary>
     /// Gets or sets the multiplier of the damage of the boss.
     /// </summary>
-    [Display(Name = "Multiplicador de daño", Description = "Sobre el daño del monstruo. 1 = sin cambios.")]
+    [Display(Name = "Boss: multiplicador de daño", Description = "Sobre el daño del monstruo. 1 = sin cambios.", Order = 12)]
     [Range(0.1, 100)]
     public double DamageMultiplier { get; set; } = 1;
 
     /// <summary>
-    /// Gets or sets the number of the map on which the boss appears.
+    /// Gets or sets the size of the boss in percent of the normal size of the monster.
     /// </summary>
-    [Display(Name = "Número de mapa")]
-    public short MapNumber { get; set; }
+    /// <remarks>Existing configurations read 0, which means the normal size.</remarks>
+    [Display(Name = "Boss: tamaño (%)", Description = "100 = normal; 150 = una vez y media. Se ve con el cliente actualizado.", Order = 13)]
+    [Range(0, 1000)]
+    public int ScalePercent { get; set; } = 100;
 
     /// <summary>
-    /// Gets or sets the points at which the boss can appear. One of them is chosen randomly.
+    /// Gets or sets the glow of the boss, like the glow of an item of a high level.
     /// </summary>
-    [Display(Name = "Lugares de aparición", Description = "Se elige uno al azar en cada encuentro. Sin lugares = un punto caminable al azar del mapa.")]
+    [Display(Name = "Boss: brillo", Description = "Como el brillo de los items +7 a +15, o dorado como los monstruos de la invasión dorada. Se ve con el cliente actualizado.", Order = 14)]
+    public MonsterGlow Glow { get; set; }
+
+    /// <summary>
+    /// Gets or sets the name which the client shows instead of the name of the monster.
+    /// </summary>
+    [Display(Name = "Boss: nombre en pantalla", Description = "Vacío = el nombre del monstruo. Hasta 32 caracteres. Se ve con el cliente actualizado.", Order = 15)]
+    [StringLength(MonsterAppearance.MaximumNameLength)]
+    public string? DisplayName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the places at which the boss can appear. One of them is chosen randomly.
+    /// </summary>
+    [Display(Name = "Lugares de aparición", Description = "Mapa y coordenadas. Si hay varios, se elige uno al azar en cada encuentro (pueden ser de mapas distintos).", Order = 20)]
     [MemberOfAggregate]
+    [ScaffoldColumn(true)]
     public ICollection<BossEncounterPoint> SpawnPoints { get; set; } = new List<BossEncounterPoint>();
 
     /// <summary>
     /// Gets or sets the radius of the arena around the boss. The mechanics affect the players inside of it.
     /// </summary>
-    [Display(Name = "Radio de la arena", Description = "Las mecánicas afectan a los jugadores que están a esta distancia del boss o menos.")]
+    [Display(Name = "Radio de la arena", Description = "Las mecánicas afectan a los jugadores que están a esta distancia del boss o menos.", Order = 21)]
     [Range(1, 100)]
     public byte ArenaRadius { get; set; } = 18;
 
     /// <summary>
     /// Gets or sets a value indicating whether the monsters of the boss which appear on the map by themselves are hidden during the encounter.
     /// </summary>
-    [Display(Name = "Ocultar el spawn automático", Description = "Si el monstruo ya aparece solo en el mapa (como Kundun en Kalima 7), se oculta mientras dura el encuentro y vuelve al terminar.")]
+    [Display(Name = "Ocultar el spawn automático", Description = "Si el monstruo ya aparece solo en el mapa (como Kundun en Kalima 7), se oculta mientras dura el encuentro y vuelve al terminar.", Order = 22)]
     public bool HideAutomaticSpawns { get; set; } = true;
 
     /// <summary>
     /// Gets or sets the points in time at which the encounter starts.
     /// </summary>
-    [Display(Name = "Horarios", Description = "Día y hora de inicio, en la zona horaria del servidor. Sin horarios = solo se inicia a mano con /boss iniciar.")]
+    [Display(Name = "Horarios", Description = "Día y hora de inicio, en la zona horaria del servidor. Sin horarios = solo se inicia a mano con /boss iniciar.", Order = 30)]
     [MemberOfAggregate]
+    [ScaffoldColumn(true)]
     public ICollection<BossEncounterScheduleEntry> Schedule { get; set; } = new List<BossEncounterScheduleEntry>();
 
     /// <summary>
     /// Gets or sets the minutes before the start, at which the encounter is announced to all players.
     /// </summary>
-    [Display(Name = "Anuncios (minutos antes)", Description = "P. ej. 10, 5 y 1.")]
+    [Display(Name = "Anuncios (minutos antes)", Description = "P. ej. 10, 5 y 1.", Order = 31)]
     public IList<int> AnnouncementMinutes { get; set; } = new List<int>();
-
-    /// <summary>
-    /// Gets or sets the time after the start, at which the last phase starts regardless of the health of the boss.
-    /// <see cref="TimeSpan.Zero"/> means never.
-    /// </summary>
-    [Display(Name = "Enrage por tiempo", Description = "Pasado este tiempo, empieza la última fase aunque el boss tenga más vida. 0 = nunca.")]
-    public TimeSpan SoftEnrageAfter { get; set; }
-
-    /// <summary>
-    /// Gets or sets the maximum duration. When it's reached, the boss retreats and the encounter fails.
-    /// </summary>
-    [Display(Name = "Duración máxima", Description = "Al cumplirse, el boss hace un último ataque y se retira: el encuentro falla.")]
-    public TimeSpan MaximumDuration { get; set; } = TimeSpan.FromMinutes(20);
-
-    /// <summary>
-    /// Gets or sets the damage of the last attack of the boss before it retreats, in percent of the maximum health of the hit player.
-    /// </summary>
-    [Display(Name = "Daño al retirarse (%)", Description = "Daño a todos los jugadores de la arena cuando se cumple la duración máxima.")]
-    [Range(0, 100)]
-    public int RetreatDamagePercent { get; set; }
 
     /// <summary>
     /// Gets or sets the message which announces the encounter to all players.
     /// Placeholders: {0} = name, {1} = map, {2} = minutes, {3} = x, {4} = y.
     /// </summary>
-    [Display(Name = "Mensaje de anuncio", Description = "{0} = nombre, {1} = mapa, {2} = minutos, {3} = x, {4} = y.")]
+    [Display(Name = "Mensaje de anuncio", Description = "{0} = nombre, {1} = mapa, {2} = minutos, {3} = x, {4} = y.", Order = 32)]
     public LocalizedString AnnouncementMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the time after the start, at which the last phase starts regardless of the health of the boss.
+    /// <see cref="TimeSpan.Zero"/> means never.
+    /// </summary>
+    [Display(Name = "Enrage por tiempo", Description = "Pasado este tiempo, empieza la última fase aunque el boss tenga más vida. 0 = nunca.", Order = 40)]
+    public TimeSpan SoftEnrageAfter { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum duration. When it's reached, the boss retreats and the encounter fails.
+    /// </summary>
+    [Display(Name = "Duración máxima", Description = "Al cumplirse, el boss hace un último ataque y se retira: el encuentro falla.", Order = 41)]
+    public TimeSpan MaximumDuration { get; set; } = TimeSpan.FromMinutes(20);
+
+    /// <summary>
+    /// Gets or sets the damage of the last attack of the boss before it retreats, in percent of the maximum health of the hit player.
+    /// </summary>
+    [Display(Name = "Daño al retirarse (%)", Description = "Daño a todos los jugadores de la arena cuando se cumple la duración máxima.", Order = 42)]
+    [Range(0, 100)]
+    public int RetreatDamagePercent { get; set; }
 
     /// <summary>
     /// Gets or sets the message which is shown to all players when the boss appears.
     /// Placeholders: {0} = name, {1} = map, {2} = x, {3} = y.
     /// </summary>
-    [Display(Name = "Mensaje de aparición", Description = "{0} = nombre, {1} = mapa, {2} = x, {3} = y.")]
+    [Display(Name = "Mensaje de aparición", Description = "{0} = nombre, {1} = mapa, {2} = x, {3} = y.", Order = 50)]
     public LocalizedString StartMessage { get; set; }
 
     /// <summary>
     /// Gets or sets the message which is shown to all players when the boss has been defeated.
     /// Placeholders: {0} = name, {1} = name of the character which killed the boss.
     /// </summary>
-    [Display(Name = "Mensaje de victoria", Description = "{0} = nombre, {1} = personaje que lo mató.")]
+    [Display(Name = "Mensaje de victoria", Description = "{0} = nombre, {1} = personaje que lo mató.", Order = 51)]
     public LocalizedString DefeatedMessage { get; set; }
 
     /// <summary>
     /// Gets or sets the message which is shown to all players when the boss retreats.
     /// Placeholder: {0} = name.
     /// </summary>
-    [Display(Name = "Mensaje de retirada", Description = "{0} = nombre.")]
+    [Display(Name = "Mensaje de retirada", Description = "{0} = nombre.", Order = 52)]
     public LocalizedString RetreatMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the items which the boss may drop, in addition to or instead of the drops of its monster.
+    /// </summary>
+    [Display(Name = "Drops", Description = "Items que puede tirar el boss. Caen alrededor suyo y son de quien lo mató (o de su party), como cualquier drop.", Order = 55)]
+    [MemberOfAggregate]
+    [ScaffoldColumn(true)]
+    public ICollection<BossEncounterDrop> Drops { get; set; } = new List<BossEncounterDrop>();
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the <see cref="Drops"/> replace the drops of the monster of the boss.
+    /// </summary>
+    [Display(Name = "Drops: reemplazar los del monstruo", Description = "Activado = el boss solo tira los drops de esta lista y el zen de abajo. Desactivado = también tira lo que tira normalmente su monstruo.", Order = 56)]
+    public bool ReplaceMonsterDrops { get; set; }
+
+    /// <summary>
+    /// Gets or sets the money which the boss drops in addition.
+    /// </summary>
+    [Display(Name = "Drops: zen", Description = "Zen extra que tira el boss. 0 = nada.", Order = 57)]
+    [Range(0, int.MaxValue)]
+    public int DropMoney { get; set; }
 
     /// <summary>
     /// Gets or sets the phases of the encounter.
     /// </summary>
-    [Display(Name = "Fases", Description = "Cada fase empieza cuando la vida del boss baja a su porcentaje. Sin fases = un boss sin mecánicas.")]
+    [Display(Name = "Fases", Description = "Cada fase empieza cuando la vida del boss baja a su porcentaje. Sin fases = un boss sin mecánicas.", Order = 60)]
     [MemberOfAggregate]
+    [ScaffoldColumn(true)]
     public ICollection<BossEncounterPhase> Phases { get; set; } = new List<BossEncounterPhase>();
 
     /// <inheritdoc />
@@ -150,6 +195,16 @@ public class BossEncounterDefinition
     public DateTime? GetNextStart(DateTime from)
     {
         return this.Schedule.Count == 0 ? null : this.Schedule.Min(entry => entry.GetNextStart(from));
+    }
+
+    /// <summary>
+    /// Gets the appearance of the boss, which the client shows differently than the other monsters of its kind.
+    /// </summary>
+    /// <returns>The appearance.</returns>
+    public MonsterAppearance GetBossAppearance()
+    {
+        var scalePercent = this.ScalePercent > 0 ? this.ScalePercent : 100;
+        return new MonsterAppearance(scalePercent, this.Glow, this.DisplayName?.Trim() ?? string.Empty);
     }
 
     /// <summary>

@@ -6595,6 +6595,40 @@ public static class ConnectionExtensions
     }
 
     /// <summary>
+    /// Sends a <see cref="MonsterAppearance" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="glow">The glow, like the glow of an item of that level: 0 = none, 7, 9, 11, 13 or 15; 100 = golden, like the monsters of the golden invasion.</param>
+    /// <param name="objectId">The id of the monster, as in the AddNpcsToScope message.</param>
+    /// <param name="scalePercent">The size in percent of the normal size of the monster.</param>
+    /// <param name="name">The name which is shown instead of the name of the monster. Empty for its own name.</param>
+    /// <remarks>
+    /// Is sent by the server when: When a monster which looks different than the others of its kind (e.g. the boss of an encounter) came into view, right after the AddNpcsToScope message.
+    /// Causes reaction on client side: The client shows the monster with the size, the glow and the name of this message, until it leaves the view.
+    /// </remarks>
+    public static async ValueTask SendMonsterAppearanceAsync(this IConnection? connection, byte @glow, ushort @objectId, ushort @scalePercent, string @name)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = MonsterAppearanceRef.Length;
+            var packet = new MonsterAppearanceRef(connection.Output.GetSpan(length)[..length]);
+            packet.Glow = @glow;
+            packet.ObjectId = @objectId;
+            packet.ScalePercent = @scalePercent;
+            packet.Name = @name;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Sends a <see cref="EventChipRegistrationResult" /> to this connection.
     /// </summary>
     /// <param name="connection">The connection.</param>

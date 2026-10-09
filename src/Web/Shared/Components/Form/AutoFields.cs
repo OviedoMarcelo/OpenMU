@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.Logging;
 using MUnique.OpenMU.DataModel.Composition;
+using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.Web.Shared.ComponentBuilders;
 using MUnique.OpenMU.Web.Shared.Services;
 
@@ -30,6 +31,10 @@ public class AutoFields : ComponentBase
     /// </summary>
     static AutoFields()
     {
+        // These have to be checked before the builder of plain numbers.
+        Builders.Add(new NumberLookupFieldBuilder<MonsterDefinition, MonsterNumberAttribute>(monster => monster.Number));
+        Builders.Add(new NumberLookupFieldBuilder<GameMapDefinition, MapNumberAttribute>(map => map.Number));
+        Builders.Add(new BossEncounterMapFieldBuilder());
         Builders.Add(new PasswordHashFieldBuilder());
         Builders.Add(new TimeZoneIdFieldBuilder());
         Builders.Add(new TextFieldBuilder());

@@ -46,6 +46,15 @@ public class NewNpcsInScopePlugIn : INewNpcsInScopePlugIn
         {
             await connection.SendAsync(
                 () => WriteNpcsInScope(isSpawned, connection, npcs, this._player)).ConfigureAwait(false);
+
+            // Monsters which look different than the others of their kind (e.g. a boss) are shown so, right after they appeared.
+            foreach (var npc in npcs)
+            {
+                if (MonsterAppearances.Get(npc) is { } appearance)
+                {
+                    await this._player.InvokeViewPlugInAsync<IShowMonsterAppearancePlugIn>(p => p.ShowMonsterAppearanceAsync(npc, appearance)).ConfigureAwait(false);
+                }
+            }
         }
 
         if (summons.Any())

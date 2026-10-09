@@ -61,7 +61,7 @@ public sealed class BossEncounterContext
     private BossEncounterDefinition _definition;
     private IReadOnlyList<BossEncounterPhase> _phases = [];
     private DateTime? _nextStart;
-    private Point? _plannedSpawnPoint;
+    private (GameMap Map, Point Point)? _plannedSpawnPlace;
     private GameMap? _map;
     private Monster? _boss;
     private DateTime _startUtc;
@@ -148,7 +148,7 @@ public sealed class BossEncounterContext
         {
             // The schedule may have changed.
             this._nextStart = null;
-            this._plannedSpawnPoint = null;
+            this._plannedSpawnPlace = null;
         }
     }
 
@@ -237,8 +237,8 @@ public sealed class BossEncounterContext
         }
 
         this._nextStart = null;
-        var spawnPoint = this._plannedSpawnPoint;
-        this._plannedSpawnPoint = null;
+        var spawnPlace = this._plannedSpawnPlace;
+        this._plannedSpawnPlace = null;
 
         var definition = this._definition;
         if (this.GetMonsterDefinition(definition.MonsterNumber) is not { } monsterDefinition)
@@ -247,19 +247,14 @@ public sealed class BossEncounterContext
             return false;
         }
 
-        if (await this._gameContext.GetMapAsync((ushort)definition.MapNumber).ConfigureAwait(false) is not { } map)
+        spawnPlace ??= await this.ChooseSpawnPlaceAsync().ConfigureAwait(false);
+        if (spawnPlace is not { } place)
         {
-            this._logger.LogWarning("The boss encounter {Name} can't start, because the map {Number} doesn't exist.", definition.Name, definition.MapNumber);
+            this._logger.LogWarning("The boss encounter {Name} can't start, because none of its places of appearance is valid.", definition.Name);
             return false;
         }
 
-        spawnPoint ??= this.ChooseSpawnPoint(map);
-        if (spawnPoint is not { } point)
-        {
-            this._logger.LogWarning("The boss encounter {Name} can't start, because the map {Number} has no walkable point.", definition.Name, definition.MapNumber);
-            return false;
-        }
-
+        var (map, point) = place;
         this._map = map;
         this._phases = definition.GetOrderedPhases();
         this._phaseIndex = -1;
@@ -278,7 +273,7 @@ public sealed class BossEncounterContext
             maximumHealth = (int)Math.Min(int.MaxValue, healthAttribute.Value * definition.HealthMultiplier);
         }
 
-        if (await this.SpawnMonsterAsync(monsterDefinition, point, maximumHealth, new BasicMonsterIntelligence()).ConfigureAwait(false) is not { } boss)
+        if (await this.SpawnMonsterAsync(monsterDefinition, point, maximumHealth, new BasicMonsterIntelligence(), definition.GetBossAppearance(), new BossEncounterDropGenerator(this._gameContext.DropGenerator, definition, this._gameContext)).ConfigureAwait(false) is not { } boss)
         {
             this.IsRunning = false;
             await this.RestoreHiddenSpawnsAsync().ConfigureAwait(false);
@@ -291,7 +286,7 @@ public sealed class BossEncounterContext
         this._isShieldActive = false;
         this.UpdateBossDamage(1);
         this._logger.LogInformation("Boss encounter {Name} started at {Map} {Point}.", definition.Name, map.Definition.Name, point);
-        await this.ShowGlobalMessageAsync(definition.StartMessage, true, definition.Name, this.GetMapName(), point.X, point.Y).ConfigureAwait(false);
+        await this.ShowGlobalMessageAsync(definition.StartMessage, true, definition.Name, GetMapName(map), point.X, point.Y).ConfigureAwait(false);
         await this.UpdatePhaseAsync(utcNow).ConfigureAwait(false);
         return true;
     }
@@ -324,6 +319,11 @@ public sealed class BossEncounterContext
         return maximumHealth > 0 ? monster.Health * 100.0 / maximumHealth : 0;
     }
 
+    private static string GetMapName(GameMap map)
+    {
+        return map.Definition.Name.ToString() ?? map.Definition.Number.ToString(CultureInfo.InvariantCulture);
+    }
+
     private static string Format(LocalizedString template, Player player, object?[] arguments)
     {
         var text = template.GetTranslation(player.Culture) ?? string.Empty;
@@ -351,7 +351,7 @@ public sealed class BossEncounterContext
     {
         // A start in this very second already happened, so the next one is searched from the next second.
         this._nextStart = this._definition.GetNextStart(serverNow.AddSeconds(1));
-        this._plannedSpawnPoint = null;
+        this._plannedSpawnPlace = null;
         this._announcedMinutes.Clear();
         if (this._nextStart is not { } nextStart)
         {
@@ -367,15 +367,16 @@ public sealed class BossEncounterContext
 
     private async ValueTask AnnounceAsync(int minutes)
     {
-        var definition = this._definition;
-        if (await this._gameContext.GetMapAsync((ushort)definition.MapNumber).ConfigureAwait(false) is { } map)
+        // The place is chosen now, so that the announced map and coordinates are the ones where the boss appears.
+        this._plannedSpawnPlace ??= await this.ChooseSpawnPlaceAsync().ConfigureAwait(false);
+        if (this._plannedSpawnPlace is not { } place)
         {
-            // The point is chosen now, so that the announced coordinates are the ones where the boss appears.
-            this._plannedSpawnPoint ??= this.ChooseSpawnPoint(map);
+            return;
         }
 
-        var point = this._plannedSpawnPoint ?? default;
-        await this.ShowGlobalMessageAsync(definition.AnnouncementMessage, false, definition.Name, this.GetMapName(), minutes, point.X, point.Y).ConfigureAwait(false);
+        var (map, point) = place;
+
+        await this.ShowGlobalMessageAsync(this._definition.AnnouncementMessage, false, this._definition.Name, GetMapName(map), minutes, point.X, point.Y).ConfigureAwait(false);
     }
 
     private async ValueTask RunningTickAsync(DateTime utcNow)
@@ -835,23 +836,28 @@ public sealed class BossEncounterContext
         return this._gameContext.Configuration.Monsters.FirstOrDefault(m => m.Number == number);
     }
 
-    private string GetMapName()
+    /// <summary>
+    /// Chooses one of the places of appearance randomly.
+    /// </summary>
+    /// <returns>The map and the point; <c>null</c>, if the place isn't valid.</returns>
+    private async ValueTask<(GameMap Map, Point Point)?> ChooseSpawnPlaceAsync()
     {
-        var definition = this._map?.Definition
-                         ?? this._gameContext.Configuration.Maps.FirstOrDefault(m => m.Number == this._definition.MapNumber);
-        return definition?.Name.ToString() ?? this._definition.MapNumber.ToString(CultureInfo.InvariantCulture);
-    }
-
-    private Point? ChooseSpawnPoint(GameMap map)
-    {
-        var points = this._definition.SpawnPoints.ToList();
-        if (points.Count == 0)
+        var places = this._definition.SpawnPoints.ToList();
+        if (places.Count == 0)
         {
-            return map.Terrain.RandomWalkableCoordinate;
+            this._logger.LogWarning("The boss encounter {Name} has no place of appearance.", this.Name);
+            return null;
         }
 
-        var point = points[Rand.NextInt(0, points.Count)];
-        return new Point(point.X, point.Y);
+        var place = places[Rand.NextInt(0, places.Count)];
+        if (await this._gameContext.GetMapAsync((ushort)place.MapNumber).ConfigureAwait(false) is not { } map)
+        {
+            this._logger.LogWarning("The map {Number} of the boss encounter {Name} doesn't exist.", place.MapNumber, this.Name);
+            return null;
+        }
+
+        var point = place.IsRandomPoint() ? map.Terrain.RandomWalkableCoordinate : new Point(place.X, place.Y);
+        return point is { } p ? (map, p) : null;
     }
 
     private Point GetWalkablePoint(Point point)
@@ -864,7 +870,7 @@ public sealed class BossEncounterContext
         return map.Terrain.GetRandomCoordinate(point, WalkablePointRadius);
     }
 
-    private async ValueTask<Monster?> SpawnMonsterAsync(MonsterDefinition monsterDefinition, Point point, int? maximumHealth, INpcIntelligence intelligence)
+    private async ValueTask<Monster?> SpawnMonsterAsync(MonsterDefinition monsterDefinition, Point point, int? maximumHealth, INpcIntelligence intelligence, MonsterAppearance? appearance = null, IDropGenerator? dropGenerator = null)
     {
         var map = this._map!;
         var spawnArea = new MonsterSpawnArea
@@ -880,10 +886,13 @@ public sealed class BossEncounterContext
             MaximumHealthOverride = maximumHealth,
         };
 
-        var monster = new Monster(spawnArea, monsterDefinition, map, this._gameContext.DropGenerator, intelligence, this._gameContext.PlugInManager, this._gameContext.PathFinderPool);
+        var monster = new Monster(spawnArea, monsterDefinition, map, dropGenerator ?? this._gameContext.DropGenerator, intelligence, this._gameContext.PlugInManager, this._gameContext.PathFinderPool);
         try
         {
             monster.Initialize();
+
+            // The appearance is sent when the monster comes into view, so it's set before.
+            MonsterAppearances.Set(monster, appearance);
             await map.AddAsync(monster).ConfigureAwait(false);
             monster.OnSpawn();
             return monster;

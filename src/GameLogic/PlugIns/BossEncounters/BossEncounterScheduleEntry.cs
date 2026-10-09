@@ -5,22 +5,24 @@
 namespace MUnique.OpenMU.GameLogic.PlugIns.BossEncounters;
 
 using System.Globalization;
+using MUnique.OpenMU.DataModel.Composition;
 
 /// <summary>
 /// A point in time of the week at which a boss encounter starts.
 /// </summary>
+[HorizontalLayout]
 public class BossEncounterScheduleEntry
 {
     /// <summary>
     /// Gets or sets the day on which the encounter starts.
     /// </summary>
-    [Display(Name = "Día")]
+    [Display(Name = "Día", Order = 1)]
     public BossEncounterDay Day { get; set; }
 
     /// <summary>
     /// Gets or sets the time of the day, in the time zone of the server.
     /// </summary>
-    [Display(Name = "Hora", Description = "En la zona horaria del servidor.")]
+    [Display(Name = "Hora", Description = "En la zona horaria del servidor.", Order = 2)]
     public TimeOnly Time { get; set; }
 
     /// <summary>

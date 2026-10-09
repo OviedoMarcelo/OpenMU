@@ -62,8 +62,7 @@ public class BossEncounterConfiguration
         Name = "Kundun Reborn",
         MonsterNumber = KundunNumber,
         HealthMultiplier = 3,
-        MapNumber = Kalima7Number,
-        SpawnPoints = new List<BossEncounterPoint> { new() { X = 26, Y = 76 } },
+        SpawnPoints = new List<BossEncounterPoint> { new() { MapNumber = Kalima7Number, X = 26, Y = 76 } },
         ArenaRadius = 18,
         HideAutomaticSpawns = true,
         Schedule = new List<BossEncounterScheduleEntry>

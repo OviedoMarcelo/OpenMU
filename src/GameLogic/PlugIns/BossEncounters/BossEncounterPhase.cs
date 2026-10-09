@@ -21,13 +21,13 @@ public class BossEncounterPhase
     /// <summary>
     /// Gets or sets the name of the phase.
     /// </summary>
-    [Display(Name = "Nombre")]
+    [Display(Name = "Nombre", Order = 1)]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the health of the boss in percent, at which the phase starts.
     /// </summary>
-    [Display(Name = "Empieza con vida (%)", Description = "La fase empieza cuando la vida del boss baja a este porcentaje. La primera fase usa 100.")]
+    [Display(Name = "Empieza con vida (%)", Description = "La fase empieza cuando la vida del boss baja a este porcentaje. La primera fase usa 100.", Order = 2)]
     [Range(0, 100)]
     public int HealthThreshold { get; set; } = 100;
 
@@ -35,60 +35,61 @@ public class BossEncounterPhase
     /// Gets or sets the message which is shown to the players of the map when the phase starts.
     /// Placeholder: {0} = name of the encounter.
     /// </summary>
-    [Display(Name = "Mensaje al empezar", Description = "Mensaje dorado para los jugadores del mapa. {0} = nombre del encuentro. Vacío = sin mensaje.")]
+    [Display(Name = "Mensaje al empezar", Description = "Mensaje dorado para los jugadores del mapa. {0} = nombre del encuentro. Vacío = sin mensaje.", Order = 3)]
     public LocalizedString EnterMessage { get; set; }
 
     /// <summary>
     /// Gets or sets the multiplier of the damage of the boss during this phase, e.g. for an enrage.
     /// </summary>
-    [Display(Name = "Multiplicador de daño del boss", Description = "1 = sin cambios; 2 = el doble (enrage). Se multiplica con el del encuentro.")]
+    [Display(Name = "Multiplicador de daño del boss", Description = "1 = sin cambios; 2 = el doble (enrage). Se multiplica con el del encuentro.", Order = 4)]
     [Range(0.1, 100)]
     public double BossDamageMultiplier { get; set; } = 1;
 
     /// <summary>
     /// Gets or sets the objects, like pillars or crystals, which appear when the phase starts.
     /// </summary>
-    [Display(Name = "Objetos", Description = "Pilares o cristales que aparecen al empezar la fase y que hay que destruir.")]
+    [Display(Name = "Objetos", Description = "Pilares o cristales que aparecen al empezar la fase y que hay que destruir.", Order = 5)]
     [MemberOfAggregate]
+    [ScaffoldColumn(true)]
     public ICollection<BossEncounterObjectSpawn> Objects { get; set; } = new List<BossEncounterObjectSpawn>();
 
     /// <summary>
     /// Gets or sets the percentage of damage which the boss receives less for each living object.
     /// </summary>
-    [Display(Name = "Reducción de daño por objeto (%)", Description = "Cada objeto vivo hace que el boss reciba este porcentaje menos de daño.")]
+    [Display(Name = "Objetos: reducción de daño del boss por cada uno (%)", Description = "Cada objeto vivo hace que el boss reciba este porcentaje menos de daño.", Order = 6)]
     [Range(0, 100)]
     public int DamageReductionPerObject { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the boss is invulnerable while objects are alive (a shield).
     /// </summary>
-    [Display(Name = "Escudo mientras haya objetos", Description = "El boss no recibe daño hasta que se destruyen todos los objetos de la fase.")]
+    [Display(Name = "Objetos: escudo mientras vivan", Description = "El boss no recibe daño hasta que se destruyen todos los objetos de la fase.", Order = 7)]
     public bool IsBossInvulnerableWhileObjectsAlive { get; set; }
 
     /// <summary>
     /// Gets or sets the time in which all objects have to be destroyed. <see cref="TimeSpan.Zero"/> means no limit.
     /// </summary>
-    [Display(Name = "Tiempo para destruir los objetos", Description = "Si no se destruyen todos a tiempo, se aplica la penalidad y reaparecen. 0 = sin límite.")]
+    [Display(Name = "Objetos: tiempo para destruirlos", Description = "Si no se destruyen todos a tiempo, se aplica la penalidad y reaparecen. 0 = sin límite.", Order = 8)]
     public TimeSpan ObjectsTimeLimit { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum time between the destruction of the first and the last object.
     /// <see cref="TimeSpan.Zero"/> means no limit.
     /// </summary>
-    [Display(Name = "Ventana entre objetos", Description = "Tiempo máximo entre la destrucción del primer y del último objeto, para obligar a coordinar. Si se pasa, se aplica la penalidad y reaparecen. 0 = sin ventana.")]
+    [Display(Name = "Objetos: ventana entre el primero y el último", Description = "Tiempo máximo entre la destrucción del primer y del último objeto, para obligar a coordinar. Si se pasa, se aplica la penalidad y reaparecen. 0 = sin ventana.", Order = 9)]
     public TimeSpan ObjectsKillWindow { get; set; }
 
     /// <summary>
     /// Gets or sets the damage in percent of the maximum health, which every player of the arena receives when the objects weren't destroyed in time.
     /// </summary>
-    [Display(Name = "Penalidad: daño (%)", Description = "Daño a todos los jugadores de la arena, en porcentaje de su vida máxima.")]
+    [Display(Name = "Objetos: penalidad, daño (%)", Description = "Daño a todos los jugadores de la arena, en porcentaje de su vida máxima.", Order = 10)]
     [Range(0, 100)]
     public int FailureDamagePercent { get; set; }
 
     /// <summary>
     /// Gets or sets the health in percent of its maximum health, which the boss heals when the objects weren't destroyed in time.
     /// </summary>
-    [Display(Name = "Penalidad: curación del boss (%)", Description = "Porcentaje de su vida máxima que se cura el boss.")]
+    [Display(Name = "Objetos: penalidad, curación del boss (%)", Description = "Porcentaje de su vida máxima que se cura el boss.", Order = 11)]
     [Range(0, 100)]
     public int FailureBossHealPercent { get; set; }
 
@@ -96,99 +97,100 @@ public class BossEncounterPhase
     /// Gets or sets the message which is shown when the objects weren't destroyed in time.
     /// Placeholder: {0} = name of the encounter.
     /// </summary>
-    [Display(Name = "Mensaje de penalidad", Description = "{0} = nombre del encuentro.")]
+    [Display(Name = "Objetos: mensaje de penalidad", Description = "{0} = nombre del encuentro.", Order = 12)]
     public LocalizedString FailureMessage { get; set; }
 
     /// <summary>
     /// Gets or sets the message which is shown when all objects have been destroyed.
     /// Placeholder: {0} = name of the encounter.
     /// </summary>
-    [Display(Name = "Mensaje al destruir los objetos", Description = "{0} = nombre del encuentro.")]
+    [Display(Name = "Objetos: mensaje al destruirlos", Description = "{0} = nombre del encuentro.", Order = 13)]
     public LocalizedString ObjectsDestroyedMessage { get; set; }
 
     /// <summary>
     /// Gets or sets the interval of the pulse of each living object. <see cref="TimeSpan.Zero"/> means no pulse.
     /// </summary>
-    [Display(Name = "Pulso de los objetos: intervalo", Description = "Cada cuánto cada objeto vivo daña a los jugadores cercanos. 0 = sin pulso.")]
+    [Display(Name = "Objetos: pulso, intervalo", Description = "Cada cuánto cada objeto vivo daña a los jugadores cercanos. 0 = sin pulso.", Order = 14)]
     public TimeSpan PulseInterval { get; set; }
 
     /// <summary>
     /// Gets or sets the radius of the pulse around each object.
     /// </summary>
-    [Display(Name = "Pulso de los objetos: radio")]
+    [Display(Name = "Objetos: pulso, radio", Order = 15)]
     [Range(0, 30)]
     public byte PulseRadius { get; set; }
 
     /// <summary>
     /// Gets or sets the damage of the pulse in percent of the maximum health of the hit player.
     /// </summary>
-    [Display(Name = "Pulso de los objetos: daño (%)")]
+    [Display(Name = "Objetos: pulso, daño (%)", Order = 16)]
     [Range(0, 100)]
     public int PulseDamagePercent { get; set; }
 
     /// <summary>
     /// Gets or sets the monsters which the boss summons.
     /// </summary>
-    [Display(Name = "Adds", Description = "Monstruos que invoca el boss alrededor suyo. Solo se completan los que faltan.")]
+    [Display(Name = "Adds", Description = "Monstruos que invoca el boss alrededor suyo. Solo se completan los que faltan.", Order = 17)]
     [MemberOfAggregate]
+    [ScaffoldColumn(true)]
     public ICollection<BossEncounterSummon> Summons { get; set; } = new List<BossEncounterSummon>();
 
     /// <summary>
     /// Gets or sets the interval of the summons. <see cref="TimeSpan.Zero"/> means only once when the phase starts.
     /// </summary>
-    [Display(Name = "Adds: intervalo", Description = "Cada cuánto vuelve a invocar los adds que faltan. 0 = solo al empezar la fase.")]
+    [Display(Name = "Adds: intervalo", Description = "Cada cuánto vuelve a invocar los adds que faltan. 0 = solo al empezar la fase.", Order = 18)]
     public TimeSpan SummonInterval { get; set; }
 
     /// <summary>
     /// Gets or sets the interval of the telegraphed area attack. <see cref="TimeSpan.Zero"/> means no area attack.
     /// </summary>
-    [Display(Name = "Ataque en área: intervalo", Description = "Cada cuánto marca jugadores (p. ej. meteoritos). 0 = sin ataque en área.")]
+    [Display(Name = "Ataque en área: intervalo", Description = "Cada cuánto marca jugadores (p. ej. meteoritos). 0 = sin ataque en área.", Order = 19)]
     public TimeSpan AreaAttackInterval { get; set; }
 
     /// <summary>
     /// Gets or sets the number of players which are marked by each area attack.
     /// </summary>
-    [Display(Name = "Ataque en área: jugadores marcados")]
+    [Display(Name = "Ataque en área: jugadores marcados", Order = 20)]
     [Range(1, 50)]
     public int AreaAttackTargets { get; set; } = 1;
 
     /// <summary>
     /// Gets or sets the radius of the area attack around the position of a marked player.
     /// </summary>
-    [Display(Name = "Ataque en área: radio")]
+    [Display(Name = "Ataque en área: radio", Order = 21)]
     [Range(0, 30)]
     public byte AreaAttackRadius { get; set; } = 3;
 
     /// <summary>
     /// Gets or sets the time between the mark and the hit, in which the players can move away.
     /// </summary>
-    [Display(Name = "Ataque en área: aviso", Description = "Tiempo entre la marca y el golpe, para que los jugadores se alejen.")]
+    [Display(Name = "Ataque en área: aviso", Description = "Tiempo entre la marca y el golpe, para que los jugadores se alejen.", Order = 22)]
     public TimeSpan AreaAttackDelay { get; set; } = TimeSpan.FromSeconds(3);
 
     /// <summary>
     /// Gets or sets the damage of the area attack in percent of the maximum health of the hit player.
     /// </summary>
-    [Display(Name = "Ataque en área: daño (%)")]
+    [Display(Name = "Ataque en área: daño (%)", Order = 23)]
     [Range(0, 100)]
     public int AreaAttackDamagePercent { get; set; }
 
     /// <summary>
     /// Gets or sets the duration of the stun of the hit players. <see cref="TimeSpan.Zero"/> means no stun.
     /// </summary>
-    [Display(Name = "Ataque en área: stun", Description = "0 = sin stun.")]
+    [Display(Name = "Ataque en área: stun", Description = "0 = sin stun.", Order = 24)]
     public TimeSpan AreaAttackStunDuration { get; set; }
 
     /// <summary>
     /// Gets or sets the message which is shown to the players of the arena when players are marked.
     /// Placeholder: {0} = name of the encounter.
     /// </summary>
-    [Display(Name = "Ataque en área: mensaje", Description = "Mensaje dorado para la arena. {0} = nombre del encuentro.")]
+    [Display(Name = "Ataque en área: mensaje", Description = "Mensaje dorado para la arena. {0} = nombre del encuentro.", Order = 25)]
     public LocalizedString AreaAttackMessage { get; set; }
 
     /// <summary>
     /// Gets or sets the message which is shown to a marked player.
     /// </summary>
-    [Display(Name = "Ataque en área: mensaje al marcado", Description = "Mensaje para el jugador marcado.")]
+    [Display(Name = "Ataque en área: mensaje al marcado", Description = "Mensaje para el jugador marcado.", Order = 26)]
     public LocalizedString AreaAttackMarkedMessage { get; set; }
 
     /// <summary>

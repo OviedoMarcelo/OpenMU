@@ -12071,6 +12071,43 @@
       </Structures>
     </Packet>
     <Packet>
+      <HeaderType>C2HeaderWithSubCode</HeaderType>
+      <Code>F5</Code>
+      <SubCode>09</SubCode>
+      <Name>MonsterAppearance</Name>
+      <Length>44</Length>
+      <Direction>ServerToClient</Direction>
+      <SentWhen>When a monster which looks different than the others of its kind (e.g. the boss of an encounter) came into view, right after the AddNpcsToScope message.</SentWhen>
+      <CausedReaction>The client shows the monster with the size, the glow and the name of this message, until it leaves the view.</CausedReaction>
+      <Fields>
+        <Field>
+          <Index>5</Index>
+          <Type>Byte</Type>
+          <Name>Glow</Name>
+          <Description>The glow, like the glow of an item of that level: 0 = none, 7, 9, 11, 13 or 15; 100 = golden, like the monsters of the golden invasion.</Description>
+        </Field>
+        <Field>
+          <Index>6</Index>
+          <Type>ShortBigEndian</Type>
+          <Name>ObjectId</Name>
+          <Description>The id of the monster, as in the AddNpcsToScope message.</Description>
+        </Field>
+        <Field>
+          <Index>8</Index>
+          <Type>ShortLittleEndian</Type>
+          <Name>ScalePercent</Name>
+          <Description>The size in percent of the normal size of the monster.</Description>
+        </Field>
+        <Field>
+          <Index>12</Index>
+          <Type>String</Type>
+          <Name>Name</Name>
+          <Length>32</Length>
+          <Description>The name which is shown instead of the name of the monster. Empty for its own name.</Description>
+        </Field>
+      </Fields>
+    </Packet>
+    <Packet>
       <HeaderType>C1Header</HeaderType>
       <Code>94</Code>
       <Name>EventChipRegistrationResult</Name>

@@ -5,11 +5,14 @@
 namespace MUnique.OpenMU.Tests;
 
 using MUnique.OpenMU.DataModel.Configuration;
+using MUnique.OpenMU.DataModel.Entities;
 using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.Attributes;
 using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.GameLogic.PlugIns.BossEncounters;
 using MUnique.OpenMU.Pathfinding;
+using Moq;
+using ItemDefinition = MUnique.OpenMU.Persistence.BasicModel.ItemDefinition;
 using MonsterAttribute = MUnique.OpenMU.Persistence.BasicModel.MonsterAttribute;
 using MonsterDefinition = MUnique.OpenMU.Persistence.BasicModel.MonsterDefinition;
 
@@ -205,6 +208,79 @@ public class BossEncounterTest
         Assert.That(map.GetNpcsInRange(new Point(50, 50), 1), Does.Contain(automaticBoss));
     }
 
+    /// <summary>
+    /// Tests that the boss gets the configured appearance before it appears, so that it's sent with the monster.
+    /// </summary>
+    [Test]
+    public async Task BossGetsConfiguredAppearanceAsync()
+    {
+        var gameContext = CreateGameContext();
+        var definition = CreateDefinition();
+        definition.ScalePercent = 150;
+        definition.Glow = MonsterGlow.Level15;
+        definition.DisplayName = "Elite Boss";
+        var context = new BossEncounterContext(gameContext, definition);
+
+        await context.StartAsync(Start).ConfigureAwait(false);
+
+        Assert.That(MonsterAppearances.Get(context.Boss!), Is.EqualTo(new MonsterAppearance(150, MonsterGlow.Level15, "Elite Boss")));
+        Assert.That(MonsterAppearances.Get(context.Objects[0]), Is.Null);
+    }
+
+    /// <summary>
+    /// Tests that a configuration without size, which was stored before the size existed, shows the boss in its normal size.
+    /// </summary>
+    [Test]
+    public void MissingSizeMeansNormalSize()
+    {
+        var definition = new BossEncounterDefinition { ScalePercent = 0 };
+
+        Assert.That(definition.GetBossAppearance().IsDefault, Is.True);
+    }
+
+    /// <summary>
+    /// Tests that the configured drops are generated with their level and quantity, and that a chance of 0 drops nothing.
+    /// </summary>
+    [Test]
+    public async Task BossDropsConfiguredItemsAsync()
+    {
+        var gameContext = CreateGameContext();
+        var itemDefinition = AddItemDefinition(gameContext);
+        var definition = CreateDefinition();
+        definition.Drops.Add(new BossEncounterDrop { Item = itemDefinition, Chance = 100, Quantity = 2, ItemLevel = 9 });
+        definition.Drops.Add(new BossEncounterDrop { Item = itemDefinition, Chance = 0, Quantity = 5 });
+        definition.ReplaceMonsterDrops = true;
+        definition.DropMoney = 1000;
+        var generator = new BossEncounterDropGenerator(CreateMonsterDropGenerator(itemDefinition), definition, gameContext);
+        var player = await CreatePlayerAsync(gameContext, new Point(100, 100)).ConfigureAwait(false);
+
+        var (items, money) = await generator.GenerateItemDropsAsync(gameContext.Configuration.Monsters.First(), 0, player).ConfigureAwait(false);
+
+        Assert.That(items.ToList(), Has.Count.EqualTo(2));
+        Assert.That(items, Has.All.Matches<Item>(item => item.Definition == itemDefinition && item.Level == 9));
+        Assert.That(money, Is.EqualTo(1000));
+    }
+
+    /// <summary>
+    /// Tests that the drops of the monster stay, unless they're replaced.
+    /// </summary>
+    [Test]
+    public async Task BossKeepsMonsterDropsUnlessReplacedAsync()
+    {
+        var gameContext = CreateGameContext();
+        var itemDefinition = AddItemDefinition(gameContext);
+        var definition = CreateDefinition();
+        definition.Drops.Add(new BossEncounterDrop { Item = itemDefinition, Chance = 100, Quantity = 1, ItemLevel = 13 });
+        definition.DropMoney = 1000;
+        var generator = new BossEncounterDropGenerator(CreateMonsterDropGenerator(itemDefinition), definition, gameContext);
+        var player = await CreatePlayerAsync(gameContext, new Point(100, 100)).ConfigureAwait(false);
+
+        var (items, money) = await generator.GenerateItemDropsAsync(gameContext.Configuration.Monsters.First(), 0, player).ConfigureAwait(false);
+
+        Assert.That(items.Select(i => (int)i.Level), Is.EquivalentTo(new[] { 0, 13 }));
+        Assert.That(money, Is.EqualTo(1500));
+    }
+
     private static async ValueTask<(BossEncounterContext Context, Player Player)> StartEncounterAsync()
     {
         var gameContext = CreateGameContext();
@@ -212,6 +288,25 @@ public class BossEncounterTest
         var player = await CreatePlayerAsync(gameContext, new Point(105, 100)).ConfigureAwait(false);
         Assert.That(await context.StartAsync(Start).ConfigureAwait(false), Is.True);
         return (context, player);
+    }
+
+    private static ItemDefinition AddItemDefinition(IGameContext gameContext)
+    {
+        var itemDefinition = new ItemDefinition { Id = Guid.NewGuid(), Group = 14, Number = 13, MaximumItemLevel = 15, Durability = 1 };
+        gameContext.Configuration.Items.Add(itemDefinition);
+        return itemDefinition;
+    }
+
+    /// <summary>
+    /// Creates the drop generator of the monsters, which drops one item of level 0 and 500 zen.
+    /// </summary>
+    private static IDropGenerator CreateMonsterDropGenerator(ItemDefinition itemDefinition)
+    {
+        var monsterDrop = new TemporaryItem { Definition = itemDefinition };
+        var generator = new Mock<IDropGenerator>();
+        generator.Setup(g => g.GenerateItemDropsAsync(It.IsAny<DataModel.Configuration.MonsterDefinition>(), It.IsAny<int>(), It.IsAny<Player>()))
+            .Returns(ValueTask.FromResult<(IEnumerable<Item> Items, uint? Money)>((new Item[] { monsterDrop }, 500)));
+        return generator.Object;
     }
 
     private static IGameContext CreateGameContext()
@@ -236,8 +331,7 @@ public class BossEncounterTest
         Name = "Test",
         MonsterNumber = BossNumber,
         HealthMultiplier = 2,
-        MapNumber = 0,
-        SpawnPoints = new List<BossEncounterPoint> { new() { X = 100, Y = 100 } },
+        SpawnPoints = new List<BossEncounterPoint> { new() { MapNumber = 0, X = 100, Y = 100 } },
         ArenaRadius = 18,
         MaximumDuration = TimeSpan.FromMinutes(20),
         Phases = new List<BossEncounterPhase>
