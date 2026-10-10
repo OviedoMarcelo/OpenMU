@@ -6,6 +6,8 @@ namespace MUnique.OpenMU.GameServer.RemoteView.World;
 
 using System.Runtime.InteropServices;
 using MUnique.OpenMU.GameLogic;
+using MUnique.OpenMU.GameLogic.Attributes;
+using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.GameLogic.Properties;
 using MUnique.OpenMU.GameLogic.Views;
 using MUnique.OpenMU.GameLogic.Views.World;
@@ -43,9 +45,20 @@ public class ObjectGotKilledPlugIn : IObjectGotKilledPlugIn
         var isCombo = killed.LastDeath?.FinalHit.Attributes.HasFlag(DamageAttributes.Combo) ?? false;
         skillId = isCombo ? ShowSkillAnimationPlugIn.ComboSkillId : skillId;
         await connection.SendObjectGotKilledAsync(killedId, skillId, killerId).ConfigureAwait(false);
-        if (this._player == killed && killer is Player killerPlayer && this._player.DuelRoom is null)
+        if (this._player != killed)
+        {
+            return;
+        }
+
+        if (killer is Player killerPlayer && this._player.DuelRoom is null)
         {
             await this._player.ShowLocalizedBlueMessageAsync(nameof(PlayerMessage.YouGotKilledBy), killerPlayer.Name).ConfigureAwait(false);
+        }
+        else if (killer is NonPlayerCharacter { Definition: { } definition })
+        {
+            // Monsters and traps: which one it was, and its level, as there are often several kinds around.
+            var level = (int)definition[Stats.Level];
+            await this._player.ShowLocalizedBlueMessageAsync(nameof(PlayerMessage.YouGotKilledByMonster), definition.Designation, level).ConfigureAwait(false);
         }
     }
 }

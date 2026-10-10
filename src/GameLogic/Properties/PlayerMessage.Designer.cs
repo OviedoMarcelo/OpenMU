@@ -2120,6 +2120,15 @@ namespace MUnique.OpenMU.GameLogic.Properties {
                 return ResourceManager.GetString("YouGotKilledBy", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to You got killed by {0} (level {1}).
+        /// </summary>
+        public static string YouGotKilledByMonster {
+            get {
+                return ResourceManager.GetString("YouGotKilledByMonster", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to You are lacking of Jewels..
