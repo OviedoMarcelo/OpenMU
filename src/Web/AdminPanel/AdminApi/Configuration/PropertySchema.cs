@@ -25,6 +25,7 @@ using System.Text.Json.Serialization;
 /// <param name="TargetType">The type of a referenced or embedded object, or of the objects of a list.</param>
 /// <param name="TargetIsBrowsable">If set to <c>true</c>, the <paramref name="TargetType"/> has its own list, so the objects are linked instead of shown inline.</param>
 /// <param name="IsReadOnly">If set to <c>true</c>, the value can't be changed by the admin API.</param>
+/// <param name="NumberOf">The type whose objects are referenced by their number instead of a reference, e.g. a monster by its number; see <see cref="ConfigurationTypeRegistry"/>.</param>
 public record PropertySchema(
     string Name,
     string Caption,
@@ -40,7 +41,8 @@ public record PropertySchema(
     IReadOnlyList<EnumValue>? EnumValues,
     string? TargetType,
     bool TargetIsBrowsable,
-    bool IsReadOnly)
+    bool IsReadOnly,
+    string? NumberOf = null)
 {
     /// <summary>
     /// Gets the property which is described.
