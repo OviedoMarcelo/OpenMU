@@ -711,6 +711,9 @@
   <data name="YouGotKilledBy" xml:space="preserve">
     <value>You got killed by {0}</value>
   </data>
+  <data name="YouGotKilledByMonster" xml:space="preserve">
+    <value>You got killed by {0} (level {1})</value>
+  </data>
   <data name="DisconnectedByGameMaster" xml:space="preserve">
     <value>You got disconnected by a game master.</value>
   </data>

@@ -58,6 +58,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="YouGotKilledBy" xml:space="preserve">
+    <value>Te mató {0}</value>
+  </data>
+  <data name="YouGotKilledByMonster" xml:space="preserve">
+    <value>Te mató {0} (nivel {1})</value>
+  </data>
   <data name="LearnSkillAlreadyKnown" xml:space="preserve">
     <value>Ya conoces esta habilidad.</value>
   </data>
