@@ -8,6 +8,7 @@ using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging.Abstractions;
 using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.DataModel.Configuration.Items;
+using MUnique.OpenMU.DataModel.Entities;
 using MUnique.OpenMU.PlugIns;
 using MUnique.OpenMU.Web.AdminPanel.AdminApi.Configuration;
 using BasicModel = MUnique.OpenMU.Persistence.BasicModel;
@@ -137,5 +138,25 @@ public class ConfigurationApiTests
 
         Assert.That(values["MaximumLevel"]!.GetValue<short>(), Is.EqualTo(400));
         Assert.That(values["Items"]!["count"]!.GetValue<int>(), Is.EqualTo(2));
+    }
+
+    /// <summary>
+    /// Tests that the accounts are described too, without their secrets, which are only replaced.
+    /// </summary>
+    [Test]
+    public void AccountsAreDescribedWithoutSecrets()
+    {
+        var schema = this._registry.GetSchema(typeof(Account));
+        var names = schema.Properties.Select(p => p.Name).ToList();
+
+        Assert.That(names, Does.Contain(nameof(Account.LoginName)).And.Contain(nameof(Account.Characters)));
+        Assert.That(names, Has.No.Member(nameof(Account.PasswordHash)).And.No.Member(nameof(Account.SecurityCode)).And.No.Member(nameof(Account.VaultPassword)));
+        Assert.That(schema.Properties.Single(p => p.Name == nameof(Account.Characters)).Kind, Is.EqualTo(PropertyKind.EmbeddedList));
+        Assert.That(this._registry.GetType(nameof(Character)), Is.EqualTo(typeof(Character)));
+
+        var account = new BasicModel.Account { LoginName = "test", PasswordHash = "secret", SecurityCode = "1234" };
+        var values = this._serializer.SerializeObject(account, typeof(Account))["values"]!.AsObject();
+        Assert.That(values.ContainsKey(nameof(Account.PasswordHash)), Is.False);
+        Assert.That(values.ToJsonString(), Does.Not.Contain("secret"));
     }
 }

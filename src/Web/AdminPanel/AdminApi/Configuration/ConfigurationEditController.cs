@@ -5,6 +5,7 @@
 namespace MUnique.OpenMU.Web.AdminPanel.AdminApi.Configuration;
 
 using System.Text.Json.Nodes;
+using System.Threading;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -29,7 +30,10 @@ using MUnique.OpenMU.Web.AdminPanel.Auth;
 [Authorize(AuthenticationSchemes = AdminApiDefaults.AuthenticationScheme, Policy = AdminPolicies.Operator)]
 public class ConfigurationEditController : ControllerBase
 {
-    private const int MaximumAuditValueLength = 200;
+    /// <summary>
+    /// Changes on the context of the data source are made one after another; a context isn't thread safe.
+    /// </summary>
+    private static readonly SemaphoreSlim DataSourceLock = new(1, 1);
 
     private readonly IDataSource<GameConfiguration> _dataSource;
     private readonly IPersistenceContextProvider _contextProvider;
@@ -82,6 +86,11 @@ public class ConfigurationEditController : ControllerBase
             return this.NotFound();
         }
 
+        if (this._dataSource.IsSupporting(clrType))
+        {
+            return await this.UpdateInDataSourceAsync(clrType, id, request.Values).ConfigureAwait(false);
+        }
+
         using var context = await this.CreateContextAsync(clrType).ConfigureAwait(false);
         var obj = await context.GetByIdAsync(id, clrType, this.HttpContext.RequestAborted).ConfigureAwait(false);
         if (obj is null)
@@ -96,7 +105,7 @@ public class ConfigurationEditController : ControllerBase
         }
 
         var after = this._serializer.SerializeObject(obj, clrType);
-        await this.AuditAsync(AuditAction.Updated, clrType, obj, this.GetChanges(clrType, before, after)).ConfigureAwait(false);
+        await this.AuditAsync(AuditAction.Updated, clrType, obj, AuditChanges.Between(this._registry.GetSchema(clrType), before, after)).ConfigureAwait(false);
         return after;
     }
 
@@ -128,7 +137,7 @@ public class ConfigurationEditController : ControllerBase
         }
 
         var after = this._serializer.SerializeObject(obj, clrType);
-        await this.AuditAsync(AuditAction.Created, clrType, obj, this.GetChanges(clrType, before, after)).ConfigureAwait(false);
+        await this.AuditAsync(AuditAction.Created, clrType, obj, AuditChanges.Between(this._registry.GetSchema(clrType), before, after)).ConfigureAwait(false);
         return this.StatusCode(StatusCodes.Status201Created, after);
     }
 
@@ -183,21 +192,57 @@ public class ConfigurationEditController : ControllerBase
         return this.NoContent();
     }
 
-    private static string? Truncate(string? value) =>
-        value is { Length: > MaximumAuditValueLength } ? value[..MaximumAuditValueLength] + "…" : value;
-
-    private static string? DescribeValue(JsonNode? value, PropertySchema property)
+    /// <summary>
+    /// Changes an object of the game configuration on the context of the data source, like the edit pages
+    /// of the admin panel do. That context has the whole configuration loaded - a typed context doesn't
+    /// load the owned objects of every owned object (e.g. the items of the store of a merchant), so they
+    /// would be taken as new. When a value is invalid or saving fails, the changes are discarded.
+    /// </summary>
+    private async Task<ActionResult<JsonObject>> UpdateInDataSourceAsync(Type type, Guid id, JsonObject? values)
     {
-        return value switch
+        await DataSourceLock.WaitAsync(this.HttpContext.RequestAborted).ConfigureAwait(false);
+        try
         {
-            null => null,
-            JsonObject reference when property.Kind is PropertyKind.Reference || (property.Kind is PropertyKind.Embedded && property.TargetIsBrowsable) => reference["name"]?.GetValue<string>(),
-            JsonArray flags when property.Kind is PropertyKind.Flags => string.Join(", ", flags.Select(f => f?.GetValue<string>())),
-            JsonArray list => $"{list.Count} elemento(s)",
-            JsonObject => null,
-            JsonValue simple when simple.TryGetValue<string>(out var text) => text,
-            _ => value.ToJsonString(),
-        };
+            await this._dataSource.GetOwnerAsync(default, this.HttpContext.RequestAborted).ConfigureAwait(false);
+            var context = await this._dataSource.GetContextAsync(this.HttpContext.RequestAborted).ConfigureAwait(false);
+            object? obj = type == typeof(GameConfiguration)
+                ? await this._dataSource.GetOwnerAsync(default, this.HttpContext.RequestAborted).ConfigureAwait(false)
+                : this._dataSource.Get(id);
+            if (obj is null || !type.IsInstanceOfType(obj) || obj.GetId() != id)
+            {
+                return this.NotFound();
+            }
+
+            var before = this._serializer.SerializeObject(obj, type);
+            try
+            {
+                await this._writer.ApplyAsync(obj, type, values ?? [], context, this.HttpContext.RequestAborted).ConfigureAwait(false);
+            }
+            catch (ConfigurationValidationException ex)
+            {
+                await this._dataSource.ForceDiscardChangesAsync().ConfigureAwait(false);
+                return this.BadRequest(new ErrorResponse("Hay valores inválidos.", ex.Errors));
+            }
+
+            try
+            {
+                await context.SaveChangesAsync(this.HttpContext.RequestAborted).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, "{Type} {Id} couldn't be saved.", type.Name, id);
+                await this._dataSource.ForceDiscardChangesAsync().ConfigureAwait(false);
+                return this.Conflict(new ErrorResponse($"No se pudo guardar: {(ex.InnerException ?? ex).Message}"));
+            }
+
+            var after = this._serializer.SerializeObject(obj, type);
+            await this.AuditAsync(AuditAction.Updated, type, obj, AuditChanges.Between(this._registry.GetSchema(type), before, after)).ConfigureAwait(false);
+            return after;
+        }
+        finally
+        {
+            DataSourceLock.Release();
+        }
     }
 
     private async Task<IContext> CreateContextAsync(Type type, bool useCache = true)
@@ -252,20 +297,6 @@ public class ConfigurationEditController : ControllerBase
                 this._logger.LogWarning(ex, "The configuration couldn't be loaded again after a change.");
             }
         });
-    }
-
-    private IReadOnlyList<AuditChange> GetChanges(Type type, JsonObject before, JsonObject after)
-    {
-        var beforeValues = before["values"]!.AsObject();
-        var afterValues = after["values"]!.AsObject();
-        return this._registry.GetSchema(type).Properties
-            .Where(p => !JsonNode.DeepEquals(beforeValues[p.Name], afterValues[p.Name]))
-            .Select(p => new AuditChange(
-                p.Name,
-                p.Caption,
-                Truncate(DescribeValue(beforeValues[p.Name], p)),
-                Truncate(DescribeValue(afterValues[p.Name], p))))
-            .ToList();
     }
 
     private Task AuditAsync(AuditAction action, Type type, object obj, IReadOnlyList<AuditChange> changes)

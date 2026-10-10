@@ -10,6 +10,7 @@ using System.Reflection;
 using MUnique.OpenMU.DataModel;
 using MUnique.OpenMU.DataModel.Composition;
 using MUnique.OpenMU.DataModel.Configuration;
+using MUnique.OpenMU.DataModel.Entities;
 using MUnique.OpenMU.Interfaces;
 using MUnique.OpenMU.PlugIns;
 using MUnique.OpenMU.Web.Shared;
@@ -37,6 +38,16 @@ public class ConfigurationTypeRegistry
     /// is resolved by reflection), which made every page with them slow.
     /// </summary>
     private static readonly HashSet<Type> ExcludedTypes = [typeof(PlugInConfiguration)];
+
+    /// <summary>
+    /// Secrets of the accounts, which are never sent; they can only be replaced (see the accounts controller).
+    /// </summary>
+    private static readonly HashSet<(Type Type, string Property)> HiddenProperties =
+    [
+        (typeof(Account), nameof(Account.PasswordHash)),
+        (typeof(Account), nameof(Account.SecurityCode)),
+        (typeof(Account), nameof(Account.VaultPassword)),
+    ];
 
     private readonly Dictionary<string, Type> _typesByName = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<Type> _browsableTypes = [];
@@ -67,9 +78,19 @@ public class ConfigurationTypeRegistry
         }
 
         this.Register(typeof(GameConfiguration));
+
+        // The accounts with their characters are edited with the same forms.
+        this.Register(typeof(Account));
+
         foreach (var type in GameConfigurationHelper.Enumerables.Keys)
         {
             this.Register(type);
+        }
+
+        // The custom configurations of the plugins, e.g. of the chat commands.
+        foreach (var configurationType in FindPlugInConfigurationTypes())
+        {
+            this.Register(configurationType);
         }
     }
 
@@ -77,6 +98,17 @@ public class ConfigurationTypeRegistry
     /// Gets the types which have their own list, i.e. the collections of the game configuration.
     /// </summary>
     public IReadOnlyCollection<Type> BrowsableTypes => this._browsableTypes;
+
+    /// <summary>
+    /// Determines whether objects of the type are persisted entities: the types of the data model and
+    /// the collections of the game configuration (some, like the attribute definitions, are elsewhere).
+    /// The custom configurations of plugins are plain objects instead, which are serialized as JSON.
+    /// </summary>
+    /// <param name="type">The type.</param>
+    /// <returns><c>true</c>, if objects of the type are entities.</returns>
+    public static bool IsEntityType(Type type) =>
+        (type.Namespace?.StartsWith("MUnique.OpenMU.DataModel", StringComparison.Ordinal) ?? false)
+        || GameConfigurationHelper.Enumerables.ContainsKey(type);
 
     /// <summary>
     /// Gets the type with the specified name.
@@ -115,6 +147,9 @@ public class ConfigurationTypeRegistry
         ConfigurationTypeGroups.FindEntry(type)?.Caption
         ?? (type.GetCustomAttribute<DisplayAttribute>()?.GetName() ?? type.GetTypeCaption());
 
+    private static IEnumerable<PropertyInfo> GetProperties(Type type) =>
+        ConfigurationPropertyFilter.GetVisibleProperties(type).Where(property => !HiddenProperties.Contains((type, property.Name)));
+
     private static Type? GetCollectionElementType(Type type)
     {
         if (type == typeof(string) || type.IsArray || !type.IsGenericType)
@@ -130,6 +165,26 @@ public class ConfigurationTypeRegistry
         }
 
         return null;
+    }
+
+    private static IEnumerable<Type> FindPlugInConfigurationTypes()
+    {
+        return AppDomain.CurrentDomain.GetAssemblies()
+            .Where(assembly => assembly.FullName?.StartsWith(nameof(MUnique), StringComparison.Ordinal) ?? false)
+            .SelectMany(assembly =>
+            {
+                try
+                {
+                    return assembly.DefinedTypes.Where(type => type.GetCustomAttribute<PlugInAttribute>() is not null).Select(type => type.AsType());
+                }
+                catch (ReflectionTypeLoadException)
+                {
+                    return [];
+                }
+            })
+            .Select(type => type.GetCustomConfigurationType())
+            .OfType<Type>()
+            .Distinct();
     }
 
     private static bool IsDataModelType(Type type) =>
@@ -219,7 +274,7 @@ public class ConfigurationTypeRegistry
             PropertyKind.Unknown => true,
             PropertyKind.Embedded or PropertyKind.EmbeddedList when targetIsBrowsable => true,
             PropertyKind.EmbeddedList or PropertyKind.ReferenceList or PropertyKind.ValueList => false,
-            _ => property.Name == "Id" || property.SetMethod is not { IsPublic: true },
+            _ => (property.Name == "Id" && property.PropertyType == typeof(Guid)) || property.SetMethod is not { IsPublic: true },
         };
     }
 
@@ -240,7 +295,7 @@ public class ConfigurationTypeRegistry
                 }
             }
 
-            foreach (var property in ConfigurationPropertyFilter.GetVisibleProperties(current))
+            foreach (var property in GetProperties(current))
             {
                 var target = GetCollectionElementType(property.PropertyType) ?? property.PropertyType;
                 if (IsDataModelType(target) && !ExcludedTypes.Contains(target) && !this._typesByName.ContainsKey(target.Name))
@@ -253,7 +308,7 @@ public class ConfigurationTypeRegistry
 
     private TypeSchema CreateSchema(Type type)
     {
-        var properties = ConfigurationPropertyFilter.GetVisibleProperties(type)
+        var properties = GetProperties(type)
             .Select((property, index) => (Property: this.CreatePropertySchema(type, property), Index: index))
             .Where(p => p.Property.TargetClrType is null || !ExcludedTypes.Contains(p.Property.TargetClrType))
             .OrderBy(p => p.Property.Order ?? int.MaxValue)
@@ -303,6 +358,10 @@ public class ConfigurationTypeRegistry
         var valueType = underlyingType ?? propertyType;
         var isMemberOfAggregate = property.GetCustomAttribute<MemberOfAggregateAttribute>() is not null;
 
+        // A plain object (e.g. the configuration of a plugin) owns its objects, except the entities
+        // which it references, like an item definition.
+        var ownsPlainObjects = !IsEntityType(declaringType);
+
         PropertyKind kind;
         Type? target = null;
         Type? enumType = null;
@@ -316,7 +375,7 @@ public class ConfigurationTypeRegistry
             }
             else
             {
-                kind = isMemberOfAggregate ? PropertyKind.EmbeddedList : PropertyKind.ReferenceList;
+                kind = isMemberOfAggregate || (ownsPlainObjects && !IsEntityType(elementType)) ? PropertyKind.EmbeddedList : PropertyKind.ReferenceList;
                 target = elementType;
             }
         }
@@ -329,7 +388,7 @@ public class ConfigurationTypeRegistry
             }
             else if (kind == PropertyKind.Unknown && IsDataModelType(valueType))
             {
-                kind = isMemberOfAggregate ? PropertyKind.Embedded : PropertyKind.Reference;
+                kind = isMemberOfAggregate || (ownsPlainObjects && !IsEntityType(valueType)) ? PropertyKind.Embedded : PropertyKind.Reference;
                 target = valueType;
             }
         }

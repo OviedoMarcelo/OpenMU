@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
+using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.Interfaces;
 using MUnique.OpenMU.Persistence;
 
@@ -47,10 +48,15 @@ public class ConfigurationValueWriter
     /// <param name="values">The values, by the names of the properties.</param>
     /// <param name="context">The context which loaded the object; it resolves references and creates owned objects.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="plainObjects">
+    /// If set to <c>true</c>, the object is a plain object (e.g. the configuration of a plugin) instead
+    /// of an entity: its owned objects are created without the context and are not deleted, and the
+    /// objects of its lists, which have no ids, are matched by their position.
+    /// </param>
     /// <exception cref="ConfigurationValidationException">When values are invalid.</exception>
-    public async Task ApplyAsync(object target, Type type, JsonObject values, IContext context, CancellationToken cancellationToken = default)
+    public async Task ApplyAsync(object target, Type type, JsonObject values, IContext context, CancellationToken cancellationToken = default, bool plainObjects = false)
     {
-        var state = new WriteState(context, cancellationToken);
+        var state = new WriteState(context, cancellationToken, plainObjects);
         await this.ApplyObjectAsync(target, type, values, string.Empty, state).ConfigureAwait(false);
         if (state.Errors.Count > 0)
         {
@@ -77,6 +83,14 @@ public class ConfigurationValueWriter
         await ((ValueTask<bool>)method.Invoke(context, [obj])!).ConfigureAwait(false);
     }
 
+    private static object CreateOwned(WriteState state, Type type) =>
+        state.PlainObjects
+            ? Activator.CreateInstance(type) ?? throw new InvalidOperationException($"{type} can't be created.")
+            : state.Context.CreateNew(type);
+
+    private static ValueTask DeleteOwnedAsync(WriteState state, object obj) =>
+        state.PlainObjects ? ValueTask.CompletedTask : DeleteAsync(state.Context, obj);
+
     private static Guid? ReadId(JsonNode? node)
     {
         var id = node is JsonObject obj ? obj["id"] : null;
@@ -90,6 +104,12 @@ public class ConfigurationValueWriter
 
     private static void Validate(object target, string path, WriteState state)
     {
+        // A spawn without a monster would break the spawning on the game server.
+        if (target is MonsterSpawnArea { MonsterDefinition: null })
+        {
+            state.Errors.Add(new FieldError(Combine(path, nameof(MonsterSpawnArea.MonsterDefinition)), "Elegí el monstruo del spawn."));
+        }
+
         var results = new List<ValidationResult>();
         if (Validator.TryValidateObject(target, new ValidationContext(target), results, true))
         {
@@ -105,10 +125,36 @@ public class ConfigurationValueWriter
                 // A range is already checked when the value is applied, with a Spanish message.
                 if (state.Errors.All(e => e.Path != memberPath))
                 {
-                    state.Errors.Add(new FieldError(memberPath, result.ErrorMessage ?? "Valor inválido."));
+                    state.Errors.Add(new FieldError(memberPath, SpanishMessage(target, member) ?? result.ErrorMessage ?? "Valor inválido."));
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Gets a Spanish message for the first validation attribute of the property which fails; the
+    /// messages of the data annotations are English.
+    /// </summary>
+    private static string? SpanishMessage(object target, string member)
+    {
+        if (member.Length == 0 || target.GetType().GetProperty(member) is not { } property)
+        {
+            return null;
+        }
+
+        var value = property.GetValue(target);
+        var failed = property.GetCustomAttributes<ValidationAttribute>(true).FirstOrDefault(a => !a.IsValid(value));
+        return failed switch
+        {
+            RequiredAttribute => "Es obligatorio.",
+            RangeAttribute range => $"Tiene que estar entre {range.Minimum} y {range.Maximum}.",
+            StringLengthAttribute length when length.MinimumLength > 0 => $"Tiene que tener entre {length.MinimumLength} y {length.MaximumLength} caracteres.",
+            StringLengthAttribute length => $"Tiene que tener como máximo {length.MaximumLength} caracteres.",
+            MaxLengthAttribute maxLength => $"Tiene que tener como máximo {maxLength.Length}.",
+            MinLengthAttribute minLength => $"Tiene que tener como mínimo {minLength.Length}.",
+            RegularExpressionAttribute => "No tiene el formato correcto.",
+            _ => null,
+        };
     }
 
     private static JsonObject ReadValues(JsonNode? node, string path)
@@ -367,7 +413,7 @@ public class ConfigurationValueWriter
             if (current is not null)
             {
                 property.Property.SetValue(target, null);
-                await DeleteAsync(state.Context, current).ConfigureAwait(false);
+                await DeleteOwnedAsync(state, current).ConfigureAwait(false);
             }
 
             return;
@@ -375,7 +421,7 @@ public class ConfigurationValueWriter
 
         if (current is null)
         {
-            current = state.Context.CreateNew(property.TargetClrType!);
+            current = CreateOwned(state, property.TargetClrType!);
             property.Property.SetValue(target, current);
         }
 
@@ -384,6 +430,12 @@ public class ConfigurationValueWriter
 
     private async Task ApplyEmbeddedListAsync(object target, PropertySchema property, JsonNode? node, string path, WriteState state)
     {
+        if (state.PlainObjects)
+        {
+            await this.ApplyPlainListAsync(target, property, node, path, state).ConfigureAwait(false);
+            return;
+        }
+
         var collection = GetCollection(target, property);
         var existing = collection.Items.ToDictionary(item => item.GetId());
         var kept = new HashSet<Guid>();
@@ -399,7 +451,7 @@ public class ConfigurationValueWriter
             }
             else
             {
-                var newItem = state.Context.CreateNew(property.TargetClrType!);
+                var newItem = CreateOwned(state, property.TargetClrType!);
                 await this.ApplyObjectAsync(newItem, property.TargetClrType!, values, itemPath, state).ConfigureAwait(false);
                 added.Add(newItem);
             }
@@ -408,16 +460,39 @@ public class ConfigurationValueWriter
         foreach (var removed in existing.Where(e => !kept.Contains(e.Key)).Select(e => e.Value))
         {
             collection.Remove(removed);
-            await DeleteAsync(state.Context, removed).ConfigureAwait(false);
+            await DeleteOwnedAsync(state, removed).ConfigureAwait(false);
         }
 
         added.ForEach(collection.Add);
     }
 
     /// <summary>
+    /// Applies a list of plain objects, which have no ids: the n-th sent object changes the n-th
+    /// object of the list, so its values which aren't sent stay.
+    /// </summary>
+    private async Task ApplyPlainListAsync(object target, PropertySchema property, JsonNode? node, string path, WriteState state)
+    {
+        var collection = GetCollection(target, property);
+        var existing = collection.Items.ToList();
+        var result = new List<object>();
+        var index = 0;
+        foreach (var item in node?.AsArray() ?? [])
+        {
+            var itemPath = $"{path}[{index}]";
+            var obj = index < existing.Count ? existing[index] : CreateOwned(state, property.TargetClrType!);
+            await this.ApplyObjectAsync(obj, property.TargetClrType!, ReadValues(item, itemPath), itemPath, state).ConfigureAwait(false);
+            result.Add(obj);
+            index++;
+        }
+
+        collection.Clear();
+        result.ForEach(collection.Add);
+    }
+
+    /// <summary>
     /// The state of applying values to an object and its owned objects.
     /// </summary>
-    private sealed record WriteState(IContext Context, CancellationToken CancellationToken)
+    private sealed record WriteState(IContext Context, CancellationToken CancellationToken, bool PlainObjects)
     {
         public List<FieldError> Errors { get; } = [];
     }

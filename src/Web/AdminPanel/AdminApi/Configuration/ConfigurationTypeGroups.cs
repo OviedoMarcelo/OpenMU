@@ -29,7 +29,7 @@ public static class ConfigurationTypeGroups
         ]),
         new("Mundo", [
             new(typeof(GameMapDefinition), "Mapas", "Mapas: multiplicador de experiencia, requisitos de entrada, zonas de aparición y drops propios.", ["Number", "ExpMultiplier", "SafezoneMap"]),
-            new(typeof(MonsterDefinition), "Monstruos", "Monstruos y NPC: vida, daño, defensa, velocidad, respawn y qué sueltan.", ["Number", "ObjectKind", "MoveRange", "AttackRange", "RespawnDelay", "NumberOfMaximumItemDrops"]),
+            new(typeof(MonsterDefinition), "Monstruos", "Monstruos y NPC: vida, daño, defensa, velocidad, respawn y qué sueltan.", ["Number", "ObjectKind", "NpcWindow", "MoveRange", "AttackRange", "RespawnDelay", "NumberOfMaximumItemDrops"]),
             new(typeof(WarpInfo), "Lista de warps", "Lista de teletransportes del comando /warp: costo, nivel mínimo y destino.", ["Index", "Costs", "LevelRequirement", "Gate"]),
         ]),
         new("Ítems y economía", [
