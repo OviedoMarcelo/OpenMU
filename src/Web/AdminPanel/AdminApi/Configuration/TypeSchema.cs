@@ -14,6 +14,7 @@ namespace MUnique.OpenMU.Web.AdminPanel.AdminApi.Configuration;
 /// <param name="NameProperty">The property which holds the name of an object, if any.</param>
 /// <param name="ListColumns">The properties which are shown as columns of a list of objects of this type.</param>
 /// <param name="Properties">The properties.</param>
+/// <param name="CanCreate">If set to <c>true</c>, objects of the type can be created and deleted by the admin API.</param>
 public record TypeSchema(
     string Name,
     string Caption,
@@ -21,4 +22,5 @@ public record TypeSchema(
     bool IsBrowsable,
     string? NameProperty,
     IReadOnlyList<string> ListColumns,
-    IReadOnlyList<PropertySchema> Properties);
+    IReadOnlyList<PropertySchema> Properties,
+    bool CanCreate);

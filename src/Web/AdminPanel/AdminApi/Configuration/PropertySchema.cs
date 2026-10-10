@@ -24,6 +24,7 @@ using System.Text.Json.Serialization;
 /// <param name="EnumValues">The possible values of an enumeration.</param>
 /// <param name="TargetType">The type of a referenced or embedded object, or of the objects of a list.</param>
 /// <param name="TargetIsBrowsable">If set to <c>true</c>, the <paramref name="TargetType"/> has its own list, so the objects are linked instead of shown inline.</param>
+/// <param name="IsReadOnly">If set to <c>true</c>, the value can't be changed by the admin API.</param>
 public record PropertySchema(
     string Name,
     string Caption,
@@ -38,7 +39,8 @@ public record PropertySchema(
     double? Maximum,
     IReadOnlyList<EnumValue>? EnumValues,
     string? TargetType,
-    bool TargetIsBrowsable)
+    bool TargetIsBrowsable,
+    bool IsReadOnly)
 {
     /// <summary>
     /// Gets the property which is described.

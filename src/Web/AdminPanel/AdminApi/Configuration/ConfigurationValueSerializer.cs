@@ -79,7 +79,7 @@ public class ConfigurationValueSerializer
         {
             null => null,
             Enum enumValue => enumValue.ToString(),
-            LocalizedString localizedString => localizedString.ToString(),
+            LocalizedString localizedString => localizedString.ValueInNeutralLanguage,
             TimeSpan timeSpan => timeSpan.ToString("c", CultureInfo.InvariantCulture),
             byte[] bytes => Convert.ToHexString(bytes),
             float.NaN or double.NaN => null,

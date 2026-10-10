@@ -207,6 +207,22 @@ public class ConfigurationTypeRegistry
             .ToList();
     }
 
+    /// <summary>
+    /// Determines whether a property can't be changed: the id, values without a public setter, values
+    /// which the API doesn't understand, and the collections whose objects have their own list (e.g. the
+    /// items of the game configuration), because these are changed on their own pages.
+    /// </summary>
+    private static bool IsReadOnly(PropertyInfo property, PropertyKind kind, bool targetIsBrowsable)
+    {
+        return kind switch
+        {
+            PropertyKind.Unknown => true,
+            PropertyKind.Embedded or PropertyKind.EmbeddedList when targetIsBrowsable => true,
+            PropertyKind.EmbeddedList or PropertyKind.ReferenceList or PropertyKind.ValueList => false,
+            _ => property.Name == "Id" || property.SetMethod is not { IsPublic: true },
+        };
+    }
+
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
 
     private void Register(Type type)
@@ -271,7 +287,8 @@ public class ConfigurationTypeRegistry
             this.IsBrowsable(type),
             nameProperty?.Name,
             listColumns,
-            properties);
+            properties,
+            this.IsBrowsable(type) && type != typeof(GameConfiguration));
     }
 
     private PropertySchema CreatePropertySchema(Type declaringType, PropertyInfo property)
@@ -331,7 +348,8 @@ public class ConfigurationTypeRegistry
             ToDouble(range?.Maximum),
             enumType is null ? null : GetEnumValues(enumType),
             target is null ? null : this.GetName(target),
-            target is not null && this.IsBrowsable(target))
+            target is not null && this.IsBrowsable(target),
+            IsReadOnly(property, kind, target is not null && this.IsBrowsable(target)))
         {
             Property = property,
             TargetClrType = target,
