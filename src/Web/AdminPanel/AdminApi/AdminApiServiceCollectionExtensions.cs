@@ -5,7 +5,11 @@
 namespace MUnique.OpenMU.Web.AdminPanel.AdminApi;
 
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using MUnique.OpenMU.Web.AdminPanel.AdminApi.Audit;
+using MUnique.OpenMU.Web.AdminPanel.AdminApi.Configuration;
 
 /// <summary>
 /// Extensions which add the admin API, which is used by the separate admin frontend.
@@ -21,6 +25,12 @@ public static class AdminApiServiceCollectionExtensions
     {
         services.AddSingleton<AdminTokenService>();
         services.AddSingleton<ServerMetricsSampler>();
+        services.AddSingleton<ConfigurationTypeRegistry>();
+        services.AddSingleton<ConfigurationValueSerializer>();
+        services.AddSingleton<ConfigurationValueWriter>();
+        services.AddSingleton(provider => new AdminAuditLog(
+            provider.GetService<IConfiguration>()?[AdminAuditLog.PathConfigurationKey] is { Length: > 0 } path ? path : AdminAuditLog.DefaultPath,
+            provider.GetRequiredService<ILogger<AdminAuditLog>>()));
         services.AddHostedService(provider => provider.GetRequiredService<ServerMetricsSampler>());
         services.AddAuthentication()
             .AddScheme<AuthenticationSchemeOptions, AdminTokenAuthenticationHandler>(

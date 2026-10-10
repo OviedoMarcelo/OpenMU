@@ -155,12 +155,7 @@ public class AutoFields : ComponentBase
 
     private static IReadOnlyList<PropertyMetadata> CreatePropertyMetadata(Type type)
     {
-        return type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy)
-            .Where(p => p.GetCustomAttribute<TransientAttribute>() is null)
-            .Where(p => p.GetCustomAttribute<BrowsableAttribute>()?.Browsable ?? true)
-            .Where(p => !p.Name.StartsWith("Raw", StringComparison.Ordinal))
-            .Where(p => !p.Name.StartsWith("Joined", StringComparison.Ordinal))
-            .Where(p => !p.GetIndexParameters().Any())
+        return ConfigurationPropertyFilter.GetVisibleProperties(type)
             .Select(p => new PropertyMetadata(
                 p,
                 p.GetCustomAttribute<DisplayAttribute>(),
