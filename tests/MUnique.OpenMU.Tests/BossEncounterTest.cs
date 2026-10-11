@@ -61,6 +61,43 @@ public class BossEncounterTest
     }
 
     /// <summary>
+    /// Tests that a schedule entry with a repetition starts again in its interval until the end of the day.
+    /// </summary>
+    [Test]
+    public void ScheduleRepeatsUntilEndOfDay()
+    {
+        var entry = new BossEncounterScheduleEntry { Day = BossEncounterDay.EveryDay, Time = new TimeOnly(12, 0), RepeatEvery = TimeSpan.FromHours(4) };
+
+        Assert.That(entry.GetNextStart(new DateTime(2026, 10, 7, 11, 0, 0)), Is.EqualTo(new DateTime(2026, 10, 7, 12, 0, 0)));
+        Assert.That(entry.GetNextStart(new DateTime(2026, 10, 7, 13, 0, 0)), Is.EqualTo(new DateTime(2026, 10, 7, 16, 0, 0)));
+        Assert.That(entry.GetNextStart(new DateTime(2026, 10, 7, 20, 0, 0)), Is.EqualTo(new DateTime(2026, 10, 7, 20, 0, 0)));
+        Assert.That(entry.GetNextStart(new DateTime(2026, 10, 7, 20, 0, 1)), Is.EqualTo(new DateTime(2026, 10, 8, 12, 0, 0)));
+    }
+
+    /// <summary>
+    /// Tests that the random delay keeps the start within its window, and that the encounter starts at the delayed time.
+    /// </summary>
+    [Test]
+    public async Task RandomDelayKeepsStartWithinWindowAsync()
+    {
+        var definition = CreateDefinition();
+        definition.Schedule.Add(new BossEncounterScheduleEntry { Day = BossEncounterDay.EveryDay, Time = TimeOnly.FromDateTime(Start), RandomDelayUpTo = TimeSpan.FromMinutes(30) });
+        for (var i = 0; i < 50; i++)
+        {
+            Assert.That(definition.GetNextStart(Start.AddHours(-1)), Is.InRange(Start, Start.AddMinutes(30)));
+        }
+
+        var context = new BossEncounterContext(CreateGameContext(), definition);
+        await context.TickAsync(Start.AddHours(-1)).ConfigureAwait(false);
+        var nextStart = DateTime.SpecifyKind(context.NextStart!.Value, DateTimeKind.Utc);
+
+        await context.TickAsync(nextStart.AddSeconds(-1)).ConfigureAwait(false);
+        Assert.That(context.IsRunning, Is.False);
+        await context.TickAsync(nextStart).ConfigureAwait(false);
+        Assert.That(context.IsRunning, Is.True);
+    }
+
+    /// <summary>
     /// Tests that the encounter starts at its scheduled time, with the multiplied health of the boss at the configured point.
     /// </summary>
     [Test]

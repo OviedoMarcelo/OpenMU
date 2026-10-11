@@ -278,13 +278,20 @@ public class BossEncounterDefinition
     public override string ToString() => this.Name;
 
     /// <summary>
-    /// Gets the next start of the encounter, which is at or after the specified point in time.
+    /// Gets the next start of the encounter, whose scheduled time is at or after the specified point in time.
+    /// The random delay of its schedule entry is added, so the result differs between calls.
     /// </summary>
     /// <param name="from">The point in time, in the time zone of the server.</param>
     /// <returns>The next start, in the time zone of the server; <c>null</c>, if the encounter has no schedule.</returns>
     public DateTime? GetNextStart(DateTime from)
     {
-        return this.Schedule.Count == 0 ? null : this.Schedule.Min(entry => entry.GetNextStart(from));
+        if (this.Schedule.Count == 0)
+        {
+            return null;
+        }
+
+        var (start, entry) = this.Schedule.Select(entry => (Start: entry.GetNextStart(from), Entry: entry)).MinBy(next => next.Start);
+        return start == DateTime.MaxValue ? start : start + entry.GetRandomDelay();
     }
 
     /// <summary>
