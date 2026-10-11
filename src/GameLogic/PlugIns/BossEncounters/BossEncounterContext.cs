@@ -79,6 +79,10 @@ public sealed class BossEncounterContext
     private DateTime _nextAreaAttackUtc;
     private SimpleElement? _damageElement;
     private SimpleElement? _damageReductionElement;
+    private SimpleElement? _healthScalingElement;
+    private double _phaseDamageMultiplier = 1;
+    private int _scalingPlayers = 1;
+    private DateTime _nextScalingUtc;
     private bool _isShieldActive;
     private int _isStartRequested;
     private int _isStopRequested;
@@ -297,6 +301,9 @@ public sealed class BossEncounterContext
         this._damageTracker.Track(boss);
         this._damageElement = null;
         this._damageReductionElement = null;
+        this._healthScalingElement = null;
+        this._scalingPlayers = 1;
+        this._nextScalingUtc = utcNow;
         this._isShieldActive = false;
         this.UpdateBossDamage(1);
         this._logger.LogInformation("Boss encounter {Name} started at {Map} {Point}.", definition.Name, map.Definition.Name, point);
@@ -436,6 +443,7 @@ public sealed class BossEncounterContext
         }
 
         await this.LeashAsync(boss).ConfigureAwait(false);
+        this.UpdateScaling(boss, utcNow);
 
         if (this._definition.SoftEnrageAfter > TimeSpan.Zero && utcNow - this._enrageTimerStartUtc >= this._definition.SoftEnrageAfter)
         {
@@ -876,6 +884,55 @@ public sealed class BossEncounterContext
         }
     }
 
+    /// <summary>
+    /// Makes the boss stronger when more players are in the arena than before. It never gets weaker,
+    /// so that players can't leave the arena to weaken it.
+    /// </summary>
+    private void UpdateScaling(Monster boss, DateTime utcNow)
+    {
+        var definition = this._definition;
+        if ((definition.ScalingHealthPercentPerPlayer <= 0 && definition.ScalingDamagePercentPerPlayer <= 0) || utcNow < this._nextScalingUtc)
+        {
+            return;
+        }
+
+        this._nextScalingUtc = utcNow + (definition.ScalingInterval > TimeSpan.Zero ? definition.ScalingInterval : TimeSpan.FromSeconds(1));
+        var players = Math.Min(this.GetPlayersInArena().Count, Math.Max(1, definition.ScalingMaximumPlayers));
+        if (players <= this._scalingPlayers)
+        {
+            return;
+        }
+
+        this._scalingPlayers = players;
+        this._logger.LogInformation("Boss encounter {Name} scales to {Players} players.", this.Name, players);
+        this.UpdateHealthScaling(boss);
+        this.UpdateBossDamage(this._phaseDamageMultiplier);
+    }
+
+    private double GetScalingFactor(int percentPerPlayer) => 1 + ((this._scalingPlayers - 1) * percentPerPlayer / 100.0);
+
+    /// <summary>
+    /// Sets the maximum health of the boss for the counted players, keeping the percentage of its current health.
+    /// </summary>
+    private void UpdateHealthScaling(Monster boss)
+    {
+        var factor = this.GetScalingFactor(this._definition.ScalingHealthPercentPerPlayer);
+        if (factor <= 1)
+        {
+            return;
+        }
+
+        var healthRatio = (double)boss.Health / boss.Attributes[Stats.MaximumHealth];
+        if (this._healthScalingElement is { } previous)
+        {
+            boss.Attributes.RemoveElement(previous, Stats.MaximumHealth);
+        }
+
+        this._healthScalingElement = new SimpleElement((float)factor, AggregateType.Multiplicate);
+        boss.Attributes.AddElement(this._healthScalingElement, Stats.MaximumHealth);
+        boss.Health = (int)Math.Min(int.MaxValue, boss.Attributes[Stats.MaximumHealth] * healthRatio);
+    }
+
     private void UpdateBossDamage(double phaseMultiplier)
     {
         if (this._boss is not { } boss)
@@ -883,13 +940,14 @@ public sealed class BossEncounterContext
             return;
         }
 
+        this._phaseDamageMultiplier = phaseMultiplier;
         if (this._damageElement is { } previous)
         {
             boss.Attributes.RemoveElement(previous, Stats.AttackDamageIncrease);
             this._damageElement = null;
         }
 
-        var multiplier = this._definition.DamageMultiplier * phaseMultiplier;
+        var multiplier = this._definition.DamageMultiplier * phaseMultiplier * this.GetScalingFactor(this._definition.ScalingDamagePercentPerPlayer);
         if (Math.Abs(multiplier - 1) > 0.001)
         {
             this._damageElement = new SimpleElement((float)multiplier, AggregateType.Multiplicate);

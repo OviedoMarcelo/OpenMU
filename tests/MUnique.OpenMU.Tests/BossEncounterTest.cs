@@ -417,6 +417,47 @@ public class BossEncounterTest
         Assert.That(drop.Item, Is.SameAs(reward));
     }
 
+    /// <summary>
+    /// Tests that the boss gets more health and damage with more players in the arena, keeping the percentage of its health,
+    /// and that it doesn't get weaker when they leave.
+    /// </summary>
+    [Test]
+    public async Task BossScalesWithPlayersInArenaAsync()
+    {
+        var gameContext = CreateGameContext();
+        var definition = CreateDefinition();
+        definition.ScalingHealthPercentPerPlayer = 50;
+        definition.ScalingDamagePercentPerPlayer = 10;
+        var context = new BossEncounterContext(gameContext, definition);
+        await CreatePlayerAsync(gameContext, new Point(105, 100)).ConfigureAwait(false);
+        await context.StartAsync(Start).ConfigureAwait(false);
+        var boss = context.Boss!;
+        var damage = boss.Attributes[Stats.AttackDamageIncrease];
+        Assume.That(damage, Is.GreaterThan(0));
+        boss.Health = BossHealth;
+
+        await context.TickAsync(Start.AddSeconds(1)).ConfigureAwait(false);
+        Assert.That(boss.Attributes[Stats.MaximumHealth], Is.EqualTo(BossHealth * 2));
+
+        var others = new[]
+        {
+            await CreatePlayerAsync(gameContext, new Point(106, 100)).ConfigureAwait(false),
+            await CreatePlayerAsync(gameContext, new Point(107, 100)).ConfigureAwait(false),
+        };
+        await context.TickAsync(Start.AddSeconds(11)).ConfigureAwait(false);
+        Assert.That(boss.Attributes[Stats.MaximumHealth], Is.EqualTo(BossHealth * 4));
+        Assert.That(boss.Health, Is.EqualTo(BossHealth * 2));
+        Assert.That(boss.Attributes[Stats.AttackDamageIncrease], Is.EqualTo(damage * 1.2f).Within(0.001f));
+
+        foreach (var other in others)
+        {
+            other.IsAlive = false;
+        }
+
+        await context.TickAsync(Start.AddSeconds(21)).ConfigureAwait(false);
+        Assert.That(boss.Attributes[Stats.MaximumHealth], Is.EqualTo(BossHealth * 4));
+    }
+
     private static async ValueTask<(BossEncounterContext Context, Player Player)> StartEncounterAsync()
     {
         var gameContext = CreateGameContext();

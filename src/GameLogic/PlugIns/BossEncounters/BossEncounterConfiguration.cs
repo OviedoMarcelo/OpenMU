@@ -65,6 +65,8 @@ public class BossEncounterConfiguration
         SpawnPoints = new List<BossEncounterPoint> { new() { MapNumber = Kalima7Number, X = 26, Y = 76 } },
         ArenaRadius = 18,
         HideAutomaticSpawns = true,
+        ScalingHealthPercentPerPlayer = 15,
+        ScalingDamagePercentPerPlayer = 3,
         Schedule = new List<BossEncounterScheduleEntry>
         {
             new() { Day = BossEncounterDay.EveryDay, Time = new TimeOnly(15, 0) },

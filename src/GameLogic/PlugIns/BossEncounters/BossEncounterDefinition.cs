@@ -109,6 +109,33 @@ public class BossEncounterDefinition
     public TimeSpan ResetAfterEmptyArena { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
+    /// Gets or sets the percentage of health which the boss gets for each player in the arena after the first one.
+    /// </summary>
+    [Display(Name = "Escalado: vida por jugador (%)", Description = "Vida extra del boss por cada jugador en la arena después del primero, sobre su vida máxima. Se recalcula mientras dura y solo sube: si los jugadores se van, no baja. El % de vida actual se mantiene. 0 = sin escalado.", Order = 25)]
+    [Range(0, 1000)]
+    public int ScalingHealthPercentPerPlayer { get; set; }
+
+    /// <summary>
+    /// Gets or sets the percentage of damage which the boss gets for each player in the arena after the first one.
+    /// </summary>
+    [Display(Name = "Escalado: daño por jugador (%)", Description = "Daño extra del boss por cada jugador en la arena después del primero. Se multiplica con los otros multiplicadores de daño. 0 = sin escalado.", Order = 26)]
+    [Range(0, 1000)]
+    public int ScalingDamagePercentPerPlayer { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum number of players which are counted for the scaling.
+    /// </summary>
+    [Display(Name = "Escalado: máximo de jugadores", Description = "Más jugadores que estos no hacen más fuerte al boss.", Order = 27)]
+    [Range(1, 1000)]
+    public int ScalingMaximumPlayers { get; set; } = 20;
+
+    /// <summary>
+    /// Gets or sets the interval in which the players in the arena are counted for the scaling.
+    /// </summary>
+    [Display(Name = "Escalado: intervalo", Description = "Cada cuánto se cuentan los jugadores de la arena.", Order = 28)]
+    public TimeSpan ScalingInterval { get; set; } = TimeSpan.FromSeconds(10);
+
+    /// <summary>
     /// Gets or sets the points in time at which the encounter starts.
     /// </summary>
     [Display(Name = "Horarios", Description = "Día y hora de inicio, en la zona horaria del servidor. Sin horarios = solo se inicia a mano con /boss iniciar.", Order = 30)]
