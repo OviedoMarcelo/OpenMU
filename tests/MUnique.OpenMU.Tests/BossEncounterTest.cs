@@ -343,6 +343,80 @@ public class BossEncounterTest
         Assert.That(money, Is.EqualTo(1500));
     }
 
+    /// <summary>
+    /// Tests that the damage of the hits on the boss is summed up by player, that the damage of a summoned monster
+    /// counts for its owner, and that hits on other monsters aren't tracked.
+    /// </summary>
+    [Test]
+    public async Task DamageIsTrackedByPlayerAsync()
+    {
+        var (context, player) = await StartEncounterAsync().ConfigureAwait(false);
+        var other = await CreatePlayerAsync(player.GameContext, new Point(106, 100)).ConfigureAwait(false);
+        var summon = await SpawnAsync(player.GameContext, context.Boss!.CurrentMap, AddNumber, new Point(104, 100), SpawnTrigger.Automatic, new SummonedMonsterIntelligence(other)).ConfigureAwait(false);
+        var plugIn = new BossEncounterHitPlugIn();
+
+        plugIn.AttackableGotHit(context.Boss, player, new HitInfo(250, 50, DamageAttributes.Undefined));
+        plugIn.AttackableGotHit(context.Boss, other, new HitInfo(60, 0, DamageAttributes.Undefined));
+        plugIn.AttackableGotHit(context.Boss, summon, new HitInfo(40, 0, DamageAttributes.Undefined));
+        plugIn.AttackableGotHit(context.Objects[0], player, new HitInfo(1000, 0, DamageAttributes.Undefined));
+
+        var participants = context.DamageTracker.GetParticipants();
+        Assert.That(participants.Select(p => (p.Player, p.Damage)), Is.EqualTo(new[] { (player, 300L), (other, 100L) }));
+        Assert.That(participants[0].Percent, Is.EqualTo(75).Within(0.001));
+    }
+
+    /// <summary>
+    /// Tests that the players with enough damage get the rewards for the participation when the boss is defeated, and the others don't.
+    /// </summary>
+    [Test]
+    public async Task ParticipantsWithEnoughDamageGetRewardsAsync()
+    {
+        var gameContext = CreateGameContext();
+        var itemDefinition = AddItemDefinition(gameContext);
+        var definition = CreateDefinition();
+        definition.ParticipationMinimumDamagePercent = 20;
+        definition.ParticipationRewards.Add(new BossEncounterDrop { Item = itemDefinition, Chance = 100, Quantity = 1, ItemLevel = 7 });
+        definition.ParticipationMoney = 1000;
+        var context = new BossEncounterContext(gameContext, definition);
+        var player = await CreatePlayerAsync(gameContext, new Point(105, 100)).ConfigureAwait(false);
+        var other = await CreatePlayerAsync(gameContext, new Point(106, 100)).ConfigureAwait(false);
+        await context.StartAsync(Start).ConfigureAwait(false);
+        var boss = context.Boss!;
+
+        context.DamageTracker.AddDamage(player, 900);
+        context.DamageTracker.AddDamage(other, 100);
+        await boss.ReflectDamageAsync(player, (uint)boss.Health).ConfigureAwait(false);
+        await context.TickAsync(Start.AddSeconds(1)).ConfigureAwait(false);
+
+        Assert.That(context.IsRunning, Is.False);
+        Assert.That(player.Inventory!.Items.Where(i => i.Definition == itemDefinition).Select(i => (int)i.Level), Is.EqualTo(new[] { 7 }));
+        Assert.That(player.Money, Is.EqualTo(1000));
+        Assert.That(other.Inventory!.Items, Is.Empty);
+        Assert.That(other.Money, Is.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Tests that a reward which doesn't fit into the inventory is dropped at the feet of the player, for the player.
+    /// </summary>
+    [Test]
+    public async Task RewardIsDroppedWhenInventoryIsFullAsync()
+    {
+        var gameContext = CreateGameContext();
+        var itemDefinition = AddItemDefinition(gameContext);
+        itemDefinition.Width = 8;
+        itemDefinition.Height = 15;
+        var player = await CreatePlayerAsync(gameContext, new Point(105, 100)).ConfigureAwait(false);
+        var filler = new TemporaryItem { Definition = itemDefinition }.MakePersistent(player.PersistenceContext);
+        Assume.That(await player.Inventory!.AddItemAsync(filler).ConfigureAwait(false), Is.True);
+
+        var reward = new TemporaryItem { Definition = itemDefinition, Level = 9 };
+        await BossEncounterRewarder.GiveAsync(player, [reward], 0).ConfigureAwait(false);
+
+        Assert.That(player.Inventory.Items, Has.Count.EqualTo(1));
+        var drop = player.CurrentMap!.GetDropsInRange(player.Position, 0).OfType<DroppedItem>().Single();
+        Assert.That(drop.Item, Is.SameAs(reward));
+    }
+
     private static async ValueTask<(BossEncounterContext Context, Player Player)> StartEncounterAsync()
     {
         var gameContext = CreateGameContext();
@@ -438,7 +512,7 @@ public class BossEncounterTest
         },
     };
 
-    private static async ValueTask<Monster> SpawnAsync(IGameContext gameContext, GameMap map, short number, Point point, SpawnTrigger trigger)
+    private static async ValueTask<Monster> SpawnAsync(IGameContext gameContext, GameMap map, short number, Point point, SpawnTrigger trigger, INpcIntelligence? intelligence = null)
     {
         var definition = gameContext.Configuration.Monsters.First(m => m.Number == number);
         var spawnArea = new MonsterSpawnArea
@@ -453,7 +527,7 @@ public class BossEncounterTest
             SpawnTrigger = trigger,
         };
 
-        var monster = new Monster(spawnArea, definition, map, NullDropGenerator.Instance, new NullMonsterIntelligence(), gameContext.PlugInManager, gameContext.PathFinderPool);
+        var monster = new Monster(spawnArea, definition, map, NullDropGenerator.Instance, intelligence ?? new NullMonsterIntelligence(), gameContext.PlugInManager, gameContext.PathFinderPool);
         monster.Initialize();
         await map.AddAsync(monster).ConfigureAwait(false);
         return monster;

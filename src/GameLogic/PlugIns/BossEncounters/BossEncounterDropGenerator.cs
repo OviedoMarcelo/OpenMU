@@ -64,14 +64,16 @@ public sealed class BossEncounterDropGenerator : IDropGenerator
     }
 
     /// <summary>
-    /// Generates the configured items. The chance of each drop applies to each of its items.
+    /// Generates the items of the drops. The chance of each drop applies to each of its items.
     /// </summary>
+    /// <param name="gameContext">The game context.</param>
+    /// <param name="drops">The drops.</param>
     /// <returns>The generated items.</returns>
-    internal IEnumerable<Item> GenerateConfiguredItems()
+    internal static IEnumerable<Item> GenerateItems(IGameContext gameContext, IEnumerable<BossEncounterDrop> drops)
     {
-        foreach (var drop in this._definition.Drops)
+        foreach (var drop in drops)
         {
-            if (ConfiguredItemFactory.Resolve(this._gameContext, drop.Item) is not { } itemDefinition)
+            if (ConfiguredItemFactory.Resolve(gameContext, drop.Item) is not { } itemDefinition)
             {
                 continue;
             }
@@ -85,4 +87,10 @@ public sealed class BossEncounterDropGenerator : IDropGenerator
             }
         }
     }
+
+    /// <summary>
+    /// Generates the configured items. The chance of each drop applies to each of its items.
+    /// </summary>
+    /// <returns>The generated items.</returns>
+    internal IEnumerable<Item> GenerateConfiguredItems() => GenerateItems(this._gameContext, this._definition.Drops);
 }

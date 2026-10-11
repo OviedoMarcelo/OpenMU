@@ -4189,5 +4189,11 @@ namespace MUnique.OpenMU.GameLogic.Properties {
         /// <summary>Gets the localized BossEncounterChatCommandPlugIn_Description text.</summary>
         public static string BossEncounterChatCommandPlugIn_Description => ResourceManager.GetString("BossEncounterChatCommandPlugIn_Description", resourceCulture)!;
 
+        /// <summary>Gets the localized BossEncounterHitPlugIn_Name text.</summary>
+        public static string BossEncounterHitPlugIn_Name => ResourceManager.GetString("BossEncounterHitPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized BossEncounterHitPlugIn_Description text.</summary>
+        public static string BossEncounterHitPlugIn_Description => ResourceManager.GetString("BossEncounterHitPlugIn_Description", resourceCulture)!;
+
     }
 }

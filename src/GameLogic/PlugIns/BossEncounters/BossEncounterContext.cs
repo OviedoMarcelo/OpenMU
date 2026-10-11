@@ -57,6 +57,7 @@ public sealed class BossEncounterContext
     private readonly HashSet<Monster> _hiddenMonsters = new();
     private readonly HashSet<int> _announcedMinutes = new();
     private readonly SimpleElement _shieldElement = new(0, AggregateType.Multiplicate);
+    private readonly BossEncounterDamageTracker _damageTracker = new();
 
     private BossEncounterDefinition _definition;
     private IReadOnlyList<BossEncounterPhase> _phases = [];
@@ -133,6 +134,11 @@ public sealed class BossEncounterContext
     /// Gets the number of area attacks which hit soon.
     /// </summary>
     public int PendingAreaAttackCount => this._pendingAreaAttacks.Count;
+
+    /// <summary>
+    /// Gets the damage which the players did to the boss.
+    /// </summary>
+    public BossEncounterDamageTracker DamageTracker => this._damageTracker;
 
     /// <summary>
     /// Updates the definition, e.g. after it has been changed in the admin panel.
@@ -287,6 +293,8 @@ public sealed class BossEncounterContext
         }
 
         this._boss = boss;
+        this._damageTracker.Clear();
+        this._damageTracker.Track(boss);
         this._damageElement = null;
         this._damageReductionElement = null;
         this._isShieldActive = false;
@@ -342,6 +350,15 @@ public sealed class BossEncounterContext
             // A misconfigured message shouldn't break the encounter.
             return text;
         }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the player is still in the game with its character, even when it's dead.
+    /// </summary>
+    private static bool IsInWorld(Player player)
+    {
+        var state = player.PlayerState.CurrentState;
+        return state == PlayerState.EnteredWorld || state == PlayerState.Dead || state == PlayerState.ChangingMap;
     }
 
     private static async ValueTask RemoveMonsterAsync(Monster monster)
@@ -672,8 +689,11 @@ public sealed class BossEncounterContext
         var boss = this._boss;
         this._boss = null;
         this.IsRunning = false;
+        var participants = this._damageTracker.GetParticipants();
+        this._damageTracker.Clear();
         if (boss is not null)
         {
+            this._damageTracker.Untrack(boss);
             await RemoveMonsterAsync(boss).ConfigureAwait(false);
         }
 
@@ -693,10 +713,77 @@ public sealed class BossEncounterContext
         if (bossDeath is not null)
         {
             await this.ShowGlobalMessageAsync(this._definition.DefeatedMessage, true, this.Name, bossDeath.KillerName).ConfigureAwait(false);
+            await this.RewardParticipantsAsync(participants).ConfigureAwait(false);
         }
         else
         {
             await this.ShowGlobalMessageAsync(this._definition.RetreatMessage, true, this.Name).ConfigureAwait(false);
+        }
+
+        await this.ShowRankingAsync(participants).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gives the rewards for the participation to the players with enough damage, who are still online.
+    /// </summary>
+    private async ValueTask RewardParticipantsAsync(IReadOnlyList<BossEncounterParticipant> participants)
+    {
+        var definition = this._definition;
+        if (definition.ParticipationRewards.Count == 0 && definition.ParticipationMoney <= 0)
+        {
+            return;
+        }
+
+        foreach (var participant in participants.Where(p => p.Percent >= definition.ParticipationMinimumDamagePercent && IsInWorld(p.Player)))
+        {
+            try
+            {
+                var items = BossEncounterDropGenerator.GenerateItems(this._gameContext, definition.ParticipationRewards).ToList();
+                await BossEncounterRewarder.GiveAsync(participant.Player, items, definition.ParticipationMoney).ConfigureAwait(false);
+                await this.ShowMessageAsync(participant.Player, definition.ParticipationMessage, this.Name, participant.Percent).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, "Couldn't give the reward of the boss encounter {Name} to {Player}.", this.Name, participant.Player);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Shows the players with the most damage in the chat of the players of the map.
+    /// </summary>
+    private async ValueTask ShowRankingAsync(IReadOnlyList<BossEncounterParticipant> participants)
+    {
+        var size = this._definition.RankingSize;
+        if (size <= 0 || participants.Count == 0 || this._map is not { } map)
+        {
+            return;
+        }
+
+        var lines = participants
+            .Take(size)
+            .Select((p, index) => string.Create(CultureInfo.InvariantCulture, $"{index + 1}. {p.Name}: {p.Percent:0.#} %"))
+            .ToList();
+        var players = await this._gameContext.GetPlayersAsync().ConfigureAwait(false);
+        foreach (var player in players.Where(player => player.CurrentMap == map))
+        {
+            try
+            {
+                var title = Format(this._definition.RankingMessage, player, [this.Name]);
+                if (!string.IsNullOrEmpty(title))
+                {
+                    await player.ShowBlueMessageAsync(title).ConfigureAwait(false);
+                }
+
+                foreach (var line in lines)
+                {
+                    await player.ShowBlueMessageAsync(line).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, "Couldn't show the ranking of the boss encounter {Name} to {Player}.", this.Name, player);
+            }
         }
     }
 
@@ -876,6 +963,7 @@ public sealed class BossEncounterContext
         this._isSoftEnraged = false;
         this._enrageTimerStartUtc = utcNow;
         this._phaseIndex = -1;
+        this._damageTracker.Clear();
         boss.Health = (int)boss.Attributes[Stats.MaximumHealth];
         this.UpdateBossDamage(1);
         await this.ShowMapMessageAsync(this._definition.ResetMessage, this.Name).ConfigureAwait(false);

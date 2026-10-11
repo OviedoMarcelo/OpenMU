@@ -1541,4 +1541,10 @@
   <data name="BossEncounterChatCommandPlugIn_Description" xml:space="preserve">
     <value>Handles the chat command '/boss [iniciar|terminar name]'. Shows the boss encounters, starts one or lets its boss retreat.</value>
   </data>
+  <data name="BossEncounterHitPlugIn_Name" xml:space="preserve">
+    <value>Boss encounter damage tracking</value>
+  </data>
+  <data name="BossEncounterHitPlugIn_Description" xml:space="preserve">
+    <value>Sums up the damage which the players do to the bosses of the encounters, for the rewards for the participation and the ranking. It does nothing while no encounter runs.</value>
+  </data>
 </root>

@@ -198,9 +198,51 @@ public class BossEncounterDefinition
     public int DropMoney { get; set; }
 
     /// <summary>
+    /// Gets or sets the minimum percentage of the damage of all players, which a player has to do to the boss to get the
+    /// <see cref="ParticipationRewards"/> and the <see cref="ParticipationMoney"/>.
+    /// </summary>
+    [Display(Name = "Participación: daño mínimo (%)", Description = "Porcentaje del daño total que tiene que hacer un jugador (con sus invocaciones) para recibir la recompensa por participar, si el boss muere. 0 = alcanza con haberle pegado.", Order = 58)]
+    [Range(0, 100)]
+    public double ParticipationMinimumDamagePercent { get; set; } = 5;
+
+    /// <summary>
+    /// Gets or sets the items which each player with enough damage gets into its inventory, when the boss was defeated.
+    /// </summary>
+    [Display(Name = "Participación: items", Description = "Items que recibe en el inventario cada jugador que llegó al daño mínimo, si el boss muere. Con el inventario lleno, caen a sus pies y son suyos. Vacío = sin items.", Order = 59)]
+    [MemberOfAggregate]
+    [ScaffoldColumn(true)]
+    public ICollection<BossEncounterDrop> ParticipationRewards { get; set; } = new List<BossEncounterDrop>();
+
+    /// <summary>
+    /// Gets or sets the money which each player with enough damage gets, when the boss was defeated.
+    /// </summary>
+    [Display(Name = "Participación: zen", Description = "Zen que recibe cada jugador que llegó al daño mínimo. 0 = nada.", Order = 60)]
+    [Range(0, int.MaxValue)]
+    public int ParticipationMoney { get; set; }
+
+    /// <summary>
+    /// Gets or sets the message for a player who got the reward for the participation.
+    /// </summary>
+    [Display(Name = "Participación: mensaje", Description = "Para cada jugador que recibe la recompensa. {0} = nombre, {1} = su % del daño.", Order = 61)]
+    public LocalizedString ParticipationMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of players of the ranking of the damage, which is shown when the encounter ends.
+    /// </summary>
+    [Display(Name = "Ranking: jugadores", Description = "Cuántos jugadores muestra el ranking de daño al terminar el encuentro, en el chat de los jugadores del mapa. 0 = sin ranking.", Order = 62)]
+    [Range(0, 20)]
+    public int RankingSize { get; set; } = 5;
+
+    /// <summary>
+    /// Gets or sets the title of the ranking of the damage.
+    /// </summary>
+    [Display(Name = "Ranking: título", Description = "Primera línea del ranking. {0} = nombre.", Order = 63)]
+    public LocalizedString RankingMessage { get; set; }
+
+    /// <summary>
     /// Gets or sets the phases of the encounter.
     /// </summary>
-    [Display(Name = "Fases", Description = "Cada fase empieza cuando la vida del boss baja a su porcentaje. Sin fases = un boss sin mecánicas.", Order = 60)]
+    [Display(Name = "Fases", Description = "Cada fase empieza cuando la vida del boss baja a su porcentaje. Sin fases = un boss sin mecánicas.", Order = 70)]
     [MemberOfAggregate]
     [ScaffoldColumn(true)]
     public ICollection<BossEncounterPhase> Phases { get; set; } = new List<BossEncounterPhase>();

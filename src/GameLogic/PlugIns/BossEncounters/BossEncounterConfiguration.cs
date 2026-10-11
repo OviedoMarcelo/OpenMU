@@ -79,6 +79,8 @@ public class BossEncounterConfiguration
         DefeatedMessage = "¡{1} derrotó a {0}!",
         RetreatMessage = "{0} se retiró. El encuentro falló.",
         ResetMessage = "{0} recuperó toda su vida: la arena quedó vacía.",
+        ParticipationMessage = "Recibiste la recompensa por participar contra {0} ({1:0} % del daño).",
+        RankingMessage = "Ranking de daño contra {0}:",
         Phases = new List<BossEncounterPhase>
         {
             new()
