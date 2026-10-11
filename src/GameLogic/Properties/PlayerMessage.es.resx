@@ -64,6 +64,9 @@
   <data name="YouGotKilledByMonster" xml:space="preserve">
     <value>Te mató {0} (nivel {1})</value>
   </data>
+  <data name="ProgressCouldNotBeSaved" xml:space="preserve">
+    <value>No se pudo guardar tu progreso. Te vamos a desconectar, volvé a entrar.</value>
+  </data>
   <data name="LearnSkillAlreadyKnown" xml:space="preserve">
     <value>Ya conoces esta habilidad.</value>
   </data>

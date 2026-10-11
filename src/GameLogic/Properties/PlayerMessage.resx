@@ -714,6 +714,9 @@
   <data name="YouGotKilledByMonster" xml:space="preserve">
     <value>You got killed by {0} (level {1})</value>
   </data>
+  <data name="ProgressCouldNotBeSaved" xml:space="preserve">
+    <value>Your progress couldn't be saved. You'll be disconnected, please log in again.</value>
+  </data>
   <data name="DisconnectedByGameMaster" xml:space="preserve">
     <value>You got disconnected by a game master.</value>
   </data>
