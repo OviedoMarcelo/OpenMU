@@ -279,6 +279,26 @@ public class BossEncounterDefinition
     public LocalizedString RankingMessage { get; set; }
 
     /// <summary>
+    /// Gets or sets the title of the ranking of the healing.
+    /// </summary>
+    [Display(Name = "Ranking de curación: título", Description = "Primera línea del ranking de curación, que se muestra si alguien curó en la arena. {0} = nombre.", Order = 64)]
+    public LocalizedString HealingRankingMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the rewards for the places of the rankings, given in addition to the reward for the participation.
+    /// </summary>
+    [Display(Name = "Premios por puesto", Description = "Premios extra para los primeros puestos del ranking de daño o de curación, si el boss muere. P. ej. daño puesto 1 = un item mejor, puestos 2 a 3 = otro. Se suman a la recompensa por participar. Con el inventario lleno, caen a sus pies.", Order = 65)]
+    [MemberOfAggregate]
+    [ScaffoldColumn(true)]
+    public ICollection<BossEncounterRankReward> RankRewards { get; set; } = new List<BossEncounterRankReward>();
+
+    /// <summary>
+    /// Gets or sets the message for a player who got a reward for its place.
+    /// </summary>
+    [Display(Name = "Premios por puesto: mensaje", Description = "{0} = nombre, {1} = puesto, {2} = ranking (daño o curación).", Order = 66)]
+    public LocalizedString RankRewardMessage { get; set; }
+
+    /// <summary>
     /// Gets or sets the phases of the encounter.
     /// </summary>
     [Display(Name = "Fases", Description = "Cada fase empieza cuando la vida del boss baja a su porcentaje. Sin fases = un boss sin mecánicas.", Order = 70)]

@@ -85,6 +85,8 @@ public class BossEncounterConfiguration
         ResetMessage = "{0} recuperó toda su vida: la arena quedó vacía.",
         ParticipationMessage = "Recibiste la recompensa por participar contra {0} ({1:0} % del daño).",
         RankingMessage = "Ranking de daño contra {0}:",
+        HealingRankingMessage = "Ranking de curación contra {0}:",
+        RankRewardMessage = "¡Premio por el puesto {1} en {2} contra {0}!",
         Phases = new List<BossEncounterPhase>
         {
             new()

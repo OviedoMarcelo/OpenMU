@@ -1541,6 +1541,12 @@
   <data name="BossEncounterChatCommandPlugIn_Description" xml:space="preserve">
     <value>Handles the chat command '/boss [iniciar|terminar name]'. Shows the boss encounters, starts one or lets its boss retreat.</value>
   </data>
+  <data name="BossEncounterHealPlugIn_Name" xml:space="preserve">
+    <value>Boss encounter healing tracking</value>
+  </data>
+  <data name="BossEncounterHealPlugIn_Description" xml:space="preserve">
+    <value>Sums up the health which the players restore to the players in the arena of a boss encounter, for the ranking of the healing and its rewards. It does nothing while no encounter runs.</value>
+  </data>
   <data name="BossEncounterHitPlugIn_Name" xml:space="preserve">
     <value>Boss encounter damage tracking</value>
   </data>

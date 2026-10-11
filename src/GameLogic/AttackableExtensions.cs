@@ -11,6 +11,7 @@ using MUnique.OpenMU.DataModel.Configuration.Items;
 using MUnique.OpenMU.GameLogic.Attributes;
 using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.GameLogic.Pet;
+using MUnique.OpenMU.GameLogic.PlugIns;
 using MUnique.OpenMU.GameLogic.Views.World;
 using MUnique.OpenMU.Pathfinding;
 
@@ -379,9 +380,15 @@ public static class AttackableExtensions
             {
                 var regenerationValue = player.Attributes.CreateElement(powerUpDefinition);
                 var value = regenerationValue.Value + (skillEntry.Level == 0 ? 0 : regenerationValue.Value * skillEntry.CalculateValue() / 100);
+                var previousValue = target.Attributes[regeneration.CurrentAttribute];
                 target.Attributes[regeneration.CurrentAttribute] = Math.Min(
-                    target.Attributes[regeneration.CurrentAttribute] + value,
+                    previousValue + value,
                     target.Attributes[regeneration.MaximumAttribute]);
+                var restoredHealth = target.Attributes[regeneration.CurrentAttribute] - previousValue;
+                if (regeneration.CurrentAttribute == Stats.CurrentHealth && restoredHealth > 0)
+                {
+                    player.GameContext.PlugInManager.GetPlugInPoint<IHealthRestoredPlugIn>()?.HealthRestored(target, player, restoredHealth);
+                }
             }
             else
             {

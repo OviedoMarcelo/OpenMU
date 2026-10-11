@@ -9,8 +9,8 @@ using System.Runtime.CompilerServices;
 using MUnique.OpenMU.GameLogic.NPC;
 
 /// <summary>
-/// Sums up the damage which each player did to the boss of an encounter. The damage of summoned
-/// monsters counts for their owner.
+/// Sums up the damage which each player did to the boss of an encounter, and the health which each
+/// player restored to the players in its arena. The damage of summoned monsters counts for their owner.
 /// </summary>
 /// <remarks>
 /// The boss is registered with its tracker, so that a hit finds it without searching the encounters,
@@ -21,6 +21,7 @@ public sealed class BossEncounterDamageTracker
     private static readonly ConditionalWeakTable<Monster, BossEncounterDamageTracker> Trackers = new();
 
     private readonly ConcurrentDictionary<Player, long> _damage = new();
+    private readonly ConcurrentDictionary<Player, long> _healing = new();
 
     /// <summary>
     /// Gets the tracker of the boss which was hit.
@@ -67,29 +68,55 @@ public sealed class BossEncounterDamageTracker
     }
 
     /// <summary>
-    /// Forgets the damage, e.g. when the encounter starts again.
+    /// Adds the health which a player restored to a player in the arena.
+    /// </summary>
+    /// <param name="healer">The player who healed.</param>
+    /// <param name="amount">The restored health.</param>
+    public void AddHealing(Player healer, long amount)
+    {
+        if (amount <= 0)
+        {
+            return;
+        }
+
+        this._healing.AddOrUpdate(healer, amount, (_, sum) => sum + amount);
+    }
+
+    /// <summary>
+    /// Forgets the damage and the healing, e.g. when the encounter starts again.
     /// </summary>
     public void Clear()
     {
         this._damage.Clear();
+        this._healing.Clear();
     }
 
     /// <summary>
-    /// Gets the players who damaged the boss, the one with the most damage first.
+    /// Gets the players who damaged the boss or healed, the one with the most damage first.
     /// </summary>
     /// <returns>The participants.</returns>
     public IReadOnlyList<BossEncounterParticipant> GetParticipants()
     {
-        var damages = this._damage.ToArray();
-        var total = damages.Sum(entry => entry.Value);
-        if (total <= 0)
-        {
-            return [];
-        }
+        var damages = this._damage.ToArray().ToDictionary(entry => entry.Key, entry => entry.Value);
+        var healings = this._healing.ToArray().ToDictionary(entry => entry.Key, entry => entry.Value);
+        var totalDamage = damages.Values.Sum();
+        var totalHealing = healings.Values.Sum();
 
-        return damages
-            .OrderByDescending(entry => entry.Value)
-            .Select(entry => new BossEncounterParticipant(entry.Key, entry.Key.Name, entry.Value, entry.Value * 100.0 / total))
+        return damages.Keys.Union(healings.Keys)
+            .Select(player =>
+            {
+                var damage = damages.GetValueOrDefault(player);
+                var healing = healings.GetValueOrDefault(player);
+                return new BossEncounterParticipant(
+                    player,
+                    player.Name,
+                    damage,
+                    totalDamage > 0 ? damage * 100.0 / totalDamage : 0,
+                    healing,
+                    totalHealing > 0 ? healing * 100.0 / totalHealing : 0);
+            })
+            .OrderByDescending(p => p.Damage)
+            .ThenByDescending(p => p.Healing)
             .ToList();
     }
 }

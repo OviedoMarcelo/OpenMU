@@ -492,6 +492,59 @@ public class BossEncounterTest
     }
 
     /// <summary>
+    /// Tests that the healing of players in the arena is tracked for the healer, and the healing of players outside of it isn't.
+    /// </summary>
+    [Test]
+    public async Task HealingInArenaIsTrackedAsync()
+    {
+        var (context, player) = await StartEncounterAsync().ConfigureAwait(false);
+        var healer = await CreatePlayerAsync(player.GameContext, new Point(106, 100)).ConfigureAwait(false);
+        var outside = await CreatePlayerAsync(player.GameContext, new Point(160, 160)).ConfigureAwait(false);
+        var plugIn = new BossEncounterHealPlugIn();
+
+        plugIn.HealthRestored(player, healer, 300);
+        plugIn.HealthRestored(healer, healer, 50);
+        plugIn.HealthRestored(outside, healer, 1000);
+        plugIn.HealthRestored(context.Boss!, healer, 1000);
+
+        var participant = context.DamageTracker.GetParticipants().Single();
+        Assert.That(participant.Player, Is.SameAs(healer));
+        Assert.That(participant.Healing, Is.EqualTo(350));
+        Assert.That(participant.Damage, Is.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Tests that the best places of the rankings of damage and healing get their rewards, in addition to each other.
+    /// </summary>
+    [Test]
+    public async Task RankRewardsGoToBestPlacesAsync()
+    {
+        var gameContext = CreateGameContext();
+        var itemDefinition = AddItemDefinition(gameContext);
+        var definition = CreateDefinition();
+        definition.RankRewards.Add(new BossEncounterRankReward { Ranking = BossEncounterRanking.Damage, FromRank = 1, ToRank = 1, Item = itemDefinition, ItemLevel = 13 });
+        definition.RankRewards.Add(new BossEncounterRankReward { Ranking = BossEncounterRanking.Damage, FromRank = 2, ToRank = 3, Item = itemDefinition, ItemLevel = 9 });
+        definition.RankRewards.Add(new BossEncounterRankReward { Ranking = BossEncounterRanking.Healing, FromRank = 1, ToRank = 1, Money = 5000 });
+        var context = new BossEncounterContext(gameContext, definition);
+        var first = await CreatePlayerAsync(gameContext, new Point(105, 100)).ConfigureAwait(false);
+        var second = await CreatePlayerAsync(gameContext, new Point(106, 100)).ConfigureAwait(false);
+        var healer = await CreatePlayerAsync(gameContext, new Point(107, 100)).ConfigureAwait(false);
+        await context.StartAsync(Start).ConfigureAwait(false);
+        var boss = context.Boss!;
+
+        context.DamageTracker.AddDamage(second, 100);
+        context.DamageTracker.AddHealing(healer, 500);
+        await boss.ReflectDamageAsync(first, (uint)boss.Health).ConfigureAwait(false);
+        await context.TickAsync(Start.AddSeconds(1)).ConfigureAwait(false);
+
+        Assert.That(first.Inventory!.Items.Select(i => (int)i.Level), Is.EqualTo(new[] { 13 }));
+        Assert.That(second.Inventory!.Items.Select(i => (int)i.Level), Is.EqualTo(new[] { 9 }));
+        Assert.That(healer.Inventory!.Items, Is.Empty);
+        Assert.That(healer.Money, Is.EqualTo(5000));
+        Assert.That(first.Money, Is.EqualTo(0));
+    }
+
+    /// <summary>
     /// Tests that a reward which doesn't fit into the inventory is dropped at the feet of the player, for the player.
     /// </summary>
     [Test]

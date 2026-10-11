@@ -4,6 +4,7 @@
 
 namespace MUnique.OpenMU.GameLogic.PlugIns.BossEncounters;
 
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Threading;
 using MUnique.OpenMU.AttributeSystem;
@@ -53,6 +54,11 @@ public sealed class BossEncounterContext
     /// The center of a map. Together with <see cref="WholeMapRange"/>, it covers the whole map.
     /// </summary>
     private static readonly Point MapCenter = new(128, 128);
+
+    /// <summary>
+    /// The running encounters of all game servers, so that a heal finds the arena of its target without searching the plugins.
+    /// </summary>
+    private static readonly ConcurrentDictionary<BossEncounterContext, byte> RunningEncounters = new();
 
     private readonly IGameContext _gameContext;
     private readonly ILogger<BossEncounterContext> _logger;
@@ -155,6 +161,24 @@ public sealed class BossEncounterContext
     /// Gets the damage which the players did to the boss.
     /// </summary>
     public BossEncounterDamageTracker DamageTracker => this._damageTracker;
+
+    /// <summary>
+    /// Gets the running encounter in whose arena the player is.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <returns>The encounter; <c>null</c>, if the player isn't in an arena.</returns>
+    public static BossEncounterContext? FindArenaOf(Player player)
+    {
+        foreach (var encounter in RunningEncounters.Keys)
+        {
+            if (encounter.IsInArena(player))
+            {
+                return encounter;
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// Updates the definition, e.g. after it has been changed in the admin panel.
@@ -312,6 +336,7 @@ public sealed class BossEncounterContext
         this._boss = boss;
         this._damageTracker.Clear();
         this._damageTracker.Track(boss);
+        RunningEncounters[this] = 0;
         this._damageElement = null;
         this._damageReductionElement = null;
         this._healthScalingElement = null;
@@ -345,6 +370,19 @@ public sealed class BossEncounterContext
         return this._nextStart is { } nextStart
             ? $"{this.Name}: próximo {nextStart.ToString("dd/MM HH:mm", CultureInfo.InvariantCulture)}"
             : $"{this.Name}: sin horarios";
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the player is in the arena of the running encounter.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <returns><c>true</c>, if the encounter runs and the player is in its arena.</returns>
+    public bool IsInArena(Player player)
+    {
+        return this.IsRunning
+            && this._map is { } map
+            && player.CurrentMap == map
+            && player.IsInRange(this._arenaCenter, this._definition.ArenaRadius);
     }
 
     /// <summary>
@@ -401,6 +439,16 @@ public sealed class BossEncounterContext
     {
         var state = player.PlayerState.CurrentState;
         return state == PlayerState.EnteredWorld || state == PlayerState.Dead || state == PlayerState.ChangingMap;
+    }
+
+    /// <summary>
+    /// Gets the players of a ranking, the best one first. Players without damage or healing aren't in it.
+    /// </summary>
+    private static IReadOnlyList<BossEncounterParticipant> GetRanking(IReadOnlyList<BossEncounterParticipant> participants, BossEncounterRanking ranking)
+    {
+        return ranking == BossEncounterRanking.Healing
+            ? participants.Where(p => p.Healing > 0).OrderByDescending(p => p.Healing).ToList()
+            : participants.Where(p => p.Damage > 0).OrderByDescending(p => p.Damage).ToList();
     }
 
     private static async ValueTask RemoveMonsterAsync(Monster monster)
@@ -799,6 +847,7 @@ public sealed class BossEncounterContext
         var boss = this._boss;
         this._boss = null;
         this.IsRunning = false;
+        RunningEncounters.TryRemove(this, out _);
         var phaseName = this.CurrentPhase?.Name;
         var participants = this._damageTracker.GetParticipants();
         this._damageTracker.Clear();
@@ -827,6 +876,7 @@ public sealed class BossEncounterContext
         {
             await this.ShowGlobalMessageAsync(this._definition.DefeatedMessage, true, this.Name, bossDeath.KillerName).ConfigureAwait(false);
             rewardedPlayers = await this.RewardParticipantsAsync(participants).ConfigureAwait(false);
+            await this.GiveRankRewardsAsync(participants, rewardedPlayers).ConfigureAwait(false);
         }
         else
         {
@@ -844,9 +894,13 @@ public sealed class BossEncounterContext
             return;
         }
 
+        // The best ones of both rankings, so that healers without damage are kept, too.
+        var kept = GetRanking(participants, BossEncounterRanking.Damage).Take(MaximumHistoryRankingSize)
+            .Union(GetRanking(participants, BossEncounterRanking.Healing).Take(MaximumHistoryRankingSize))
+            .ToHashSet();
         var ranking = participants
-            .Take(MaximumHistoryRankingSize)
-            .Select(p => new BossEncounterRankingEntry(p.Name, p.Damage, p.Percent, rewardedPlayers.Contains(p.Player)))
+            .Where(kept.Contains)
+            .Select(p => new BossEncounterRankingEntry(p.Name, p.Damage, p.Percent, rewardedPlayers.Contains(p.Player), p.Healing))
             .ToList();
         var result = new BossEncounterResult(
             this.Name,
@@ -874,7 +928,7 @@ public sealed class BossEncounterContext
             return rewardedPlayers;
         }
 
-        foreach (var participant in participants.Where(p => p.Percent >= definition.ParticipationMinimumDamagePercent && IsInWorld(p.Player)))
+        foreach (var participant in participants.Where(p => p.Damage > 0 && p.Percent >= definition.ParticipationMinimumDamagePercent && IsInWorld(p.Player)))
         {
             try
             {
@@ -893,6 +947,42 @@ public sealed class BossEncounterContext
     }
 
     /// <summary>
+    /// Gives the rewards for the places of the rankings to the players who are still online.
+    /// A player at a place of several rewards gets all of them.
+    /// </summary>
+    private async ValueTask GiveRankRewardsAsync(IReadOnlyList<BossEncounterParticipant> participants, HashSet<Player> rewardedPlayers)
+    {
+        foreach (var rewardsOfRanking in this._definition.RankRewards.GroupBy(reward => reward.Ranking))
+        {
+            var ranking = GetRanking(participants, rewardsOfRanking.Key);
+            var rankingName = rewardsOfRanking.Key == BossEncounterRanking.Healing ? "curación" : "daño";
+            for (var index = 0; index < ranking.Count; index++)
+            {
+                var rank = index + 1;
+                var player = ranking[index].Player;
+                var rewards = rewardsOfRanking.Where(reward => reward.AppliesTo(rank)).ToList();
+                if (rewards.Count == 0 || !IsInWorld(player))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var items = BossEncounterDropGenerator.GenerateItems(this._gameContext, rewards).ToList();
+                    var money = (int)Math.Min(int.MaxValue, rewards.Sum(reward => (long)reward.Money));
+                    await BossEncounterRewarder.GiveAsync(player, items, money).ConfigureAwait(false);
+                    rewardedPlayers.Add(player);
+                    await this.ShowMessageAsync(player, this._definition.RankRewardMessage, this.Name, rank, rankingName).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    this._logger.LogError(ex, "Couldn't give the reward of the place {Rank} of the boss encounter {Name} to {Player}.", rank, this.Name, player);
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Shows the players with the most damage in the chat of the players of the map.
     /// </summary>
     private async ValueTask ShowRankingAsync(IReadOnlyList<BossEncounterParticipant> participants)
@@ -903,30 +993,45 @@ public sealed class BossEncounterContext
             return;
         }
 
-        var lines = participants
+        var damageLines = GetRanking(participants, BossEncounterRanking.Damage)
             .Take(size)
             .Select((p, index) => string.Create(CultureInfo.InvariantCulture, $"{index + 1}. {p.Name}: {p.Percent:0.#} %"))
+            .ToList();
+        var healingLines = GetRanking(participants, BossEncounterRanking.Healing)
+            .Take(size)
+            .Select((p, index) => string.Create(CultureInfo.InvariantCulture, $"{index + 1}. {p.Name}: {p.HealingPercent:0.#} %"))
             .ToList();
         var players = await this._gameContext.GetPlayersAsync().ConfigureAwait(false);
         foreach (var player in players.Where(player => player.CurrentMap == map))
         {
             try
             {
-                var title = Format(this._definition.RankingMessage, player, [this.Name]);
-                if (!string.IsNullOrEmpty(title))
-                {
-                    await player.ShowBlueMessageAsync(title).ConfigureAwait(false);
-                }
-
-                foreach (var line in lines)
-                {
-                    await player.ShowBlueMessageAsync(line).ConfigureAwait(false);
-                }
+                await this.ShowRankingLinesAsync(player, this._definition.RankingMessage, damageLines).ConfigureAwait(false);
+                await this.ShowRankingLinesAsync(player, this._definition.HealingRankingMessage, healingLines).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 this._logger.LogError(ex, "Couldn't show the ranking of the boss encounter {Name} to {Player}.", this.Name, player);
             }
+        }
+    }
+
+    private async ValueTask ShowRankingLinesAsync(Player player, LocalizedString titleMessage, IReadOnlyList<string> lines)
+    {
+        if (lines.Count == 0)
+        {
+            return;
+        }
+
+        var title = Format(titleMessage, player, [this.Name]);
+        if (!string.IsNullOrEmpty(title))
+        {
+            await player.ShowBlueMessageAsync(title).ConfigureAwait(false);
+        }
+
+        foreach (var line in lines)
+        {
+            await player.ShowBlueMessageAsync(line).ConfigureAwait(false);
         }
     }
 
