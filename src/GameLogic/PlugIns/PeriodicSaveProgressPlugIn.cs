@@ -56,6 +56,7 @@ public class PeriodicSaveProgressPlugIn : IPeriodicTaskPlugIn, ISupportCustomCon
                 catch (Exception ex)
                 {
                     player.Logger.LogError(ex, "Error when saving the progress periodically for player '{player}': {ex}", player, ex);
+                    await DisconnectUnsavablePlayerAsync(player).ConfigureAwait(false);
                 }
             }
 
@@ -77,6 +78,29 @@ public class PeriodicSaveProgressPlugIn : IPeriodicTaskPlugIn, ISupportCustomCon
     public object CreateDefaultConfig()
     {
         return CreateDefaultConfiguration();
+    }
+
+    /// <summary>
+    /// Once a save failed, the following ones of the same session fail as well, so the player
+    /// would keep playing without anything being saved. Disconnecting makes the next login load
+    /// the last saved state, so only the progress since the last successful save is lost.
+    /// </summary>
+    /// <param name="player">The player whose progress couldn't be saved.</param>
+    private static async ValueTask DisconnectUnsavablePlayerAsync(Player player)
+    {
+        try
+        {
+            await player.ShowLocalizedGoldenMessageAsync(nameof(PlayerMessage.ProgressCouldNotBeSaved)).ConfigureAwait(false);
+            await player.ShowLocalizedBlueMessageAsync(nameof(PlayerMessage.ProgressCouldNotBeSaved)).ConfigureAwait(false);
+
+            // Give the client a moment to show the message.
+            await Task.Delay(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+            await player.DisconnectAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            player.Logger.LogError(ex, "Couldn't disconnect player '{player}' after a failed save.", player);
+        }
     }
 
     private static PeriodicSaveProgressPlugInConfiguration CreateDefaultConfiguration()

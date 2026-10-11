@@ -2122,6 +2122,15 @@ namespace MUnique.OpenMU.GameLogic.Properties {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Your progress couldn't be saved. You'll be disconnected, please log in again..
+        /// </summary>
+        public static string ProgressCouldNotBeSaved {
+            get {
+                return ResourceManager.GetString("ProgressCouldNotBeSaved", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to You got killed by {0} (level {1}).
         /// </summary>
         public static string YouGotKilledByMonster {

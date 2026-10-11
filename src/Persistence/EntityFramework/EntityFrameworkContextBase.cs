@@ -84,6 +84,13 @@ internal class EntityFrameworkContextBase : IContext
             {
                 return await this.SaveChangesCoreAsync(cancellationToken).ConfigureAwait(false);
             }
+            catch (DbUpdateConcurrencyException ex) when (attempt < maxAttempts)
+            {
+                // Retrying the same statements would fail the same way, and so would every later save
+                // of this context. So the rows which are missing in the database are reconciled first.
+                this._logger.LogWarning(ex, "Concurrency conflict while saving (attempt {Attempt}/{MaxAttempts}); reconciling the affected entries and retrying.", attempt, maxAttempts);
+                await this.ReconcileMissingRowsAsync(ex, cancellationToken).ConfigureAwait(false);
+            }
             catch (Exception ex) when (attempt < maxAttempts && IsTransientConcurrencyConflict(ex))
             {
                 this._logger.LogWarning(ex, "Transient concurrency conflict while saving (attempt {Attempt}/{MaxAttempts}); retrying.", attempt, maxAttempts);
@@ -304,6 +311,13 @@ internal class EntityFrameworkContextBase : IContext
             or KeyNotFoundException;
     }
 
+    private static string DescribeKey(EntityEntry entry)
+    {
+        return entry.Metadata.FindPrimaryKey() is { } key
+            ? string.Join(", ", key.Properties.Select(p => entry.Property(p.Name).CurrentValue))
+            : "?";
+    }
+
     private async ValueTask<bool> SaveChangesCoreAsync(CancellationToken cancellationToken)
     {
         using var l = await this._lock.LockAsync();
@@ -340,6 +354,77 @@ internal class EntityFrameworkContextBase : IContext
         {
             sender = s;
             args = e;
+        }
+    }
+
+    /// <summary>
+    /// Reconciles the entries of a failed save with the database. No entity has a concurrency token,
+    /// so an update or delete affecting no row means that the row doesn't exist (anymore):
+    /// a deleted entity is gone already, so it's just detached; a modified one is inserted again,
+    /// together with its aggregated children which are missing as well, so the player keeps it.
+    /// </summary>
+    /// <param name="exception">The exception of the failed save.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    private async ValueTask ReconcileMissingRowsAsync(DbUpdateConcurrencyException exception, CancellationToken cancellationToken)
+    {
+        using var l = await this._lock.LockAsync(cancellationToken);
+
+        // The exception may only name the first failing statement of the batch, so all pending
+        // updates and deletes are checked - otherwise each retry would just stop at the next one.
+        var entries = exception.Entries
+            .Concat(this.Context.ChangeTracker.Entries().Where(e => e.State is EntityState.Deleted or EntityState.Modified))
+            .Distinct()
+            .ToList();
+        foreach (var entry in entries)
+        {
+            if (entry.State is not (EntityState.Deleted or EntityState.Modified))
+            {
+                continue;
+            }
+
+            var databaseValues = await entry.GetDatabaseValuesAsync(cancellationToken).ConfigureAwait(false);
+            if (databaseValues is not null)
+            {
+                if (exception.Entries.Contains(entry))
+                {
+                    // Can't happen without concurrency tokens; take the database state as the original values.
+                    this._logger.LogWarning("Save conflict on {EntityType} {Key} ({State}), although its row exists.", entry.Metadata.ClrType.Name, DescribeKey(entry), entry.State);
+                    entry.OriginalValues.SetValues(databaseValues);
+                }
+
+                continue;
+            }
+
+            this._logger.LogWarning("Save conflict: {EntityType} {Key} ({State}) has no row in the database.", entry.Metadata.ClrType.Name, DescribeKey(entry), entry.State);
+            switch (entry.State)
+            {
+                case EntityState.Deleted:
+                    entry.State = EntityState.Detached;
+                    break;
+                default:
+                    entry.State = EntityState.Added;
+                    await this.AddMissingAggregatesAsync(entry.Entity, cancellationToken).ConfigureAwait(false);
+                    break;
+            }
+        }
+    }
+
+    private async ValueTask AddMissingAggregatesAsync(object entity, CancellationToken cancellationToken)
+    {
+        var aggregates = new List<object>();
+        this.ForEachAggregate(entity, aggregates.Add);
+        foreach (var aggregate in aggregates)
+        {
+            var entry = this.Context.Entry(aggregate);
+            if (entry.State is not (EntityState.Modified or EntityState.Unchanged)
+                || await entry.GetDatabaseValuesAsync(cancellationToken).ConfigureAwait(false) is not null)
+            {
+                continue;
+            }
+
+            this._logger.LogWarning("Inserting the missing {EntityType} {Key} again.", entry.Metadata.ClrType.Name, DescribeKey(entry));
+            entry.State = EntityState.Added;
+            await this.AddMissingAggregatesAsync(aggregate, cancellationToken).ConfigureAwait(false);
         }
     }
 
