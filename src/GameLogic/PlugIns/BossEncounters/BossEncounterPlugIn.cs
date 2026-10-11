@@ -62,7 +62,7 @@ public sealed class BossEncounterPlugIn : IFeaturePlugIn, IPeriodicTaskPlugIn, I
 
             foreach (var definition in definitions)
             {
-                var context = contexts.GetOrAdd(definition.Name, _ => new BossEncounterContext(gameContext, definition));
+                var context = contexts.GetOrAdd(definition.Name, _ => new BossEncounterContext(gameContext, definition, BossEncounterHistory.Shared));
                 context.UpdateDefinition(definition);
                 await this.TickAsync(gameContext, context, utcNow).ConfigureAwait(false);
             }

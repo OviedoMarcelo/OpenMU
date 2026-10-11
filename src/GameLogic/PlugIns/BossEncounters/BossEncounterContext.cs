@@ -45,6 +45,11 @@ public sealed class BossEncounterContext
     private const byte SummonRadius = 4;
 
     /// <summary>
+    /// The number of players of the ranking of the damage, which are kept in the history.
+    /// </summary>
+    private const int MaximumHistoryRankingSize = 10;
+
+    /// <summary>
     /// The center of a map. Together with <see cref="WholeMapRange"/>, it covers the whole map.
     /// </summary>
     private static readonly Point MapCenter = new(128, 128);
@@ -60,6 +65,7 @@ public sealed class BossEncounterContext
     private readonly HashSet<Player> _playersWithHealthBar = new();
     private readonly SimpleElement _shieldElement = new(0, AggregateType.Multiplicate);
     private readonly BossEncounterDamageTracker _damageTracker = new();
+    private readonly BossEncounterHistory? _history;
 
     private BossEncounterDefinition _definition;
     private IReadOnlyList<BossEncounterPhase> _phases = [];
@@ -96,10 +102,12 @@ public sealed class BossEncounterContext
     /// </summary>
     /// <param name="gameContext">The game context.</param>
     /// <param name="definition">The definition of the encounter.</param>
-    public BossEncounterContext(IGameContext gameContext, BossEncounterDefinition definition)
+    /// <param name="history">The history to which the results are added; <c>null</c> for none.</param>
+    public BossEncounterContext(IGameContext gameContext, BossEncounterDefinition definition, BossEncounterHistory? history = null)
     {
         this._gameContext = gameContext;
         this._definition = definition;
+        this._history = history;
         this._logger = gameContext.LoggerFactory.CreateLogger<BossEncounterContext>();
     }
 
@@ -196,7 +204,7 @@ public sealed class BossEncounterContext
             Interlocked.Exchange(ref this._isStartRequested, 0);
             if (Interlocked.Exchange(ref this._isStopRequested, 0) != 0)
             {
-                await this.EndAsync(null).ConfigureAwait(false);
+                await this.EndAsync(null, BossEncounterOutcome.Stopped).ConfigureAwait(false);
                 return;
             }
 
@@ -339,6 +347,28 @@ public sealed class BossEncounterContext
             : $"{this.Name}: sin horarios";
     }
 
+    /// <summary>
+    /// Gets the state of the encounter, e.g. for the admin panel.
+    /// </summary>
+    /// <returns>The state.</returns>
+    public BossEncounterSnapshot GetSnapshot()
+    {
+        var boss = this._boss;
+        var isRunning = this.IsRunning && boss is not null;
+        return new BossEncounterSnapshot(
+            this.Name,
+            this._definition.IsActive,
+            isRunning,
+            this._nextStart,
+            isRunning ? this._startUtc : null,
+            isRunning && this._map is { } map ? GetMapName(map) : null,
+            isRunning ? this._arenaCenter.X : null,
+            isRunning ? this._arenaCenter.Y : null,
+            isRunning ? this.CurrentPhase?.Name : null,
+            boss is not null && isRunning ? Math.Round(GetHealthPercentage(boss), 1) : null,
+            isRunning ? this.GetPlayersInArena().Count : 0);
+    }
+
     private static double GetHealthPercentage(Monster monster)
     {
         var maximumHealth = monster.Attributes[Stats.MaximumHealth];
@@ -418,14 +448,15 @@ public sealed class BossEncounterContext
     {
         if (this._boss is not { } boss)
         {
-            await this.EndAsync(null).ConfigureAwait(false);
+            await this.EndAsync(null, BossEncounterOutcome.Stopped).ConfigureAwait(false);
             return;
         }
 
         if (!boss.IsAlive)
         {
             // When the boss was removed otherwise (e.g. by a game master), it has no death information.
-            await this.EndAsync(boss.LastDeath).ConfigureAwait(false);
+            var outcome = boss.LastDeath is null ? BossEncounterOutcome.Stopped : BossEncounterOutcome.Defeated;
+            await this.EndAsync(boss.LastDeath, outcome).ConfigureAwait(false);
             return;
         }
 
@@ -755,18 +786,20 @@ public sealed class BossEncounterContext
             }
         }
 
-        await this.EndAsync(null).ConfigureAwait(false);
+        await this.EndAsync(null, BossEncounterOutcome.Retreated).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Ends the encounter and removes its monsters.
     /// </summary>
     /// <param name="bossDeath">The death information of the boss, if it was defeated.</param>
-    private async ValueTask EndAsync(DeathInformation? bossDeath)
+    /// <param name="outcome">How the encounter ended, for the history.</param>
+    private async ValueTask EndAsync(DeathInformation? bossDeath, BossEncounterOutcome outcome)
     {
         var boss = this._boss;
         this._boss = null;
         this.IsRunning = false;
+        var phaseName = this.CurrentPhase?.Name;
         var participants = this._damageTracker.GetParticipants();
         this._damageTracker.Clear();
         if (boss is not null)
@@ -788,11 +821,12 @@ public sealed class BossEncounterContext
         this._nextStart = null;
         await this.RestoreHiddenSpawnsAsync().ConfigureAwait(false);
 
-        this._logger.LogInformation("Boss encounter {Name} ended, defeated: {Defeated}.", this.Name, bossDeath is not null);
+        this._logger.LogInformation("Boss encounter {Name} ended: {Outcome}.", this.Name, outcome);
+        var rewardedPlayers = new HashSet<Player>();
         if (bossDeath is not null)
         {
             await this.ShowGlobalMessageAsync(this._definition.DefeatedMessage, true, this.Name, bossDeath.KillerName).ConfigureAwait(false);
-            await this.RewardParticipantsAsync(participants).ConfigureAwait(false);
+            rewardedPlayers = await this.RewardParticipantsAsync(participants).ConfigureAwait(false);
         }
         else
         {
@@ -800,17 +834,44 @@ public sealed class BossEncounterContext
         }
 
         await this.ShowRankingAsync(participants).ConfigureAwait(false);
+        await this.AddToHistoryAsync(outcome, bossDeath, phaseName, participants, rewardedPlayers).ConfigureAwait(false);
+    }
+
+    private async ValueTask AddToHistoryAsync(BossEncounterOutcome outcome, DeathInformation? bossDeath, string? phaseName, IReadOnlyList<BossEncounterParticipant> participants, HashSet<Player> rewardedPlayers)
+    {
+        if (this._history is not { } history)
+        {
+            return;
+        }
+
+        var ranking = participants
+            .Take(MaximumHistoryRankingSize)
+            .Select(p => new BossEncounterRankingEntry(p.Name, p.Damage, p.Percent, rewardedPlayers.Contains(p.Player)))
+            .ToList();
+        var result = new BossEncounterResult(
+            this.Name,
+            (this._gameContext as IGameServerContext)?.Id,
+            this._map is { } map ? GetMapName(map) : string.Empty,
+            this._startUtc,
+            DateTime.UtcNow - this._startUtc,
+            outcome,
+            bossDeath?.KillerName,
+            phaseName,
+            ranking);
+        await history.AddAsync(result, this._logger).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Gives the rewards for the participation to the players with enough damage, who are still online.
     /// </summary>
-    private async ValueTask RewardParticipantsAsync(IReadOnlyList<BossEncounterParticipant> participants)
+    /// <returns>The players who got the reward.</returns>
+    private async ValueTask<HashSet<Player>> RewardParticipantsAsync(IReadOnlyList<BossEncounterParticipant> participants)
     {
+        var rewardedPlayers = new HashSet<Player>();
         var definition = this._definition;
         if (definition.ParticipationRewards.Count == 0 && definition.ParticipationMoney <= 0)
         {
-            return;
+            return rewardedPlayers;
         }
 
         foreach (var participant in participants.Where(p => p.Percent >= definition.ParticipationMinimumDamagePercent && IsInWorld(p.Player)))
@@ -819,6 +880,7 @@ public sealed class BossEncounterContext
             {
                 var items = BossEncounterDropGenerator.GenerateItems(this._gameContext, definition.ParticipationRewards).ToList();
                 await BossEncounterRewarder.GiveAsync(participant.Player, items, definition.ParticipationMoney).ConfigureAwait(false);
+                rewardedPlayers.Add(participant.Player);
                 await this.ShowMessageAsync(participant.Player, definition.ParticipationMessage, this.Name, participant.Percent).ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -826,6 +888,8 @@ public sealed class BossEncounterContext
                 this._logger.LogError(ex, "Couldn't give the reward of the boss encounter {Name} to {Player}.", this.Name, participant.Player);
             }
         }
+
+        return rewardedPlayers;
     }
 
     /// <summary>

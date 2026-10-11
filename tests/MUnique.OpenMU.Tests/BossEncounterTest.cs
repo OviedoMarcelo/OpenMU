@@ -4,6 +4,8 @@
 
 namespace MUnique.OpenMU.Tests;
 
+using System.IO;
+using Microsoft.Extensions.Logging.Abstractions;
 using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.DataModel.Entities;
 using MUnique.OpenMU.GameLogic;
@@ -550,6 +552,63 @@ public class BossEncounterTest
 
         await context.TickAsync(Start.AddSeconds(21)).ConfigureAwait(false);
         Assert.That(boss.Attributes[Stats.MaximumHealth], Is.EqualTo(BossHealth * 4));
+    }
+
+    /// <summary>
+    /// Tests that the result of a finished encounter is added to the history with its ranking, and that it's read again from the file.
+    /// </summary>
+    [Test]
+    public async Task ResultIsAddedToHistoryAsync()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"boss-history-{Guid.NewGuid():N}.jsonl");
+        try
+        {
+            var history = new BossEncounterHistory(path);
+            var gameContext = CreateGameContext();
+            var context = new BossEncounterContext(gameContext, CreateDefinition(), history);
+            var player = await CreatePlayerAsync(gameContext, new Point(105, 100)).ConfigureAwait(false);
+            await context.StartAsync(Start).ConfigureAwait(false);
+            var boss = context.Boss!;
+
+            // The hit is tracked by the hit plugin, which is active in the game context of the tests.
+            await boss.ReflectDamageAsync(player, (uint)boss.Health).ConfigureAwait(false);
+            await context.TickAsync(Start.AddSeconds(1)).ConfigureAwait(false);
+
+            var result = (await history.GetRecentAsync(10, NullLogger.Instance).ConfigureAwait(false)).Single();
+            Assert.That(result.Name, Is.EqualTo("Test"));
+            Assert.That(result.Outcome, Is.EqualTo(BossEncounterOutcome.Defeated));
+            Assert.That(result.PhaseName, Is.EqualTo("Pilares"));
+            Assert.That(result.Ranking.Select(r => (r.Name, r.Damage, r.WasRewarded)), Is.EqualTo(new[] { (player.Name, (long)BossHealth * 2, false) }));
+
+            var reloaded = await new BossEncounterHistory(path).GetRecentAsync(10, NullLogger.Instance).ConfigureAwait(false);
+            Assert.That(reloaded.Single().Outcome, Is.EqualTo(BossEncounterOutcome.Defeated));
+            Assert.That(reloaded.Single().Ranking, Has.Count.EqualTo(1));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    /// <summary>
+    /// Tests that the snapshot of a running encounter tells its place, phase, health and players.
+    /// </summary>
+    [Test]
+    public async Task SnapshotDescribesRunningEncounterAsync()
+    {
+        var (context, _) = await StartEncounterAsync().ConfigureAwait(false);
+
+        var snapshot = context.GetSnapshot();
+
+        Assert.That(snapshot.IsRunning, Is.True);
+        Assert.That((snapshot.X, snapshot.Y), Is.EqualTo((100, 100)));
+        Assert.That(snapshot.PhaseName, Is.EqualTo("Pilares"));
+        Assert.That(snapshot.HealthPercent, Is.EqualTo(100));
+        Assert.That(snapshot.PlayersInArena, Is.EqualTo(1));
+
+        context.RequestStop();
+        await context.TickAsync(Start.AddSeconds(1)).ConfigureAwait(false);
+        Assert.That(context.GetSnapshot().IsRunning, Is.False);
     }
 
     private static async ValueTask<(BossEncounterContext Context, Player Player)> StartEncounterAsync()
