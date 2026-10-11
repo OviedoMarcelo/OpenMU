@@ -10,6 +10,9 @@ using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.Attributes;
 using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.GameLogic.PlugIns.BossEncounters;
+using MUnique.OpenMU.GameLogic.Views;
+using MUnique.OpenMU.GameLogic.Views.World;
+using MUnique.OpenMU.Interfaces;
 using MUnique.OpenMU.Pathfinding;
 using Moq;
 using ItemDefinition = MUnique.OpenMU.Persistence.BasicModel.ItemDefinition;
@@ -206,6 +209,60 @@ public class BossEncounterTest
         await context.TickAsync(Start.AddSeconds(12)).ConfigureAwait(false);
         Assert.That(context.PendingAreaAttackCount, Is.EqualTo(0));
         Assert.That(player.Attributes[Stats.CurrentHealth], Is.EqualTo(maximumHealth - (uint)(maximumHealth * 0.4)).Within(1));
+
+        var groundMarker = Mock.Get(player.ViewPlugIns.GetPlugIn<IShowGroundMarkerPlugIn>()!);
+        groundMarker.Verify(p => p.ShowGroundWarningAsync(new Point(105, 100), 3, TimeSpan.FromSeconds(3)), Times.Once);
+        groundMarker.Verify(p => p.ShowGroundHitAsync(new Point(105, 100), 3), Times.Once);
+    }
+
+    /// <summary>
+    /// Tests that the bar of the health of the boss is shown to the players in the arena when it changes, and hidden when the encounter ends.
+    /// </summary>
+    [Test]
+    public async Task HealthBarIsShownInArenaAndHiddenAtEndAsync()
+    {
+        var (context, player) = await StartEncounterAsync().ConfigureAwait(false);
+        var boss = context.Boss!;
+        var healthBar = Mock.Get(player.ViewPlugIns.GetPlugIn<IShowBossHealthPlugIn>()!);
+
+        await context.TickAsync(Start.AddSeconds(1)).ConfigureAwait(false);
+        await context.TickAsync(Start.AddSeconds(2)).ConfigureAwait(false);
+        healthBar.Verify(p => p.ShowBossHealthAsync(boss, "Test", "Pilares", 100), Times.Once);
+
+        boss.Health = (int)(boss.Attributes[Stats.MaximumHealth] * 0.4);
+        await context.TickAsync(Start.AddSeconds(3)).ConfigureAwait(false);
+        healthBar.Verify(p => p.ShowBossHealthAsync(boss, "Test", "Meteoritos", 40), Times.Once);
+
+        context.RequestStop();
+        await context.TickAsync(Start.AddSeconds(4)).ConfigureAwait(false);
+        healthBar.Verify(p => p.HideBossHealthAsync(boss), Times.Once);
+    }
+
+    /// <summary>
+    /// Tests that each configured percentage of the health is announced once, and only the lowest one when several are reached at once.
+    /// </summary>
+    [Test]
+    public async Task HealthIsAnnouncedOnceAsync()
+    {
+        var gameContext = CreateGameContext();
+        var definition = CreateDefinition();
+        definition.HealthAnnouncements = new List<int> { 90, 75, 50 };
+        definition.HealthAnnouncementMessage = "Vida {1}";
+        var context = new BossEncounterContext(gameContext, definition);
+        var player = await CreatePlayerAsync(gameContext, new Point(105, 100)).ConfigureAwait(false);
+        await context.StartAsync(Start).ConfigureAwait(false);
+        var boss = context.Boss!;
+        var messages = Mock.Get(player.ViewPlugIns.GetPlugIn<IShowMessagePlugIn>()!);
+
+        boss.Health = (int)(boss.Attributes[Stats.MaximumHealth] * 0.7);
+        await context.TickAsync(Start.AddSeconds(1)).ConfigureAwait(false);
+        await context.TickAsync(Start.AddSeconds(2)).ConfigureAwait(false);
+        boss.Health = (int)(boss.Attributes[Stats.MaximumHealth] * 0.4);
+        await context.TickAsync(Start.AddSeconds(3)).ConfigureAwait(false);
+
+        messages.Verify(p => p.ShowMessageAsync("Vida 90", It.IsAny<MessageType>()), Times.Never);
+        messages.Verify(p => p.ShowMessageAsync("Vida 75", MessageType.GoldenCenter), Times.Once);
+        messages.Verify(p => p.ShowMessageAsync("Vida 50", MessageType.GoldenCenter), Times.Once);
     }
 
     /// <summary>
@@ -625,6 +682,7 @@ public class BossEncounterTest
         player.Position = position;
         player.Attributes![Stats.CurrentHealth] = player.Attributes[Stats.MaximumHealth];
         await player.CurrentMap!.AddAsync(player).ConfigureAwait(false);
+        await ((GameContext)gameContext).AddPlayerAsync(player).ConfigureAwait(false);
         return player;
     }
 }

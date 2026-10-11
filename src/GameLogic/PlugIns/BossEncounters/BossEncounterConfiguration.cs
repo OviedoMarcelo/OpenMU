@@ -73,6 +73,8 @@ public class BossEncounterConfiguration
             new() { Day = BossEncounterDay.EveryDay, Time = new TimeOnly(21, 0) },
         },
         AnnouncementMinutes = new List<int> { 10, 5, 1 },
+        HealthAnnouncements = new List<int> { 75, 50, 25, 10 },
+        HealthAnnouncementMessage = "¡{0} está al {1} % de su vida!",
         SoftEnrageAfter = TimeSpan.FromMinutes(15),
         MaximumDuration = TimeSpan.FromMinutes(20),
         RetreatDamagePercent = 80,

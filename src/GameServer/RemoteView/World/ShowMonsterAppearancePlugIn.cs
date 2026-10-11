@@ -37,12 +37,7 @@ public class ShowMonsterAppearancePlugIn : IShowMonsterAppearancePlugIn
             return;
         }
 
-        var name = appearance.Name ?? string.Empty;
-        while (Encoding.UTF8.GetByteCount(name) > GameLogic.NPC.MonsterAppearance.MaximumNameLength)
-        {
-            name = name[..^1];
-        }
-
+        var name = Utf8Text.Truncate(appearance.Name, GameLogic.NPC.MonsterAppearance.MaximumNameLength);
         var scalePercent = (ushort)Math.Clamp(appearance.ScalePercent, 1, ushort.MaxValue);
         await connection.SendMonsterAppearanceAsync((byte)appearance.Glow, npc.Id, scalePercent, name).ConfigureAwait(false);
     }

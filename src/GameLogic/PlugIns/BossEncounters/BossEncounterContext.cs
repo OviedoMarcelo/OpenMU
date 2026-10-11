@@ -56,6 +56,8 @@ public sealed class BossEncounterContext
     private readonly List<(Point Target, DateTime DueUtc, BossEncounterPhase Phase)> _pendingAreaAttacks = new();
     private readonly HashSet<Monster> _hiddenMonsters = new();
     private readonly HashSet<int> _announcedMinutes = new();
+    private readonly HashSet<int> _announcedHealthPercents = new();
+    private readonly HashSet<Player> _playersWithHealthBar = new();
     private readonly SimpleElement _shieldElement = new(0, AggregateType.Multiplicate);
     private readonly BossEncounterDamageTracker _damageTracker = new();
 
@@ -82,6 +84,8 @@ public sealed class BossEncounterContext
     private SimpleElement? _healthScalingElement;
     private double _phaseDamageMultiplier = 1;
     private int _scalingPlayers = 1;
+    private int _shownHealthPercent = -1;
+    private int _shownPhaseIndex = -1;
     private DateTime _nextScalingUtc;
     private bool _isShieldActive;
     private int _isStartRequested;
@@ -276,6 +280,7 @@ public sealed class BossEncounterContext
         this._enrageTimerStartUtc = utcNow;
         this._arenaCenter = point;
         this._arenaEmptySinceUtc = null;
+        this._announcedHealthPercents.Clear();
         this.IsRunning = true;
         if (definition.HideAutomaticSpawns)
         {
@@ -457,6 +462,68 @@ public sealed class BossEncounterContext
         }
 
         await this.ExecuteDueAreaAttacksAsync(boss, utcNow).ConfigureAwait(false);
+        await this.UpdateHealthBarAsync(boss).ConfigureAwait(false);
+        await this.AnnounceHealthAsync(boss).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Shows the bar of the health of the boss to the players in the arena, when it changed or when they entered
+    /// the arena, and hides it for the players who left.
+    /// </summary>
+    private async ValueTask UpdateHealthBarAsync(Monster boss)
+    {
+        var healthPercent = (int)Math.Clamp(Math.Ceiling(GetHealthPercentage(boss)), 0, 100);
+        var hasChanged = healthPercent != this._shownHealthPercent || this._phaseIndex != this._shownPhaseIndex;
+        this._shownHealthPercent = healthPercent;
+        this._shownPhaseIndex = this._phaseIndex;
+
+        var players = this.GetPlayersNearArena();
+        var bossName = string.IsNullOrWhiteSpace(this._definition.DisplayName) ? this.Name : this._definition.DisplayName.Trim();
+        var phaseName = this.CurrentPhase?.Name ?? string.Empty;
+        foreach (var player in players)
+        {
+            if (this._playersWithHealthBar.Add(player) || hasChanged)
+            {
+                await player.InvokeViewPlugInAsync<IShowBossHealthPlugIn>(p => p.ShowBossHealthAsync(boss, bossName, phaseName, (byte)healthPercent)).ConfigureAwait(false);
+            }
+        }
+
+        foreach (var player in this._playersWithHealthBar.Except(players).ToList())
+        {
+            this._playersWithHealthBar.Remove(player);
+            await player.InvokeViewPlugInAsync<IShowBossHealthPlugIn>(p => p.HideBossHealthAsync(boss)).ConfigureAwait(false);
+        }
+    }
+
+    private async ValueTask HideHealthBarAsync(Monster boss)
+    {
+        foreach (var player in this._playersWithHealthBar)
+        {
+            await player.InvokeViewPlugInAsync<IShowBossHealthPlugIn>(p => p.HideBossHealthAsync(boss)).ConfigureAwait(false);
+        }
+
+        this._playersWithHealthBar.Clear();
+        this._shownHealthPercent = -1;
+        this._shownPhaseIndex = -1;
+    }
+
+    /// <summary>
+    /// Tells the players of the map when the health of the boss falls to one of the configured percentages, once each.
+    /// </summary>
+    private async ValueTask AnnounceHealthAsync(Monster boss)
+    {
+        var healthPercent = GetHealthPercentage(boss);
+        var reached = this._definition.HealthAnnouncements
+            .Where(percent => percent > 0 && percent < 100 && healthPercent <= percent && !this._announcedHealthPercents.Contains(percent))
+            .ToList();
+        if (reached.Count == 0)
+        {
+            return;
+        }
+
+        // When the health fell over several percentages at once, only the lowest one is shown.
+        this._announcedHealthPercents.UnionWith(reached);
+        await this.ShowMapMessageAsync(this._definition.HealthAnnouncementMessage, this.Name, reached.Min()).ConfigureAwait(false);
     }
 
     private async ValueTask UpdatePhaseAsync(DateTime utcNow)
@@ -651,7 +718,9 @@ public sealed class BossEncounterContext
 
         foreach (var target in targets)
         {
-            this._pendingAreaAttacks.Add((target.Position, utcNow + phase.AreaAttackDelay, phase));
+            var targetPosition = target.Position;
+            this._pendingAreaAttacks.Add((targetPosition, utcNow + phase.AreaAttackDelay, phase));
+            await this.ForEachPlayerNearArenaAsync<IShowGroundMarkerPlugIn>(p => p.ShowGroundWarningAsync(targetPosition, phase.AreaAttackRadius, phase.AreaAttackDelay)).ConfigureAwait(false);
             await this.ShowMessageAsync(target, phase.AreaAttackMarkedMessage, this.Name).ConfigureAwait(false);
             await this.ShowSkillAnimationAsync(boss, target).ConfigureAwait(false);
         }
@@ -663,6 +732,7 @@ public sealed class BossEncounterContext
         foreach (var attack in dueAttacks)
         {
             this._pendingAreaAttacks.Remove(attack);
+            await this.ForEachPlayerNearArenaAsync<IShowGroundMarkerPlugIn>(p => p.ShowGroundHitAsync(attack.Target, attack.Phase.AreaAttackRadius)).ConfigureAwait(false);
             foreach (var player in this.GetPlayersInRange(attack.Target, attack.Phase.AreaAttackRadius))
             {
                 await this.ShowSkillAnimationAsync(boss, player).ConfigureAwait(false);
@@ -702,6 +772,7 @@ public sealed class BossEncounterContext
         if (boss is not null)
         {
             this._damageTracker.Untrack(boss);
+            await this.HideHealthBarAsync(boss).ConfigureAwait(false);
             await RemoveMonsterAsync(boss).ConfigureAwait(false);
         }
 
@@ -981,6 +1052,32 @@ public sealed class BossEncounterContext
     /// </summary>
     private IReadOnlyList<Player> GetPlayersInArena() => this.GetPlayersInRange(this._arenaCenter, this._definition.ArenaRadius);
 
+    private async ValueTask ForEachPlayerNearArenaAsync<TViewPlugIn>(Func<TViewPlugIn, ValueTask> action)
+        where TViewPlugIn : class, IViewPlugIn
+    {
+        foreach (var player in this.GetPlayersNearArena())
+        {
+            await player.InvokeViewPlugInAsync(action).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Gets the players in the arena, the dead ones too, e.g. for the bar of the health of the boss.
+    /// </summary>
+    private IReadOnlyList<Player> GetPlayersNearArena()
+    {
+        if (this._map is not { } map)
+        {
+            return [];
+        }
+
+        var radius = this._definition.ArenaRadius;
+        return map.GetAttackablesInRange(this._arenaCenter, radius)
+            .OfType<Player>()
+            .Where(player => player.IsInRange(this._arenaCenter, radius))
+            .ToList();
+    }
+
     /// <summary>
     /// Starts the encounter again, when there was no living player in the arena for the configured time,
     /// e.g. after all of them died. Nothing happens while the boss is untouched in its first phase.
@@ -1022,6 +1119,7 @@ public sealed class BossEncounterContext
         this._enrageTimerStartUtc = utcNow;
         this._phaseIndex = -1;
         this._damageTracker.Clear();
+        this._announcedHealthPercents.Clear();
         boss.Health = (int)boss.Attributes[Stats.MaximumHealth];
         this.UpdateBossDamage(1);
         await this.ShowMapMessageAsync(this._definition.ResetMessage, this.Name).ConfigureAwait(false);

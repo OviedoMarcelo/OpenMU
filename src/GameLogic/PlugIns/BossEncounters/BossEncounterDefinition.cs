@@ -157,6 +157,18 @@ public class BossEncounterDefinition
     public LocalizedString AnnouncementMessage { get; set; }
 
     /// <summary>
+    /// Gets or sets the percentages of the health of the boss at which the players of the map get a message.
+    /// </summary>
+    [Display(Name = "Avisos de vida (%)", Description = "P. ej. 75, 50 y 25: un mensaje dorado al mapa cuando la vida del boss baja a cada uno. Se avisa una vez por encuentro (otra vez después de un reinicio).", Order = 33)]
+    public IList<int> HealthAnnouncements { get; set; } = new List<int>();
+
+    /// <summary>
+    /// Gets or sets the message for the <see cref="HealthAnnouncements"/>.
+    /// </summary>
+    [Display(Name = "Mensaje de aviso de vida", Description = "{0} = nombre, {1} = porcentaje.", Order = 34)]
+    public LocalizedString HealthAnnouncementMessage { get; set; }
+
+    /// <summary>
     /// Gets or sets the time after the start, at which the last phase starts regardless of the health of the boss.
     /// <see cref="TimeSpan.Zero"/> means never.
     /// </summary>
