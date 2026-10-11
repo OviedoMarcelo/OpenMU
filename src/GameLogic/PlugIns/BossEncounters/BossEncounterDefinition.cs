@@ -94,6 +94,21 @@ public class BossEncounterDefinition
     public bool HideAutomaticSpawns { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets the maximum distance of the boss to the place where it appeared. When it's further away, it's
+    /// teleported back, so that it can't be pulled out of its arena. 0 = no limit.
+    /// </summary>
+    [Display(Name = "Distancia máxima del boss", Description = "Si el boss se aleja más que esto del lugar donde apareció, vuelve teletransportado. Así no se lo puede sacar de la arena. 0 = sin límite.", Order = 23)]
+    [Range(0, 255)]
+    public byte LeashRadius { get; set; } = 25;
+
+    /// <summary>
+    /// Gets or sets the time after which the encounter starts again, when there are no living players in the arena,
+    /// e.g. after all of them died. The boss heals completely and goes back to its first phase. 0 = never.
+    /// </summary>
+    [Display(Name = "Reiniciar con la arena vacía", Description = "Si no queda ningún jugador vivo en la arena durante este tiempo (p. ej. murieron todos), el boss se cura por completo y vuelve a la primera fase. La duración máxima sigue contando. 0 = nunca.", Order = 24)]
+    public TimeSpan ResetAfterEmptyArena { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
     /// Gets or sets the points in time at which the encounter starts.
     /// </summary>
     [Display(Name = "Horarios", Description = "Día y hora de inicio, en la zona horaria del servidor. Sin horarios = solo se inicia a mano con /boss iniciar.", Order = 30)]
@@ -154,6 +169,12 @@ public class BossEncounterDefinition
     /// </summary>
     [Display(Name = "Mensaje de retirada", Description = "{0} = nombre.", Order = 52)]
     public LocalizedString RetreatMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the message which is shown to the players of the map, when the encounter starts again because the arena was empty.
+    /// </summary>
+    [Display(Name = "Mensaje de reinicio", Description = "Cuando el boss se cura porque la arena quedó vacía. {0} = nombre.", Order = 53)]
+    public LocalizedString ResetMessage { get; set; }
 
     /// <summary>
     /// Gets or sets the items which the boss may drop, in addition to or instead of the drops of its monster.

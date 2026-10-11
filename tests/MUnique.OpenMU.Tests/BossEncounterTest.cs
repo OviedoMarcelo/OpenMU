@@ -189,6 +189,68 @@ public class BossEncounterTest
     }
 
     /// <summary>
+    /// Tests that the boss is teleported back to the place where it appeared, when it's pulled too far away.
+    /// </summary>
+    [Test]
+    public async Task BossIsTeleportedBackWhenPulledAwayAsync()
+    {
+        var (context, _) = await StartEncounterAsync().ConfigureAwait(false);
+        var boss = context.Boss!;
+
+        await boss.MoveAsync(new Point(120, 100)).ConfigureAwait(false);
+        await context.TickAsync(Start.AddSeconds(1)).ConfigureAwait(false);
+        Assert.That(boss.Position, Is.EqualTo(new Point(120, 100)));
+
+        await boss.MoveAsync(new Point(140, 100)).ConfigureAwait(false);
+        await context.TickAsync(Start.AddSeconds(2)).ConfigureAwait(false);
+        Assert.That(boss.Position, Is.EqualTo(new Point(100, 100)));
+    }
+
+    /// <summary>
+    /// Tests that the boss heals completely and goes back to its first phase, when no living player was in the arena for the configured time.
+    /// </summary>
+    [Test]
+    public async Task EncounterStartsAgainWhenArenaIsEmptyAsync()
+    {
+        var (context, player) = await StartEncounterAsync().ConfigureAwait(false);
+        var boss = context.Boss!;
+        var maximumHealth = (int)boss.Attributes[Stats.MaximumHealth];
+        boss.Health = (int)(maximumHealth * 0.4);
+        await context.TickAsync(Start.AddSeconds(1)).ConfigureAwait(false);
+        Assert.That(context.CurrentPhase!.Name, Is.EqualTo("Meteoritos"));
+
+        player.IsAlive = false;
+        await context.TickAsync(Start.AddSeconds(2)).ConfigureAwait(false);
+        await context.TickAsync(Start.AddSeconds(31)).ConfigureAwait(false);
+        Assert.That(boss.Health, Is.EqualTo((int)(maximumHealth * 0.4)));
+
+        await context.TickAsync(Start.AddSeconds(32)).ConfigureAwait(false);
+        Assert.That(context.IsRunning, Is.True);
+        Assert.That(boss.Health, Is.EqualTo(maximumHealth));
+        Assert.That(context.CurrentPhase!.Name, Is.EqualTo("Pilares"));
+        Assert.That(context.Summons, Is.Empty);
+        Assert.That(context.Objects, Has.Count.EqualTo(2));
+    }
+
+    /// <summary>
+    /// Tests that the encounter doesn't start again while a living player is in the arena.
+    /// </summary>
+    [Test]
+    public async Task EncounterDoesNotStartAgainWithPlayersInArenaAsync()
+    {
+        var (context, _) = await StartEncounterAsync().ConfigureAwait(false);
+        var boss = context.Boss!;
+        var health = (int)(boss.Attributes[Stats.MaximumHealth] * 0.4);
+        boss.Health = health;
+
+        await context.TickAsync(Start.AddSeconds(1)).ConfigureAwait(false);
+        await context.TickAsync(Start.AddSeconds(40)).ConfigureAwait(false);
+
+        Assert.That(boss.Health, Is.EqualTo(health));
+        Assert.That(context.CurrentPhase!.Name, Is.EqualTo("Meteoritos"));
+    }
+
+    /// <summary>
     /// Tests that the monster of the boss, which appears on the map by itself, is hidden during the encounter and shown again afterward.
     /// </summary>
     [Test]

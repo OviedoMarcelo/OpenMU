@@ -78,6 +78,7 @@ public class BossEncounterConfiguration
         StartMessage = "¡{0} apareció en {1} ({2}, {3})!",
         DefeatedMessage = "¡{1} derrotó a {0}!",
         RetreatMessage = "{0} se retiró. El encuentro falló.",
+        ResetMessage = "{0} recuperó toda su vida: la arena quedó vacía.",
         Phases = new List<BossEncounterPhase>
         {
             new()

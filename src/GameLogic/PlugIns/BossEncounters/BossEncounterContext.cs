@@ -65,6 +65,9 @@ public sealed class BossEncounterContext
     private GameMap? _map;
     private Monster? _boss;
     private DateTime _startUtc;
+    private DateTime _enrageTimerStartUtc;
+    private Point _arenaCenter;
+    private DateTime? _arenaEmptySinceUtc;
     private int _phaseIndex = -1;
     private bool _isSoftEnraged;
     private DateTime _objectsSpawnedUtc;
@@ -260,6 +263,9 @@ public sealed class BossEncounterContext
         this._phaseIndex = -1;
         this._isSoftEnraged = false;
         this._startUtc = utcNow;
+        this._enrageTimerStartUtc = utcNow;
+        this._arenaCenter = point;
+        this._arenaEmptySinceUtc = null;
         this.IsRunning = true;
         if (definition.HideAutomaticSpawns)
         {
@@ -407,7 +413,14 @@ public sealed class BossEncounterContext
             return;
         }
 
-        if (this._definition.SoftEnrageAfter > TimeSpan.Zero && elapsed >= this._definition.SoftEnrageAfter)
+        if (await this.ResetIfArenaIsEmptyAsync(boss, utcNow).ConfigureAwait(false))
+        {
+            return;
+        }
+
+        await this.LeashAsync(boss).ConfigureAwait(false);
+
+        if (this._definition.SoftEnrageAfter > TimeSpan.Zero && utcNow - this._enrageTimerStartUtc >= this._definition.SoftEnrageAfter)
         {
             this._isSoftEnraged = true;
         }
@@ -520,7 +533,7 @@ public sealed class BossEncounterContext
     {
         this._logger.LogInformation("Boss encounter {Name}: the objects of the phase {Phase} weren't destroyed in time.", this.Name, phase.Name);
         await this.ShowMapMessageAsync(phase.FailureMessage, this.Name).ConfigureAwait(false);
-        foreach (var player in this.GetPlayersInRange(boss.Position, this._definition.ArenaRadius))
+        foreach (var player in this.GetPlayersInArena())
         {
             await this.DamagePlayerAsync(boss, player, phase.FailureDamagePercent).ConfigureAwait(false);
         }
@@ -599,7 +612,7 @@ public sealed class BossEncounterContext
 
     private async ValueTask MarkAreaAttackTargetsAsync(Monster boss, BossEncounterPhase phase, DateTime utcNow)
     {
-        var players = this.GetPlayersInRange(boss.Position, this._definition.ArenaRadius);
+        var players = this.GetPlayersInArena();
         if (players.Count == 0)
         {
             return;
@@ -641,7 +654,7 @@ public sealed class BossEncounterContext
     {
         if (this._boss is { } boss)
         {
-            foreach (var player in this.GetPlayersInRange(boss.Position, this._definition.ArenaRadius))
+            foreach (var player in this.GetPlayersInArena())
             {
                 await this.DamagePlayerAsync(boss, player, this._definition.RetreatDamagePercent).ConfigureAwait(false);
             }
@@ -816,6 +829,72 @@ public sealed class BossEncounterContext
         {
             this._logger.LogError(ex, "Couldn't damage {Player} by the boss encounter {Name}.", player, this.Name);
         }
+    }
+
+    /// <summary>
+    /// Gets the players in the arena, which is around the place where the boss appeared.
+    /// </summary>
+    private IReadOnlyList<Player> GetPlayersInArena() => this.GetPlayersInRange(this._arenaCenter, this._definition.ArenaRadius);
+
+    /// <summary>
+    /// Starts the encounter again, when there was no living player in the arena for the configured time,
+    /// e.g. after all of them died. Nothing happens while the boss is untouched in its first phase.
+    /// </summary>
+    /// <returns><c>true</c>, if the encounter started again.</returns>
+    private async ValueTask<bool> ResetIfArenaIsEmptyAsync(Monster boss, DateTime utcNow)
+    {
+        var resetAfter = this._definition.ResetAfterEmptyArena;
+        if (resetAfter <= TimeSpan.Zero || this.GetPlayersInArena().Count > 0)
+        {
+            this._arenaEmptySinceUtc = null;
+            return false;
+        }
+
+        this._arenaEmptySinceUtc ??= utcNow;
+        var isUntouched = this._phaseIndex <= 0 && !this._isSoftEnraged && boss.Health >= (int)boss.Attributes[Stats.MaximumHealth];
+        if (utcNow - this._arenaEmptySinceUtc < resetAfter || isUntouched)
+        {
+            return false;
+        }
+
+        await this.ResetAsync(boss, utcNow).ConfigureAwait(false);
+        return true;
+    }
+
+    private async ValueTask ResetAsync(Monster boss, DateTime utcNow)
+    {
+        this._logger.LogInformation("Boss encounter {Name} starts again, because its arena was empty.", this.Name);
+        this._arenaEmptySinceUtc = null;
+        await this.RemoveObjectsAsync().ConfigureAwait(false);
+        foreach (var monster in this._summons)
+        {
+            await RemoveMonsterAsync(monster).ConfigureAwait(false);
+        }
+
+        this._summons.Clear();
+        this._pendingAreaAttacks.Clear();
+        this._isSoftEnraged = false;
+        this._enrageTimerStartUtc = utcNow;
+        this._phaseIndex = -1;
+        boss.Health = (int)boss.Attributes[Stats.MaximumHealth];
+        this.UpdateBossDamage(1);
+        await this.ShowMapMessageAsync(this._definition.ResetMessage, this.Name).ConfigureAwait(false);
+        await this.UpdatePhaseAsync(utcNow).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Teleports the boss back to the place where it appeared, when it's too far away.
+    /// </summary>
+    private async ValueTask LeashAsync(Monster boss)
+    {
+        var radius = this._definition.LeashRadius;
+        if (radius == 0 || boss.IsInRange(this._arenaCenter, radius))
+        {
+            return;
+        }
+
+        await boss.StopWalkingAsync().ConfigureAwait(false);
+        await boss.TeleportAsync(this._arenaCenter).ConfigureAwait(false);
     }
 
     private IReadOnlyList<Player> GetPlayersInRange(Point point, int range)
