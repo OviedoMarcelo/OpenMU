@@ -38,6 +38,10 @@ public partial class EditAccount : EditBase
     /// <inheritdoc />
     protected override async ValueTask LoadOwnerAsync(CancellationToken cancellationToken)
     {
+        // The data source is shared and keeps the last loaded account, so opening the same account again
+        // would show it as it was back then - e.g. without a character created in the game since, and
+        // saving it would write that old state back. Unsaved changes were confirmed away before navigating.
+        await this.AccountData.ForceDiscardChangesAsync().ConfigureAwait(true);
         await this.AccountData.GetOwnerAsync(this.AccountId, cancellationToken).ConfigureAwait(true);
     }
 
