@@ -497,7 +497,9 @@ public class BossEncounterTest
     [Test]
     public async Task HealingInArenaIsTrackedAsync()
     {
-        var (context, player) = await StartEncounterAsync().ConfigureAwait(false);
+        var definition = CreateDefinition();
+        definition.IsHealingTracked = true;
+        var (context, player) = await StartEncounterAsync(definition).ConfigureAwait(false);
         var healer = await CreatePlayerAsync(player.GameContext, new Point(106, 100)).ConfigureAwait(false);
         var outside = await CreatePlayerAsync(player.GameContext, new Point(160, 160)).ConfigureAwait(false);
         var plugIn = new BossEncounterHealPlugIn();
@@ -511,6 +513,20 @@ public class BossEncounterTest
         Assert.That(participant.Player, Is.SameAs(healer));
         Assert.That(participant.Healing, Is.EqualTo(350));
         Assert.That(participant.Damage, Is.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Tests that the healing isn't tracked when the encounter doesn't take it into account, which is the default.
+    /// </summary>
+    [Test]
+    public async Task HealingIsNotTrackedByDefaultAsync()
+    {
+        var (context, player) = await StartEncounterAsync().ConfigureAwait(false);
+        var healer = await CreatePlayerAsync(player.GameContext, new Point(106, 100)).ConfigureAwait(false);
+
+        new BossEncounterHealPlugIn().HealthRestored(player, healer, 300);
+
+        Assert.That(context.DamageTracker.GetParticipants(), Is.Empty);
     }
 
     /// <summary>
@@ -664,10 +680,10 @@ public class BossEncounterTest
         Assert.That(context.GetSnapshot().IsRunning, Is.False);
     }
 
-    private static async ValueTask<(BossEncounterContext Context, Player Player)> StartEncounterAsync()
+    private static async ValueTask<(BossEncounterContext Context, Player Player)> StartEncounterAsync(BossEncounterDefinition? definition = null)
     {
         var gameContext = CreateGameContext();
-        var context = new BossEncounterContext(gameContext, CreateDefinition());
+        var context = new BossEncounterContext(gameContext, definition ?? CreateDefinition());
         var player = await CreatePlayerAsync(gameContext, new Point(105, 100)).ConfigureAwait(false);
         Assert.That(await context.StartAsync(Start).ConfigureAwait(false), Is.True);
         return (context, player);

@@ -279,15 +279,22 @@ public class BossEncounterDefinition
     public LocalizedString RankingMessage { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the health which the players restore to the players in the arena is
+    /// tracked, for the ranking of the healing and its rewards.
+    /// </summary>
+    [Display(Name = "Curación: tenerla en cuenta", Description = "Activado = se suma la vida que cada jugador cura a los jugadores de la arena: hay ranking de curación y premios por puesto de curación. Desactivado = solo cuenta el daño.", Order = 64)]
+    public bool IsHealingTracked { get; set; }
+
+    /// <summary>
     /// Gets or sets the title of the ranking of the healing.
     /// </summary>
-    [Display(Name = "Ranking de curación: título", Description = "Primera línea del ranking de curación, que se muestra si alguien curó en la arena. {0} = nombre.", Order = 64)]
+    [Display(Name = "Ranking de curación: título", Description = "Primera línea del ranking de curación, que se muestra si se tiene en cuenta la curación y alguien curó en la arena. {0} = nombre.", Order = 65)]
     public LocalizedString HealingRankingMessage { get; set; }
 
     /// <summary>
     /// Gets or sets the rewards for the places of the rankings, given in addition to the reward for the participation.
     /// </summary>
-    [Display(Name = "Premios por puesto", Description = "Premios extra para los primeros puestos del ranking de daño o de curación, si el boss muere. P. ej. daño puesto 1 = un item mejor, puestos 2 a 3 = otro. Se suman a la recompensa por participar. Con el inventario lleno, caen a sus pies.", Order = 65)]
+    [Display(Name = "Premios por puesto", Description = "Premios extra para los primeros puestos del ranking de daño o de curación (si se tiene en cuenta), si el boss muere. P. ej. daño puesto 1 = un item mejor, puestos 2 a 3 = otro. Se suman a la recompensa por participar. Con el inventario lleno, caen a sus pies.", Order = 66)]
     [MemberOfAggregate]
     [ScaffoldColumn(true)]
     public ICollection<BossEncounterRankReward> RankRewards { get; set; } = new List<BossEncounterRankReward>();
@@ -295,7 +302,7 @@ public class BossEncounterDefinition
     /// <summary>
     /// Gets or sets the message for a player who got a reward for its place.
     /// </summary>
-    [Display(Name = "Premios por puesto: mensaje", Description = "{0} = nombre, {1} = puesto, {2} = ranking (daño o curación).", Order = 66)]
+    [Display(Name = "Premios por puesto: mensaje", Description = "{0} = nombre, {1} = puesto, {2} = ranking (daño o curación).", Order = 67)]
     public LocalizedString RankRewardMessage { get; set; }
 
     /// <summary>

@@ -19,7 +19,7 @@ public sealed class BossEncounterHealPlugIn : IHealthRestoredPlugIn
     /// <inheritdoc />
     public void HealthRestored(IAttackable target, Player healer, float amount)
     {
-        if (target is Player healedPlayer && BossEncounterContext.FindArenaOf(healedPlayer) is { } encounter)
+        if (target is Player healedPlayer && BossEncounterContext.FindArenaOf(healedPlayer) is { IsHealingTracked: true } encounter)
         {
             encounter.DamageTracker.AddHealing(healer, (long)amount);
         }

@@ -163,6 +163,11 @@ public sealed class BossEncounterContext
     public BossEncounterDamageTracker DamageTracker => this._damageTracker;
 
     /// <summary>
+    /// Gets a value indicating whether the healing of the players in the arena is tracked.
+    /// </summary>
+    public bool IsHealingTracked => this._definition.IsHealingTracked;
+
+    /// <summary>
     /// Gets the running encounter in whose arena the player is.
     /// </summary>
     /// <param name="player">The player.</param>
