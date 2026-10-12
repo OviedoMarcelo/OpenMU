@@ -6595,6 +6595,112 @@ public static class ConnectionExtensions
     }
 
     /// <summary>
+    /// Sends a <see cref="MonsterAppearance" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="glow">The glow, like the glow of an item of that level: 0 = none, 7, 9, 11, 13 or 15; 100 = golden, like the monsters of the golden invasion.</param>
+    /// <param name="objectId">The id of the monster, as in the AddNpcsToScope message.</param>
+    /// <param name="scalePercent">The size in percent of the normal size of the monster.</param>
+    /// <param name="name">The name which is shown instead of the name of the monster. Empty for its own name.</param>
+    /// <remarks>
+    /// Is sent by the server when: When a monster which looks different than the others of its kind (e.g. the boss of an encounter) came into view, right after the AddNpcsToScope message.
+    /// Causes reaction on client side: The client shows the monster with the size, the glow and the name of this message, until it leaves the view.
+    /// </remarks>
+    public static async ValueTask SendMonsterAppearanceAsync(this IConnection? connection, byte @glow, ushort @objectId, ushort @scalePercent, string @name)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = MonsterAppearanceRef.Length;
+            var packet = new MonsterAppearanceRef(connection.Output.GetSpan(length)[..length]);
+            packet.Glow = @glow;
+            packet.ObjectId = @objectId;
+            packet.ScalePercent = @scalePercent;
+            packet.Name = @name;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Sends a <see cref="BossHealth" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="state">0 = hide the bar; 1 = show it.</param>
+    /// <param name="objectId">The id of the boss, as in the AddNpcsToScope message.</param>
+    /// <param name="healthPercent">The health of the boss in percent of its maximum health, 0 to 100.</param>
+    /// <param name="bossName">The name of the boss.</param>
+    /// <param name="phaseName">The name of the current phase; empty without phases.</param>
+    /// <remarks>
+    /// Is sent by the server when: When a player is in the arena of a boss encounter: when it enters the arena, and when the health or the phase of the boss changes. When it leaves the arena or the encounter ends, it's sent with the state 0.
+    /// Causes reaction on client side: The client shows a bar with the name, the phase and the health of the boss, or hides it with the state 0.
+    /// </remarks>
+    public static async ValueTask SendBossHealthAsync(this IConnection? connection, byte @state, ushort @objectId, byte @healthPercent, string @bossName, string @phaseName)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = BossHealthRef.Length;
+            var packet = new BossHealthRef(connection.Output.GetSpan(length)[..length]);
+            packet.State = @state;
+            packet.ObjectId = @objectId;
+            packet.HealthPercent = @healthPercent;
+            packet.BossName = @bossName;
+            packet.PhaseName = @phaseName;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Sends a <see cref="GroundMarker" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="kind">0 = warning, until the attack hits; 1 = the hit.</param>
+    /// <param name="x">The x coordinate of the center.</param>
+    /// <param name="y">The y coordinate of the center.</param>
+    /// <param name="radius">The radius in tiles.</param>
+    /// <param name="durationMilliseconds">How long the warning is shown, in milliseconds; 0 for a hit.</param>
+    /// <remarks>
+    /// Is sent by the server when: When a boss marks a place for an attack which hits after a delay (kind 0), and when the attack hits (kind 1).
+    /// Causes reaction on client side: The client shows a warning circle on the ground for the duration, or the effect of the hit.
+    /// </remarks>
+    public static async ValueTask SendGroundMarkerAsync(this IConnection? connection, byte @kind, byte @x, byte @y, byte @radius, ushort @durationMilliseconds)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = GroundMarkerRef.Length;
+            var packet = new GroundMarkerRef(connection.Output.GetSpan(length)[..length]);
+            packet.Kind = @kind;
+            packet.X = @x;
+            packet.Y = @y;
+            packet.Radius = @radius;
+            packet.DurationMilliseconds = @durationMilliseconds;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Sends a <see cref="EventChipRegistrationResult" /> to this connection.
     /// </summary>
     /// <param name="connection">The connection.</param>

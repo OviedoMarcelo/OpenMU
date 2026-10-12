@@ -84,6 +84,7 @@ public class Startup
         services.AddScoped<IChangeNotificationService, ChangeNotificationService>();
         services.AddScoped<AdminUserManagementService>();
         services.AddScoped<CastleSiegeManagementService>();
+        services.AddScoped<BossEncounterManagementService>();
         services.AddAdminPanelAuth(this.Configuration);
     }
 

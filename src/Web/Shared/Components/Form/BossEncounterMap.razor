@@ -1,0 +1,57 @@
+@using MUnique.OpenMU.GameLogic.PlugIns.BossEncounters
+
+<div class="card mb-3">
+    <h5 class="card-header">Mapa del encuentro</h5>
+    @* Focusable, so that the selected point can be removed with the delete key. *@
+    <div class="card-body boss-map-body" tabindex="0" @onkeydown="this.OnKeyDown">
+        <div class="d-flex flex-wrap align-items-center mb-2 boss-map-toolbar">
+            <select class="form-select" @onchange="this.OnMapSelected" title="Mapa">
+                @foreach (var map in this._maps)
+                {
+                    <option value="@map.Number" selected="@(map.Number == this._mapNumber)">@map.Name (@map.Number)</option>
+                }
+            </select>
+            <span class="text-muted">@this.GetHint()</span>
+        </div>
+        <div class="d-flex flex-wrap boss-map-layout">
+            <div class="boss-map" style="@($"width: {MapSize}px; height: {MapSize}px;")">
+                @if (this._imageData is { } imageData)
+                {
+                    <img src="@imageData" width="@MapSize" height="@MapSize" @onclick="this.OnMapClick" draggable="false" alt="Mapa" />
+                }
+
+                @foreach (var point in this.SpawnPointsOnMap)
+                {
+                    <div class="boss-map-arena" style="@this.GetCircleStyle(point.X, point.Y, this.Encounter.ArenaRadius)"></div>
+                }
+
+                @foreach (var marker in this.Markers)
+                {
+                    <div class="@this.GetMarkerCssClass(marker)"
+                         style="@this.GetMarkerStyle(marker)"
+                         title="@this.GetLabel(marker.Item)"
+                         @onpointerdown="@(() => this.StartDrag(marker.Item))"
+                         @onclick:stopPropagation="true"></div>
+                }
+
+                @if (this._isDragging)
+                {
+                    @* While a point is dragged, this layer covers the map, so that the position of the pointer is relative to the map. *@
+                    <div class="boss-map-drag-layer"
+                         @onpointermove="this.OnDragMove"
+                         @onpointerup="this.OnDragEnd"
+                         @onpointerleave="this.OnDragEnd"></div>
+                }
+            </div>
+            <ul class="list-unstyled boss-map-legend">
+                @foreach (var marker in this.Markers)
+                {
+                    <li class="@(marker.Item == this._selected ? "selected" : null)" @onclick="@(() => this.Select(marker.Item))">
+                        <span class="@(marker.IsSpawnPoint ? "boss-map-swatch spawn" : "boss-map-swatch")" style="@($"background: {marker.Color};")"></span>
+                        @this.GetLabel(marker.Item) <span class="text-muted">(@marker.X, @marker.Y)</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>

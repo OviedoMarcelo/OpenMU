@@ -6817,6 +6817,104 @@ public class PacketStructureTests
     }
 
     /// <summary>
+    /// Tests the packet size calculation for MonsterAppearance.
+    /// </summary>
+    [Test]
+    public void MonsterAppearance_PacketSizeValidation()
+    {
+        // Fixed-length packet validation
+        const int expectedLength = 44;
+        var actualLength = MonsterAppearanceRef.Length;
+        
+        Assert.That(actualLength, Is.EqualTo(expectedLength), 
+            "Packet length mismatch: declared length does not match calculated size");
+        
+        // Validate field 'Glow' boundary
+        Assert.That(5 + 1, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'Glow' exceeds packet boundary");
+        
+        // Validate field 'ObjectId' boundary
+        Assert.That(6 + 2, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'ObjectId' exceeds packet boundary");
+        
+        // Validate field 'ScalePercent' boundary
+        Assert.That(8 + 2, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'ScalePercent' exceeds packet boundary");
+        
+        // Validate field 'Name' boundary
+        Assert.That(12 + 32, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'Name' exceeds packet boundary");
+    }
+
+    /// <summary>
+    /// Tests the packet size calculation for BossHealth.
+    /// </summary>
+    [Test]
+    public void BossHealth_PacketSizeValidation()
+    {
+        // Fixed-length packet validation
+        const int expectedLength = 76;
+        var actualLength = BossHealthRef.Length;
+        
+        Assert.That(actualLength, Is.EqualTo(expectedLength), 
+            "Packet length mismatch: declared length does not match calculated size");
+        
+        // Validate field 'State' boundary
+        Assert.That(5 + 1, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'State' exceeds packet boundary");
+        
+        // Validate field 'ObjectId' boundary
+        Assert.That(6 + 2, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'ObjectId' exceeds packet boundary");
+        
+        // Validate field 'HealthPercent' boundary
+        Assert.That(8 + 1, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'HealthPercent' exceeds packet boundary");
+        
+        // Validate field 'BossName' boundary
+        Assert.That(12 + 32, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'BossName' exceeds packet boundary");
+        
+        // Validate field 'PhaseName' boundary
+        Assert.That(44 + 32, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'PhaseName' exceeds packet boundary");
+    }
+
+    /// <summary>
+    /// Tests the packet size calculation for GroundMarker.
+    /// </summary>
+    [Test]
+    public void GroundMarker_PacketSizeValidation()
+    {
+        // Fixed-length packet validation
+        const int expectedLength = 12;
+        var actualLength = GroundMarkerRef.Length;
+        
+        Assert.That(actualLength, Is.EqualTo(expectedLength), 
+            "Packet length mismatch: declared length does not match calculated size");
+        
+        // Validate field 'Kind' boundary
+        Assert.That(5 + 1, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'Kind' exceeds packet boundary");
+        
+        // Validate field 'X' boundary
+        Assert.That(6 + 1, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'X' exceeds packet boundary");
+        
+        // Validate field 'Y' boundary
+        Assert.That(7 + 1, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'Y' exceeds packet boundary");
+        
+        // Validate field 'Radius' boundary
+        Assert.That(8 + 1, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'Radius' exceeds packet boundary");
+        
+        // Validate field 'DurationMilliseconds' boundary
+        Assert.That(10 + 2, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'DurationMilliseconds' exceeds packet boundary");
+    }
+
+    /// <summary>
     /// Tests the packet size calculation for EventChipRegistrationResult.
     /// </summary>
     [Test]

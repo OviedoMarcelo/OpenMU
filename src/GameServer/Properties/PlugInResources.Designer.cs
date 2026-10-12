@@ -7325,6 +7325,24 @@ namespace MUnique.OpenMU.GameServer.Properties {
         /// <summary>Gets the localized PlayerTitleViewPlugIn_Description text.</summary>
         public static string PlayerTitleViewPlugIn_Description => ResourceManager.GetString("PlayerTitleViewPlugIn_Description", resourceCulture)!;
 
+        /// <summary>Gets the localized ShowMonsterAppearancePlugIn_Name text.</summary>
+        public static string ShowMonsterAppearancePlugIn_Name => ResourceManager.GetString("ShowMonsterAppearancePlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized ShowMonsterAppearancePlugIn_Description text.</summary>
+        public static string ShowMonsterAppearancePlugIn_Description => ResourceManager.GetString("ShowMonsterAppearancePlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized ShowBossHealthPlugIn_Name text.</summary>
+        public static string ShowBossHealthPlugIn_Name => ResourceManager.GetString("ShowBossHealthPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized ShowBossHealthPlugIn_Description text.</summary>
+        public static string ShowBossHealthPlugIn_Description => ResourceManager.GetString("ShowBossHealthPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized ShowGroundMarkerPlugIn_Name text.</summary>
+        public static string ShowGroundMarkerPlugIn_Name => ResourceManager.GetString("ShowGroundMarkerPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized ShowGroundMarkerPlugIn_Description text.</summary>
+        public static string ShowGroundMarkerPlugIn_Description => ResourceManager.GetString("ShowGroundMarkerPlugIn_Description", resourceCulture)!;
+
         /// <summary>Gets the localized SeasonPassViewPlugIn_Name text.</summary>
         public static string SeasonPassViewPlugIn_Name => ResourceManager.GetString("SeasonPassViewPlugIn_Name", resourceCulture)!;
 
