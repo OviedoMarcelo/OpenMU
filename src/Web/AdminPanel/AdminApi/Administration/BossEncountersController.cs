@@ -47,13 +47,15 @@ public class BossEncountersController : ControllerBase
     }
 
     /// <summary>
-    /// Gets the game servers whose encounters can be managed.
+    /// Gets the game servers whose encounters can be managed, and whether the plugin is active, e.g. to show the page in the menu.
     /// </summary>
-    /// <returns>The game servers.</returns>
+    /// <returns>The overview.</returns>
     [HttpGet]
-    public IReadOnlyList<GameServerItem> GetServers()
+    public Overview GetOverview()
     {
-        return this._service.AvailableGameServers.Select(s => new GameServerItem(s.Id, s.Description)).ToList();
+        return new Overview(
+            this._service.AvailableGameServers.Select(s => new GameServerItem(s.Id, s.Description)).ToList(),
+            this._service.IsPlugInActive);
     }
 
     /// <summary>
@@ -125,6 +127,13 @@ public class BossEncountersController : ControllerBase
             [new AuditChange(caption, caption, null, name)])).ConfigureAwait(false);
         return this.GetEncounters(serverId);
     }
+
+    /// <summary>
+    /// The game servers whose encounters can be managed.
+    /// </summary>
+    /// <param name="Servers">The game servers.</param>
+    /// <param name="IsPlugInActive">A value indicating whether the plugin of the boss encounters is active.</param>
+    public record Overview(IReadOnlyList<GameServerItem> Servers, bool IsPlugInActive);
 
     /// <summary>
     /// A game server whose encounters can be managed.

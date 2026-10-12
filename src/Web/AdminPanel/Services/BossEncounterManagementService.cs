@@ -45,6 +45,13 @@ public sealed class BossEncounterManagementService
     public IReadOnlyList<CastleSiegeManagementGameServer> AvailableGameServers { get; }
 
     /// <summary>
+    /// Gets a value indicating whether the plugin of the boss encounters is active on any of the available game servers.
+    /// </summary>
+    public bool IsPlugInActive => this._serverProvider.Servers
+        .OfType<IGameServerContextProvider>()
+        .Any(provider => provider.Context.FeaturePlugIns.GetPlugIn<BossEncounterPlugIn>() is not null);
+
+    /// <summary>
     /// Gets the state of the encounters of a game server.
     /// </summary>
     /// <param name="gameServerId">The id of the game server.</param>
