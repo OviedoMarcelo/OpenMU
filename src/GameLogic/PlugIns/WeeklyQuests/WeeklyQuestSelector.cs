@@ -81,15 +81,111 @@ public static class WeeklyQuestSelector
     }
 
     /// <summary>
-    /// Determines whether the prerequisite of the quest is not completed yet.
+    /// Determines whether the prerequisite of the quest is not completed yet, or its chapter is locked.
     /// </summary>
     /// <param name="quest">The quest.</param>
     /// <param name="progress">The progress of the character in the current periods, per quest id.</param>
+    /// <param name="lockedChapters">The ids of the locked chapters, see <see cref="GetLockedChapters"/>.</param>
     /// <returns><c>true</c>, if the quest is locked.</returns>
-    public static bool IsLocked(WeeklyQuestDefinition quest, IReadOnlyDictionary<string, WeeklyQuestProgress> progress)
+    public static bool IsLocked(WeeklyQuestDefinition quest, IReadOnlyDictionary<string, WeeklyQuestProgress> progress, IReadOnlySet<string>? lockedChapters = null)
     {
+        if (!string.IsNullOrWhiteSpace(quest.ChapterId) && lockedChapters?.Contains(quest.ChapterId) == true)
+        {
+            return true;
+        }
+
         return !string.IsNullOrWhiteSpace(quest.PrerequisiteQuestId)
-               && !(progress.TryGetValue(quest.PrerequisiteQuestId, out var p) && p.CompletedAt is not null);
+               && !IsCompleted(quest.PrerequisiteQuestId, progress);
+    }
+
+    /// <summary>
+    /// Gets the chapters which are locked for the character, because the chapter which they require is locked or not completed yet.
+    /// </summary>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="character">The character.</param>
+    /// <param name="progress">The progress of the character in the current periods, per quest id.</param>
+    /// <returns>The ids of the locked chapters.</returns>
+    /// <remarks>
+    /// A chapter is completed when the character completed its <see cref="WeeklyQuestChapter.QuestsToComplete"/> active quests
+    /// which are done only once, and for which the class of the character qualifies. Daily and weekly quests of a chapter
+    /// start over, so they don't count. A required chapter which doesn't exist doesn't lock anything.
+    /// </remarks>
+    public static IReadOnlySet<string> GetLockedChapters(
+        WeeklyQuestsConfiguration configuration,
+        WeeklyQuestCharacterInfo character,
+        IReadOnlyDictionary<string, WeeklyQuestProgress> progress)
+    {
+        var locked = new HashSet<string>();
+        if (configuration.Chapters.Count == 0)
+        {
+            return locked;
+        }
+
+        var chapters = new Dictionary<string, WeeklyQuestChapter>();
+        foreach (var chapter in configuration.Chapters.Where(c => !string.IsNullOrWhiteSpace(c.Id)))
+        {
+            chapters.TryAdd(chapter.Id, chapter);
+        }
+
+        var isUnlocked = new Dictionary<string, bool>();
+        foreach (var chapter in chapters.Values)
+        {
+            if (!IsUnlocked(chapter, new HashSet<string>()))
+            {
+                locked.Add(chapter.Id);
+            }
+        }
+
+        return locked;
+
+        bool IsUnlocked(WeeklyQuestChapter chapter, HashSet<string> visited)
+        {
+            if (isUnlocked.TryGetValue(chapter.Id, out var result))
+            {
+                return result;
+            }
+
+            if (string.IsNullOrWhiteSpace(chapter.PrerequisiteChapterId)
+                || !chapters.TryGetValue(chapter.PrerequisiteChapterId, out var prerequisite))
+            {
+                result = true;
+            }
+            else if (!visited.Add(chapter.Id))
+            {
+                // The chapters require each other, so none of them can be completed first.
+                return false;
+            }
+            else
+            {
+                result = IsUnlocked(prerequisite, visited) && IsChapterCompleted(configuration, prerequisite, character, progress);
+            }
+
+            isUnlocked[chapter.Id] = result;
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Determines whether the character completed the chapter, see <see cref="GetLockedChapters"/>.
+    /// </summary>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="chapter">The chapter.</param>
+    /// <param name="character">The character.</param>
+    /// <param name="progress">The progress of the character in the current periods, per quest id.</param>
+    /// <returns><c>true</c>, if the chapter is completed.</returns>
+    public static bool IsChapterCompleted(
+        WeeklyQuestsConfiguration configuration,
+        WeeklyQuestChapter chapter,
+        WeeklyQuestCharacterInfo character,
+        IReadOnlyDictionary<string, WeeklyQuestProgress> progress)
+    {
+        var quests = configuration.Quests
+            .Where(q => q.IsActive && q.Period == QuestPeriod.Once && q.ChapterId == chapter.Id && q.IsQualified(character.Class))
+            .ToList();
+
+        // Quests which were deactivated meanwhile don't block the chapter forever.
+        var required = chapter.QuestsToComplete <= 0 ? quests.Count : Math.Min(chapter.QuestsToComplete, quests.Count);
+        return quests.Count(q => IsCompleted(q.Id, progress)) >= required;
     }
 
     /// <summary>
@@ -108,13 +204,14 @@ public static class WeeklyQuestSelector
         IReadOnlyDictionary<string, WeeklyQuestProgress> progress,
         IReadOnlySet<string> rewardedByOtherCharacters)
     {
+        var lockedChapters = GetLockedChapters(configuration, character, progress);
         return GetQuestsOfPeriod(configuration, periods)
             .Where(quest => IsAvailable(
                 quest,
                 character,
                 progress.TryGetValue(quest.Id, out var p) && p.HasAnyProgress,
                 quest.OncePerAccount && rewardedByOtherCharacters.Contains(quest.Id),
-                IsLocked(quest, progress)))
+                IsLocked(quest, progress, lockedChapters)))
             .ToList();
     }
 
@@ -251,6 +348,11 @@ public static class WeeklyQuestSelector
             RequiredCount = Math.Max(1, questCount),
             Rewards = bonus.Rewards,
         };
+    }
+
+    private static bool IsCompleted(string questId, IReadOnlyDictionary<string, WeeklyQuestProgress> progress)
+    {
+        return progress.TryGetValue(questId, out var p) && p.CompletedAt is not null;
     }
 
     private static HashSet<WeeklyQuestDefinition>? Draw(List<WeeklyQuestDefinition> active, QuestPeriod period, int count, DateTime periodStartUtc)

@@ -62,6 +62,13 @@ public class WeeklyQuestDefinition
     public string? PrerequisiteQuestId { get; set; }
 
     /// <summary>
+    /// Gets or sets the identifier of the <see cref="WeeklyQuestChapter"/> of the quest. The quest is available when the chapter is unlocked.
+    /// </summary>
+    [Display(Name = "Capítulo", Description = "Opcional. Id del capítulo de la quest. La quest se muestra recién cuando el capítulo está desbloqueado.")]
+    [StringLength(64)]
+    public string? ChapterId { get; set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether this quest is part of every week, when the quests rotate
     /// (<see cref="WeeklyQuestsConfiguration.QuestsPerWeek"/>). Otherwise, it's part of the drawing.
     /// </summary>

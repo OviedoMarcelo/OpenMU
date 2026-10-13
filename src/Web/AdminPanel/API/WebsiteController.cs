@@ -172,6 +172,12 @@ public class WebsiteController : Controller
                 .ToDictionary(g => g.Key, g => g.First());
         }
 
+        var chapterNames = new Dictionary<string, string>();
+        foreach (var chapter in configuration.Chapters.Where(c => !string.IsNullOrWhiteSpace(c.Id)))
+        {
+            chapterNames.TryAdd(chapter.Id, chapter.Name);
+        }
+
         var characters = account.Characters
             .OrderBy(c => c.CharacterSlot)
             .Select(character =>
@@ -201,6 +207,7 @@ public class WebsiteController : Controller
                         isBonus = e.Quest.Id == WeeklyQuestSelector.AllCompletedBonusId,
                         category = e.Quest.Category.ToString().ToLowerInvariant(),
                         period = e.Quest.Period.ToString().ToLowerInvariant(),
+                        chapter = e.Quest.ChapterId is { } chapterId ? chapterNames.GetValueOrDefault(chapterId) : null,
                         sequential = e.Quest.SequentialObjectives,
                         currentStep = e.CurrentStep,
                         objectives = e.Objectives.Count > 1
