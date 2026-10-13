@@ -46,13 +46,13 @@ public class SeasonDefinition
     /// <summary>
     /// Gets or sets the end of the season, in the time zone of the server.
     /// </summary>
-    [Display(Name = "Fin", Description = "Fecha y hora de fin, en la zona horaria del servidor. Después ya no se gana XP ni se reclaman premios.")]
+    [Display(Name = "Fin", Description = "Fecha y hora de fin, en la zona horaria del servidor. Después ya no se ganan puntos ni se reclaman premios.")]
     public DateTime End { get; set; }
 
     /// <summary>
     /// Gets or sets the experience of the pass which is needed for each level.
     /// </summary>
-    [Display(Name = "XP por nivel")]
+    [Display(Name = "Puntos por nivel")]
     [Range(1, int.MaxValue)]
     public int ExperiencePerLevel { get; set; } = 1000;
 
@@ -84,6 +84,28 @@ public class SeasonDefinition
     public int GetLevel(long experience)
     {
         return (int)Math.Min(this.GetMaximumLevel(), experience / Math.Max(1, this.ExperiencePerLevel));
+    }
+
+    /// <summary>
+    /// Gets the week of the season, starting at 1 for the first seven days.
+    /// </summary>
+    /// <param name="serverTime">The point in time, in the time zone of the server.</param>
+    /// <returns>The week of the season.</returns>
+    public int GetWeek(DateTime serverTime)
+    {
+        return serverTime <= this.Start ? 1 : (int)((serverTime - this.Start).TotalDays / 7) + 1;
+    }
+
+    /// <summary>
+    /// Gets the experience from sources with a weekly limit which can be gained up to the specified point in time.
+    /// The limit of the past weeks is kept, so that an account which played less can catch up.
+    /// </summary>
+    /// <param name="serverTime">The point in time, in the time zone of the server.</param>
+    /// <param name="weeklyLimit">The limit per week; 0 means no limit.</param>
+    /// <returns>The limit; <see cref="long.MaxValue"/>, if there is none.</returns>
+    public long GetCappedExperienceLimit(DateTime serverTime, int weeklyLimit)
+    {
+        return weeklyLimit <= 0 ? long.MaxValue : (long)weeklyLimit * this.GetWeek(serverTime);
     }
 
     /// <summary>

@@ -16,7 +16,8 @@ using MUnique.OpenMU.PlugIns;
 /// <summary>
 /// The default implementation of the <see cref="IWeeklyQuestListViewPlugIn"/> which sends
 /// one <see cref="WeeklyQuestEntry"/> message per quest to the game client, each followed by
-/// a <see cref="QuestDetails"/> message with its category and objectives.
+/// a <see cref="QuestDetails"/> message with its category and objectives, and a <see cref="QuestChapter"/>
+/// message when it belongs to a chapter.
 /// </summary>
 [PlugIn]
 [Display(Name = nameof(PlugInResources.WeeklyQuestListViewPlugIn_Name), Description = nameof(PlugInResources.WeeklyQuestListViewPlugIn_Description), ResourceType = typeof(PlugInResources))]
@@ -60,6 +61,7 @@ public class WeeklyQuestListViewPlugIn : IWeeklyQuestListViewPlugIn
         {
             await this.SendEntryAsync(connection, entries[i], (byte)i, (byte)entries.Count, false, seconds).ConfigureAwait(false);
             await this.SendDetailsAsync(connection, entries[i], overview.NextResetUtc, overview.NextDailyResetUtc).ConfigureAwait(false);
+            await SendChapterAsync(connection, entries[i]).ConfigureAwait(false);
         }
     }
 
@@ -73,6 +75,7 @@ public class WeeklyQuestListViewPlugIn : IWeeklyQuestListViewPlugIn
 
         await this.SendEntryAsync(connection, entry, 0, 1, true, GetSecondsUntil(nextResetUtc)).ConfigureAwait(false);
         await this.SendDetailsAsync(connection, entry, nextResetUtc, nextDailyResetUtc).ConfigureAwait(false);
+        await SendChapterAsync(connection, entry).ConfigureAwait(false);
     }
 
     private static uint GetSecondsUntil(DateTime utc)
@@ -103,6 +106,16 @@ public class WeeklyQuestListViewPlugIn : IWeeklyQuestListViewPlugIn
         }
 
         return text[..length];
+    }
+
+    private static ValueTask SendChapterAsync(IConnection connection, WeeklyQuestOverviewEntry entry)
+    {
+        if (string.IsNullOrWhiteSpace(entry.ChapterName))
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        return connection.SendQuestChapterAsync(Fit(entry.Quest.Id, 64), Fit(entry.ChapterName, 48));
     }
 
     private ValueTask SendEntryAsync(IConnection connection, WeeklyQuestOverviewEntry? entry, byte index, byte count, bool isUpdate, uint secondsUntilReset)

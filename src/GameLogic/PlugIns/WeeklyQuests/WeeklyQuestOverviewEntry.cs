@@ -21,4 +21,10 @@ public record WeeklyQuestOverviewEntry(
     bool IsCompleted,
     bool IsRewarded,
     int CurrentStep,
-    IReadOnlyList<WeeklyQuestObjectiveProgress> Objectives);
+    IReadOnlyList<WeeklyQuestObjectiveProgress> Objectives)
+{
+    /// <summary>
+    /// Gets the name of the <see cref="WeeklyQuestChapter"/> of the quest; <c>null</c> if it has none.
+    /// </summary>
+    public string? ChapterName { get; init; }
+}

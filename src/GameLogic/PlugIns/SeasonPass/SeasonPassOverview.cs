@@ -27,6 +27,21 @@ public sealed record SeasonPassOverview(
     public static SeasonPassOverview None { get; } = new(null, 0, 0, false, DateTime.MinValue, []);
 
     /// <summary>
+    /// Gets the configured name of the pass, in the language of the player; empty to use the default of the client.
+    /// </summary>
+    public string DisplayName { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the configured name of the points of the pass, in the language of the player.
+    /// </summary>
+    public string PointsName { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets a value indicating whether the premium track is available on the server.
+    /// </summary>
+    public bool PremiumEnabled { get; init; }
+
+    /// <summary>
     /// Gets the number of levels whose rewards can be claimed now.
     /// </summary>
     public int ClaimableCount => this.Levels.Count(l =>

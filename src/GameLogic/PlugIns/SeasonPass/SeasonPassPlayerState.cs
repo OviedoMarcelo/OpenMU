@@ -60,6 +60,23 @@ internal sealed class SeasonPassPlayerState
     public long PendingExperience { get; set; }
 
     /// <summary>
+    /// Gets or sets the part of the <see cref="Experience"/> which came from sources with a weekly limit,
+    /// including the <see cref="PendingCappedExperience"/>.
+    /// </summary>
+    public long CappedExperience { get; set; }
+
+    /// <summary>
+    /// Gets or sets the part of the <see cref="PendingExperience"/> which came from sources with a weekly limit.
+    /// </summary>
+    public long PendingCappedExperience { get; set; }
+
+    /// <summary>
+    /// Gets or sets the week of the season in which the player has been told that the weekly limit has been reached.
+    /// It's only kept in memory.
+    /// </summary>
+    public int? CapReachedWeek { get; set; }
+
+    /// <summary>
     /// Gets or sets the killed monsters which didn't give experience of the pass yet.
     /// They're only kept in memory.
     /// </summary>

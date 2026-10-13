@@ -5,6 +5,7 @@
 namespace MUnique.OpenMU.Tests;
 
 using Microsoft.Extensions.Logging.Abstractions;
+using MUnique.OpenMU.AttributeSystem;
 using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.DataModel.Configuration.Items;
 using MUnique.OpenMU.GameLogic;
@@ -12,6 +13,7 @@ using MUnique.OpenMU.GameLogic.Attributes;
 using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.GameLogic.PlugIns;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
+using MUnique.OpenMU.GameLogic.Views;
 using MUnique.OpenMU.Persistence;
 using MUnique.OpenMU.Persistence.WeeklyQuests;
 using MUnique.OpenMU.Interfaces;
@@ -352,6 +354,27 @@ public class WeeklyQuestsPlugInTest
     }
 
     /// <summary>
+    /// Tests that items which are picked up while the MU Helper is running only count when the configuration allows it.
+    /// </summary>
+    [Test]
+    public async Task CollectItemIgnoresMuHelperUnlessAllowedAsync()
+    {
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        player.Attributes!.AddElement(new SimpleElement(1, AggregateType.AddRaw), Stats.IsMuHelperActive);
+        var jewel = new ItemDefinition { Group = 14, Number = 13 };
+        var plugIn = CreatePlugIn(
+            new InMemoryWeeklyQuestProgressRepository(),
+            new WeeklyQuestDefinition { Id = "bless", Name = "Bless", ObjectiveType = WeeklyQuestObjectiveType.CollectItem, RequiredCount = 10, Item = jewel });
+
+        await plugIn.ItemPickedUpAsync(player, new TemporaryItem { Definition = jewel }, false).ConfigureAwait(false);
+        Assert.That(await GetCountAsync(plugIn, player, "bless").ConfigureAwait(false), Is.EqualTo(0));
+
+        plugIn.Configuration!.CountMuHelperActivity = true;
+        await plugIn.ItemPickedUpAsync(player, new TemporaryItem { Definition = jewel }, false).ConfigureAwait(false);
+        Assert.That(await GetCountAsync(plugIn, player, "bless").ConfigureAwait(false), Is.EqualTo(1));
+    }
+
+    /// <summary>
     /// Tests that the bonus is shown with the progress of the quests and rewarded when all of them are completed.
     /// </summary>
     [Test]
@@ -612,6 +635,67 @@ public class WeeklyQuestsPlugInTest
         await plugIn.CharacterResetAsync(player, 1).ConfigureAwait(false);
         Assert.That(player.Money, Is.EqualTo(1000));
         Assert.That((await GetEntryAsync(plugIn, player, "story-2").ConfigureAwait(false)).IsRewarded, Is.True);
+    }
+
+    /// <summary>
+    /// Tests that a quest to defeat a boss counts only the defeats of its encounter.
+    /// </summary>
+    [Test]
+    public async Task DefeatedBossEncounterCountsForItsQuestAsync()
+    {
+        var repository = new InMemoryWeeklyQuestProgressRepository();
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        var quest = new WeeklyQuestDefinition
+        {
+            Id = "boss",
+            Name = "Cazajefes",
+            ObjectiveType = WeeklyQuestObjectiveType.DefeatBossEncounter,
+            BossEncounterName = "Kundun Reborn",
+            RequiredCount = 2,
+        };
+        var plugIn = CreatePlugIn(repository, quest);
+        var participants = new[] { player };
+
+        await plugIn.BossEncounterEndedAsync("Kundun Reborn", true, participants).ConfigureAwait(false);
+        await plugIn.BossEncounterEndedAsync("Kundun Reborn", false, participants).ConfigureAwait(false);
+        await plugIn.BossEncounterEndedAsync("Selupan", true, participants).ConfigureAwait(false);
+        Assert.That(await GetCountAsync(plugIn, player, "boss").ConfigureAwait(false), Is.EqualTo(1));
+
+        await plugIn.BossEncounterEndedAsync("kundun reborn", true, participants).ConfigureAwait(false);
+        Assert.That((await GetEntryAsync(plugIn, player, "boss").ConfigureAwait(false)).IsCompleted, Is.True);
+    }
+
+    /// <summary>
+    /// Tests that completing the last required quest of a chapter unlocks the next chapter right away:
+    /// the player gets a message and the whole list again, with the new quests.
+    /// </summary>
+    [Test]
+    public async Task CompletedChapterSendsUnlockedQuestsAsync()
+    {
+        var repository = new InMemoryWeeklyQuestProgressRepository();
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        var chapter1 = CreateStoryQuest(new WeeklyQuestObjective { ObjectiveType = WeeklyQuestObjectiveType.GainResets });
+        chapter1.ChapterId = "c1";
+        var chapter2 = CreateStoryQuest(new WeeklyQuestObjective { ObjectiveType = WeeklyQuestObjectiveType.GainResets });
+        chapter2.Id = "story-2";
+        chapter2.ChapterId = "c2";
+        var plugIn = CreatePlugIn(repository, chapter1, chapter2);
+        plugIn.Configuration!.Chapters.Add(new WeeklyQuestChapter { Id = "c1", Name = "Capítulo I" });
+        plugIn.Configuration.Chapters.Add(new WeeklyQuestChapter { Id = "c2", Name = "Capítulo II", PrerequisiteChapterId = "c1" });
+
+        var overview = await plugIn.GetOverviewAsync(player).ConfigureAwait(false);
+        Assert.That(overview!.Entries.Select(e => e.Quest.Id), Is.EqualTo(new[] { "story" }));
+
+        await plugIn.CharacterResetAsync(player, 1).ConfigureAwait(false);
+
+        Mock.Get(player.ViewPlugIns.GetPlugIn<IShowMessagePlugIn>()!)
+            .Verify(p => p.ShowMessageAsync(It.Is<string>(m => m.Contains("Capítulo II")), MessageType.GoldenCenter), Times.Once);
+        Mock.Get(player.ViewPlugIns.GetPlugIn<IWeeklyQuestListViewPlugIn>()!)
+            .Verify(p => p.ShowWeeklyQuestsAsync(It.Is<WeeklyQuestOverview>(o => o.Entries.Any(e => e.Quest.Id == "story-2"))), Times.Once);
+
+        // The second chapter makes progress now.
+        await plugIn.CharacterResetAsync(player, 2).ConfigureAwait(false);
+        Assert.That((await GetEntryAsync(plugIn, player, "story-2").ConfigureAwait(false)).IsCompleted, Is.True);
     }
 
     /// <summary>

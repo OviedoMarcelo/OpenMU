@@ -6915,6 +6915,54 @@ public class PacketStructureTests
     }
 
     /// <summary>
+    /// Tests the packet size calculation for SeasonPassSettings.
+    /// </summary>
+    [Test]
+    public void SeasonPassSettings_PacketSizeValidation()
+    {
+        // Fixed-length packet validation
+        const int expectedLength = 70;
+        var actualLength = SeasonPassSettingsRef.Length;
+        
+        Assert.That(actualLength, Is.EqualTo(expectedLength), 
+            "Packet length mismatch: declared length does not match calculated size");
+        
+        // Validate field 'PremiumEnabled' boundary
+        Assert.That(5 + 1, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'PremiumEnabled' exceeds packet boundary");
+        
+        // Validate field 'ProgramName' boundary
+        Assert.That(6 + 32, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'ProgramName' exceeds packet boundary");
+        
+        // Validate field 'PointsName' boundary
+        Assert.That(38 + 32, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'PointsName' exceeds packet boundary");
+    }
+
+    /// <summary>
+    /// Tests the packet size calculation for QuestChapter.
+    /// </summary>
+    [Test]
+    public void QuestChapter_PacketSizeValidation()
+    {
+        // Fixed-length packet validation
+        const int expectedLength = 117;
+        var actualLength = QuestChapterRef.Length;
+        
+        Assert.That(actualLength, Is.EqualTo(expectedLength), 
+            "Packet length mismatch: declared length does not match calculated size");
+        
+        // Validate field 'Id' boundary
+        Assert.That(5 + 64, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'Id' exceeds packet boundary");
+        
+        // Validate field 'ChapterName' boundary
+        Assert.That(69 + 48, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'ChapterName' exceeds packet boundary");
+    }
+
+    /// <summary>
     /// Tests the packet size calculation for EventChipRegistrationResult.
     /// </summary>
     [Test]

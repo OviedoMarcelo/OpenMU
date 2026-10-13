@@ -167,8 +167,8 @@ public class AchievementsPlugIn :
     /// <inheritdoc />
     public async ValueTask AttackableGotKilledAsync(IAttackable killed, IAttacker? killer)
     {
-        var player = killer as Player ?? (killer as Monster)?.SummonedBy;
-        if (player is null)
+        var player = RewardEligibility.GetCreditedPlayer(killer);
+        if (player is null || !this.IsActivePlay(player))
         {
             return;
         }
@@ -182,7 +182,7 @@ public class AchievementsPlugIn :
 
             var mapNumber = monster.CurrentMap?.Definition.Number;
             var monsterNumber = monster.Definition.Number;
-            foreach (var receiver in await this.GetKillReceiversAsync(player).ConfigureAwait(false))
+            foreach (var receiver in (await this.GetKillReceiversAsync(player).ConfigureAwait(false)).Where(this.IsActivePlay))
             {
                 await this.AddProgressAsync(
                     receiver,
@@ -240,7 +240,7 @@ public class AchievementsPlugIn :
     public async ValueTask MiniGameEndedAsync(MiniGameContext miniGame, ICollection<Player> finishers)
     {
         var type = miniGame.Definition.Type;
-        foreach (var player in finishers)
+        foreach (var player in finishers.Where(this.IsActivePlay))
         {
             await this.AddProgressAsync(
                 player,
@@ -655,6 +655,11 @@ public class AchievementsPlugIn :
         state.ExperienceBonusPercent = configuration.MaximumExperienceBonusPercent > 0
             ? Math.Min(bonus, configuration.MaximumExperienceBonusPercent)
             : bonus;
+    }
+
+    private bool IsActivePlay(Player player)
+    {
+        return RewardEligibility.IsActivePlay(player, this.Configuration?.CountMuHelperActivity ?? false);
     }
 
     private bool HasAchievements(AchievementObjectiveType type)

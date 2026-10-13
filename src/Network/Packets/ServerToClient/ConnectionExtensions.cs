@@ -6701,6 +6701,68 @@ public static class ConnectionExtensions
     }
 
     /// <summary>
+    /// Sends a <see cref="SeasonPassSettings" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="premiumEnabled">The premium track is available on the server.</param>
+    /// <param name="programName">The name of the pass, in the language of the player; empty to use the default of the client.</param>
+    /// <param name="pointsName">The name of the points of the pass, in the language of the player; empty to use the default of the client.</param>
+    /// <remarks>
+    /// Is sent by the server when: Before the SeasonPassState, when the client requested the list of available chat commands.
+    /// Causes reaction on client side: The client shows the configured names of the pass and of its points on its button and window, and hides the premium track when it's disabled. Clients which don't know this message keep their defaults.
+    /// </remarks>
+    public static async ValueTask SendSeasonPassSettingsAsync(this IConnection? connection, bool @premiumEnabled, string @programName, string @pointsName)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = SeasonPassSettingsRef.Length;
+            var packet = new SeasonPassSettingsRef(connection.Output.GetSpan(length)[..length]);
+            packet.PremiumEnabled = @premiumEnabled;
+            packet.ProgramName = @programName;
+            packet.PointsName = @pointsName;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Sends a <see cref="QuestChapter" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="id">The id of the quest.</param>
+    /// <param name="chapterName">The name of the chapter of the quest.</param>
+    /// <remarks>
+    /// Is sent by the server when: Right after the QuestDetails message of a quest which belongs to a chapter, with the same quest id.
+    /// Causes reaction on client side: The client shows the quest under the name of its chapter, e.g. in the tracker of the quests in progress. Clients which don't know this message ignore it.
+    /// </remarks>
+    public static async ValueTask SendQuestChapterAsync(this IConnection? connection, string @id, string @chapterName)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = QuestChapterRef.Length;
+            var packet = new QuestChapterRef(connection.Output.GetSpan(length)[..length]);
+            packet.Id = @id;
+            packet.ChapterName = @chapterName;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Sends a <see cref="EventChipRegistrationResult" /> to this connection.
     /// </summary>
     /// <param name="connection">The connection.</param>

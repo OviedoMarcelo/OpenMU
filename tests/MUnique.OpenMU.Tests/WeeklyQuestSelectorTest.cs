@@ -162,6 +162,94 @@ public class WeeklyQuestSelectorTest
     }
 
     /// <summary>
+    /// Tests that the quests of a chapter are hidden until the required number of quests of the previous chapter are completed.
+    /// </summary>
+    [Test]
+    public void ChapterUnlocksAfterRequiredQuestsOfPreviousChapter()
+    {
+        var configuration = CreateChapterConfiguration(questsToComplete: 2);
+        var progress = new Dictionary<string, WeeklyQuestProgress>();
+
+        Assert.That(AvailableIds(configuration, progress), Is.EqualTo(new[] { "1a", "1b", "1c" }));
+
+        Complete(progress, "1a");
+        Assert.That(AvailableIds(configuration, progress), Is.EqualTo(new[] { "1a", "1b", "1c" }));
+
+        Complete(progress, "1c");
+        Assert.That(AvailableIds(configuration, progress), Is.EqualTo(new[] { "1a", "1b", "1c", "2a", "2-daily" }));
+    }
+
+    /// <summary>
+    /// Tests that a chapter without a number of quests to complete requires all of its quests which are done once,
+    /// and that its daily quests don't count.
+    /// </summary>
+    [Test]
+    public void ChapterRequiresAllOnceQuestsByDefault()
+    {
+        var configuration = CreateChapterConfiguration(questsToComplete: 0);
+        configuration.Quests.Add(new WeeklyQuestDefinition { Id = "1-daily", Period = QuestPeriod.Daily, ChapterId = "c1" });
+        var progress = new Dictionary<string, WeeklyQuestProgress>();
+        Complete(progress, "1a");
+        Complete(progress, "1b");
+        Complete(progress, "1-daily");
+
+        Assert.That(WeeklyQuestSelector.GetLockedChapters(configuration, Character, progress), Does.Contain("c2"));
+
+        Complete(progress, "1c");
+        Assert.That(WeeklyQuestSelector.GetLockedChapters(configuration, Character, progress), Is.Empty);
+    }
+
+    /// <summary>
+    /// Tests that a chapter is locked as long as the chapter which it requires is locked, even if its own required chapter has progress.
+    /// </summary>
+    [Test]
+    public void ChaptersUnlockOneAfterAnother()
+    {
+        var configuration = CreateChapterConfiguration(questsToComplete: 1);
+        configuration.Chapters.Add(new WeeklyQuestChapter { Id = "c3", PrerequisiteChapterId = "c2" });
+        var progress = new Dictionary<string, WeeklyQuestProgress>();
+
+        // Progress of the second chapter, e.g. from before it got a prerequisite, doesn't unlock the third one.
+        Complete(progress, "2a");
+        Assert.That(WeeklyQuestSelector.GetLockedChapters(configuration, Character, progress), Is.EquivalentTo(new[] { "c2", "c3" }));
+
+        Complete(progress, "1a");
+        Assert.That(WeeklyQuestSelector.GetLockedChapters(configuration, Character, progress), Is.Empty);
+    }
+
+    /// <summary>
+    /// Tests that the entries of quests tell the name of their chapter, so that the client can show it.
+    /// </summary>
+    [Test]
+    public void EntriesHaveTheNameOfTheirChapter()
+    {
+        var configuration = CreateChapterConfiguration(questsToComplete: 0);
+        configuration.Quests.Add(new WeeklyQuestDefinition { Id = "free", Period = QuestPeriod.Once });
+
+        var entries = WeeklyQuestSelector.CreateEntries(configuration, Periods(Week1), Character, new Dictionary<string, WeeklyQuestProgress>(), new HashSet<string>());
+
+        Assert.That(entries.Single(e => e.Quest.Id == "1a").ChapterName, Is.EqualTo("Capítulo I"));
+        Assert.That(entries.Single(e => e.Quest.Id == "free").ChapterName, Is.Null);
+    }
+
+    /// <summary>
+    /// Tests that unknown chapters don't lock quests, and that chapters which require each other don't hang.
+    /// </summary>
+    [Test]
+    public void MisconfiguredChaptersDontHang()
+    {
+        var configuration = CreateConfiguration(0);
+        configuration.Chapters.Add(new WeeklyQuestChapter { Id = "a", PrerequisiteChapterId = "b" });
+        configuration.Chapters.Add(new WeeklyQuestChapter { Id = "b", PrerequisiteChapterId = "a" });
+        configuration.Chapters.Add(new WeeklyQuestChapter { Id = "c", PrerequisiteChapterId = "unknown" });
+        configuration.Quests.Add(new WeeklyQuestDefinition { Id = "in-a", Period = QuestPeriod.Once, ChapterId = "a" });
+        configuration.Quests.Add(new WeeklyQuestDefinition { Id = "in-c", Period = QuestPeriod.Once, ChapterId = "c" });
+        configuration.Quests.Add(new WeeklyQuestDefinition { Id = "in-unknown", Period = QuestPeriod.Once, ChapterId = "unknown" });
+
+        Assert.That(AvailableIds(configuration, new Dictionary<string, WeeklyQuestProgress>()), Is.EqualTo(new[] { "in-c", "in-unknown" }));
+    }
+
+    /// <summary>
     /// Tests that the entry of a quest with several objectives counts the done objectives and knows the current step.
     /// </summary>
     [Test]
@@ -207,6 +295,36 @@ public class WeeklyQuestSelectorTest
     }
 
     private static QuestPeriodStarts Periods(DateTime weekStart) => new(weekStart, weekStart);
+
+    private static string[] AvailableIds(WeeklyQuestsConfiguration configuration, Dictionary<string, WeeklyQuestProgress> progress)
+    {
+        return WeeklyQuestSelector.GetAvailableQuests(configuration, Periods(Week1), Character, progress, new HashSet<string>())
+            .Select(q => q.Id)
+            .ToArray();
+    }
+
+    private static void Complete(Dictionary<string, WeeklyQuestProgress> progress, string questId)
+    {
+        progress[questId] = new WeeklyQuestProgress { QuestId = questId, Count = 1, CompletedAt = DateTime.UtcNow };
+    }
+
+    /// <summary>
+    /// Creates a configuration with a first chapter of three quests, and a second chapter with a quest and a daily quest.
+    /// </summary>
+    private static WeeklyQuestsConfiguration CreateChapterConfiguration(int questsToComplete)
+    {
+        var configuration = CreateConfiguration(0);
+        configuration.Chapters.Add(new WeeklyQuestChapter { Id = "c1", Name = "Capítulo I", QuestsToComplete = questsToComplete });
+        configuration.Chapters.Add(new WeeklyQuestChapter { Id = "c2", Name = "Capítulo II", PrerequisiteChapterId = "c1", QuestsToComplete = questsToComplete });
+        foreach (var id in new[] { "1a", "1b", "1c" })
+        {
+            configuration.Quests.Add(new WeeklyQuestDefinition { Id = id, Period = QuestPeriod.Once, ChapterId = "c1" });
+        }
+
+        configuration.Quests.Add(new WeeklyQuestDefinition { Id = "2a", Period = QuestPeriod.Once, ChapterId = "c2" });
+        configuration.Quests.Add(new WeeklyQuestDefinition { Id = "2-daily", Period = QuestPeriod.Daily, ChapterId = "c2" });
+        return configuration;
+    }
 
     private static WeeklyQuestsConfiguration CreateConfiguration(int questCount)
     {

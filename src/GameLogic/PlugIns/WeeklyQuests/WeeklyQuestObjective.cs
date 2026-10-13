@@ -67,6 +67,13 @@ public class WeeklyQuestObjective
     public MiniGameType MiniGameType { get; set; }
 
     /// <summary>
+    /// Gets or sets the name of the boss encounter, for <see cref="WeeklyQuestObjectiveType.DefeatBossEncounter"/>.
+    /// Empty means any encounter.
+    /// </summary>
+    [Display(Name = "Encuentro de jefe", Description = "Solo para \"Derrotar un jefe (encuentro)\": el nombre del encuentro, como en el plugin de boss encounters. Vacío = cualquiera. Cuenta para quien participó con el daño (o la curación) mínimo del encuentro, si el jefe muere.")]
+    public string? BossEncounterName { get; set; }
+
+    /// <summary>
     /// Gets or sets the minimum level of a killed player, for <see cref="WeeklyQuestObjectiveType.KillPlayer"/>.
     /// </summary>
     [Display(Name = "Nivel mínimo de la víctima", Description = "Solo para \"Matar jugadores\". Evita farmear con personajes bajos.")]
@@ -128,6 +135,9 @@ public class WeeklyQuestObjective
             WeeklyQuestObjectiveType.CollectItem => $"Juntá {count} {this.Item?.Name.GetTranslation(culture) ?? "?"}{(this.MinimumItemLevel > 0 ? $" +{this.MinimumItemLevel}" : string.Empty)}{onMap}",
             WeeklyQuestObjectiveType.TalkToNpc => $"Hablá con {monster}{onMap}",
             WeeklyQuestObjectiveType.EnterMap => $"Entrá a {map ?? "?"}",
+            WeeklyQuestObjectiveType.DefeatBossEncounter => string.IsNullOrWhiteSpace(this.BossEncounterName)
+                ? $"Derrotá {count} jefes"
+                : $"Derrotá a {this.BossEncounterName} ({count})",
             _ => $"{this.ObjectiveType} {count}",
         };
     }
@@ -138,4 +148,13 @@ public class WeeklyQuestObjective
     /// <param name="mapNumber">The number of the map of the kill.</param>
     /// <returns><c>true</c>, if the map matches.</returns>
     public bool IsOnMap(short? mapNumber) => this.Map is null || this.Map.Number == mapNumber;
+
+    /// <summary>
+    /// Determines whether the boss encounter counts for this objective.
+    /// </summary>
+    /// <param name="encounterName">The name of the encounter.</param>
+    /// <returns><c>true</c>, if the objective is about any encounter or this one.</returns>
+    public bool IsBossEncounter(string encounterName) =>
+        string.IsNullOrWhiteSpace(this.BossEncounterName)
+        || string.Equals(this.BossEncounterName.Trim(), encounterName, StringComparison.OrdinalIgnoreCase);
 }

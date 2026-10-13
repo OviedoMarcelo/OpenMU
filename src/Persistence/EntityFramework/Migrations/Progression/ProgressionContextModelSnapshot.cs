@@ -148,6 +148,9 @@ namespace MUnique.OpenMU.Persistence.EntityFramework.Migrations.Progression
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<long>("CappedExperience")
+                        .HasColumnType("bigint");
+
                     b.Property<long>("Experience")
                         .HasColumnType("bigint");
 

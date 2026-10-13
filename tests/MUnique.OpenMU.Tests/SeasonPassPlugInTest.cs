@@ -4,11 +4,19 @@
 
 namespace MUnique.OpenMU.Tests;
 
+using Moq;
+using MUnique.OpenMU.AttributeSystem;
+using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.GameLogic;
+using MUnique.OpenMU.GameLogic.Attributes;
+using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.GameLogic.PlugIns.SeasonPass;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
+using MUnique.OpenMU.GameLogic.Views;
+using MUnique.OpenMU.Interfaces;
 using MUnique.OpenMU.Persistence;
 using MUnique.OpenMU.Persistence.Progression;
+using MonsterDefinition = MUnique.OpenMU.Persistence.BasicModel.MonsterDefinition;
 
 /// <summary>
 /// Tests for the <see cref="SeasonPassPlugIn"/>.
@@ -134,6 +142,102 @@ public class SeasonPassPlugInTest
         Assert.That(await plugIn.GrantPremiumAsync(player.GameContext, player.Account!.GetId(), "gm").ConfigureAwait(false), Is.Null);
     }
 
+    /// <summary>
+    /// Tests that a defeated boss encounter gives the experience of its own entry, otherwise of the entry without a name,
+    /// and that a boss which retreated gives nothing.
+    /// </summary>
+    [Test]
+    public async Task DefeatedBossEncounterGivesExperienceAsync()
+    {
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        var plugIn = CreatePlugIn(new InMemoryProgressionRepository());
+        plugIn.Configuration!.BossEncounterExperience.Add(new SeasonPassBossEncounterExperience { EncounterName = "Kundun Reborn", Experience = 200 });
+        plugIn.Configuration.BossEncounterExperience.Add(new SeasonPassBossEncounterExperience { Experience = 50 });
+        var participants = new[] { player };
+
+        await plugIn.BossEncounterEndedAsync("kundun reborn", true, participants).ConfigureAwait(false);
+        Assert.That((await plugIn.GetOverviewAsync(player).ConfigureAwait(false))!.Experience, Is.EqualTo(200));
+
+        await plugIn.BossEncounterEndedAsync("Selupan", true, participants).ConfigureAwait(false);
+        await plugIn.BossEncounterEndedAsync("Kundun Reborn", false, participants).ConfigureAwait(false);
+        Assert.That((await plugIn.GetOverviewAsync(player).ConfigureAwait(false))!.Experience, Is.EqualTo(250));
+    }
+
+    /// <summary>
+    /// Tests that the premium rewards aren't handed out while the premium track is disabled, even with the premium pass.
+    /// </summary>
+    [Test]
+    public async Task NoPremiumRewardsWhilePremiumIsDisabledAsync()
+    {
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        var plugIn = CreatePlugIn(new InMemoryProgressionRepository());
+        plugIn.Configuration!.PremiumEnabled = false;
+        await plugIn.GrantPremiumAsync(player.GameContext, player.Account!.GetId(), "gm").ConfigureAwait(false);
+        await AddLevelsAsync(plugIn, player, 1).ConfigureAwait(false);
+
+        Assert.That(await plugIn.ClaimAsync(player).ConfigureAwait(false), Is.EqualTo(1));
+        Assert.That(player.Money, Is.EqualTo(1000));
+    }
+
+    /// <summary>
+    /// Tests that the bonus of a monster is limited per week, and that the limit of a past week is kept.
+    /// </summary>
+    [Test]
+    public async Task MonsterBonusIsLimitedPerWeekAsync()
+    {
+        var repository = new InMemoryProgressionRepository();
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        var plugIn = CreateKillPlugIn(repository, out var monsterDefinition);
+        var monster = await CreateMonsterAsync(player.GameContext, monsterDefinition).ConfigureAwait(false);
+        await plugIn.GetOverviewAsync(player).ConfigureAwait(false);
+
+        for (var i = 0; i < 3; i++)
+        {
+            await plugIn.AttackableGotKilledAsync(monster, player).ConfigureAwait(false);
+        }
+
+        Assert.That((await plugIn.GetOverviewAsync(player).ConfigureAwait(false))!.Experience, Is.EqualTo(100));
+        Mock.Get(player.ViewPlugIns.GetPlugIn<IShowMessagePlugIn>()!)
+            .Verify(p => p.ShowMessageAsync(It.Is<string>(m => m.Contains("tope semanal de Cyber Points")), It.IsAny<MessageType>()), Times.Once);
+
+        // Two weeks later, the limit of the second week which wasn't used is kept.
+        plugIn.UtcNow = () => Now.AddDays(14);
+        for (var i = 0; i < 5; i++)
+        {
+            await plugIn.AttackableGotKilledAsync(monster, player).ConfigureAwait(false);
+        }
+
+        Assert.That((await plugIn.GetOverviewAsync(player).ConfigureAwait(false))!.Experience, Is.EqualTo(300));
+
+        // The capped experience is persisted, so a restart doesn't reset the limit.
+        await plugIn.PlayerStateChangedAsync(player, PlayerState.EnteredWorld, PlayerState.CharacterSelection).ConfigureAwait(false);
+        var restartedPlugIn = CreateKillPlugIn(repository, out _);
+        restartedPlugIn.UtcNow = () => Now.AddDays(14);
+        await restartedPlugIn.GetOverviewAsync(player).ConfigureAwait(false);
+        await restartedPlugIn.AttackableGotKilledAsync(monster, player).ConfigureAwait(false);
+        Assert.That((await restartedPlugIn.GetOverviewAsync(player).ConfigureAwait(false))!.Experience, Is.EqualTo(300));
+    }
+
+    /// <summary>
+    /// Tests that kills while the MU Helper is running don't count, unless the configuration allows it.
+    /// </summary>
+    [Test]
+    public async Task KillsWithMuHelperOnlyCountWhenAllowedAsync()
+    {
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        player.Attributes!.AddElement(new SimpleElement(1, AggregateType.AddRaw), Stats.IsMuHelperActive);
+        var plugIn = CreateKillPlugIn(new InMemoryProgressionRepository(), out var monsterDefinition);
+        var monster = await CreateMonsterAsync(player.GameContext, monsterDefinition).ConfigureAwait(false);
+        await plugIn.GetOverviewAsync(player).ConfigureAwait(false);
+
+        await plugIn.AttackableGotKilledAsync(monster, player).ConfigureAwait(false);
+        Assert.That((await plugIn.GetOverviewAsync(player).ConfigureAwait(false))!.Experience, Is.EqualTo(0));
+
+        plugIn.Configuration!.CountMuHelperActivity = true;
+        await plugIn.AttackableGotKilledAsync(monster, player).ConfigureAwait(false);
+        Assert.That((await plugIn.GetOverviewAsync(player).ConfigureAwait(false))!.Experience, Is.EqualTo(40));
+    }
+
     private static async ValueTask AddLevelsAsync(SeasonPassPlugIn plugIn, Player player, int levels)
     {
         await plugIn.QuestCompletedAsync(player, new WeeklyQuestDefinition { SeasonXp = levels * ExperiencePerLevel }).ConfigureAwait(false);
@@ -148,6 +252,7 @@ public class SeasonPassPlugInTest
             {
                 DailyQuestExperience = 50,
                 WeeklyQuestExperience = 80,
+                PremiumEnabled = true,
                 Seasons = new List<SeasonDefinition>
                 {
                     new()
@@ -167,6 +272,34 @@ public class SeasonPassPlugInTest
                 },
             },
         };
+    }
+
+    private static SeasonPassPlugIn CreateKillPlugIn(IProgressionRepository repository, out MonsterDefinition monsterDefinition)
+    {
+        monsterDefinition = new MonsterDefinition { Number = 43, Designation = "Golden Budge Dragon" };
+        var plugIn = CreatePlugIn(repository);
+        var configuration = plugIn.Configuration!;
+        configuration.WeeklyCappedExperience = 100;
+        configuration.MonsterBonuses.Add(new SeasonPassMonsterBonus { Monster = monsterDefinition, Experience = 40 });
+        configuration.Seasons.Single().Start = Now;
+        return plugIn;
+    }
+
+    private static async ValueTask<Monster> CreateMonsterAsync(IGameContext gameContext, MonsterDefinition monsterDefinition)
+    {
+        var map = await gameContext.GetMapAsync(0).ConfigureAwait(false);
+        var spawnArea = new MonsterSpawnArea
+        {
+            MonsterDefinition = monsterDefinition,
+            GameMap = map!.Definition,
+            X1 = 100,
+            Y1 = 100,
+            X2 = 100,
+            Y2 = 100,
+            Quantity = 1,
+        };
+
+        return new Monster(spawnArea, monsterDefinition, map, NullDropGenerator.Instance, new Mock<INpcIntelligence>().Object, gameContext.PlugInManager, gameContext.PathFinderPool);
     }
 
     private static async ValueTask<Player> CreatePlayerAsync()

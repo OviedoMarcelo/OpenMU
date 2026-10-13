@@ -12194,6 +12194,64 @@
       </Fields>
     </Packet>
     <Packet>
+      <HeaderType>C2HeaderWithSubCode</HeaderType>
+      <Code>F5</Code>
+      <SubCode>0C</SubCode>
+      <Name>SeasonPassSettings</Name>
+      <Length>70</Length>
+      <Direction>ServerToClient</Direction>
+      <SentWhen>Before the SeasonPassState, when the client requested the list of available chat commands.</SentWhen>
+      <CausedReaction>The client shows the configured names of the pass and of its points on its button and window, and hides the premium track when it's disabled. Clients which don't know this message keep their defaults.</CausedReaction>
+      <Fields>
+        <Field>
+          <Index>5</Index>
+          <Type>Boolean</Type>
+          <Name>PremiumEnabled</Name>
+          <Description>The premium track is available on the server.</Description>
+        </Field>
+        <Field>
+          <Index>6</Index>
+          <Type>String</Type>
+          <Name>ProgramName</Name>
+          <Length>32</Length>
+          <Description>The name of the pass, in the language of the player; empty to use the default of the client.</Description>
+        </Field>
+        <Field>
+          <Index>38</Index>
+          <Type>String</Type>
+          <Name>PointsName</Name>
+          <Length>32</Length>
+          <Description>The name of the points of the pass, in the language of the player; empty to use the default of the client.</Description>
+        </Field>
+      </Fields>
+    </Packet>
+    <Packet>
+      <HeaderType>C2HeaderWithSubCode</HeaderType>
+      <Code>F5</Code>
+      <SubCode>0D</SubCode>
+      <Name>QuestChapter</Name>
+      <Length>117</Length>
+      <Direction>ServerToClient</Direction>
+      <SentWhen>Right after the QuestDetails message of a quest which belongs to a chapter, with the same quest id.</SentWhen>
+      <CausedReaction>The client shows the quest under the name of its chapter, e.g. in the tracker of the quests in progress. Clients which don't know this message ignore it.</CausedReaction>
+      <Fields>
+        <Field>
+          <Index>5</Index>
+          <Type>String</Type>
+          <Name>Id</Name>
+          <Length>64</Length>
+          <Description>The id of the quest.</Description>
+        </Field>
+        <Field>
+          <Index>69</Index>
+          <Type>String</Type>
+          <Name>ChapterName</Name>
+          <Length>48</Length>
+          <Description>The name of the chapter of the quest.</Description>
+        </Field>
+      </Fields>
+    </Packet>
+    <Packet>
       <HeaderType>C1Header</HeaderType>
       <Code>94</Code>
       <Name>EventChipRegistrationResult</Name>

@@ -6,6 +6,7 @@ namespace MUnique.OpenMU.GameLogic.PlugIns.SeasonPass;
 
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using MUnique.OpenMU.GameLogic.MiniGames;
 using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 using MUnique.OpenMU.GameLogic.Views;
@@ -27,6 +28,8 @@ public class SeasonPassPlugIn :
     IPlayerStateChangedPlugIn,
     IQuestCompletedPlugIn,
     IAttackableGotKilledPlugIn,
+    IMiniGameEndedPlugIn,
+    IBossEncounterEndedPlugIn,
     IPeriodicTaskPlugIn,
     ISupportCustomConfiguration<SeasonPassConfiguration>,
     ISupportDefaultCustomConfiguration,
@@ -116,7 +119,7 @@ public class SeasonPassPlugIn :
                 if (await this.EnsureLoadedAsync(player, state).ConfigureAwait(false) is { } season
                     && this.CreateOverview(player, season, state).ClaimableCount > 0)
                 {
-                    await player.ShowBlueMessageAsync(Format(this.Configuration!.RewardsAvailableMessage, player, season.Name)).ConfigureAwait(false);
+                    await player.ShowBlueMessageAsync(this.Format(this.Configuration!.RewardsAvailableMessage, player, season.Name)).ConfigureAwait(false);
                 }
             }
         }
@@ -148,28 +151,80 @@ public class SeasonPassPlugIn :
     /// <inheritdoc />
     public async ValueTask AttackableGotKilledAsync(IAttackable killed, IAttacker? killer)
     {
-        if (killed is not Monster { SummonedBy: null }
-            || (killer as Player ?? (killer as Monster)?.SummonedBy) is not { } player
-            || this.Configuration is not { MonsterKillsPerExperience: > 0, MonsterKillsExperience: > 0 } configuration
+        if (killed is not Monster { SummonedBy: null } monster
+            || RewardEligibility.GetCreditedPlayer(killer) is not { } player
+            || this.Configuration is not { } configuration
+            || !RewardEligibility.IsActivePlay(player, configuration.CountMuHelperActivity)
             || !States.TryGetValue(player, out var state))
         {
             return;
         }
 
-        bool reached;
-        using (await state.Lock.LockAsync().ConfigureAwait(false))
+        long experience = 0;
+        if (configuration is { MonsterKillsPerExperience: > 0, MonsterKillsExperience: > 0 })
         {
-            state.KillCount++;
-            reached = state.KillCount >= configuration.MonsterKillsPerExperience;
-            if (reached)
+            using (await state.Lock.LockAsync().ConfigureAwait(false))
             {
-                state.KillCount = 0;
+                state.KillCount++;
+                if (state.KillCount >= configuration.MonsterKillsPerExperience)
+                {
+                    state.KillCount = 0;
+                    experience += configuration.MonsterKillsExperience;
+                }
             }
         }
 
-        if (reached)
+        var monsterNumber = monster.Definition.Number;
+        experience += configuration.MonsterBonuses
+            .Where(b => b.Monster is not null && b.Monster.Number == monsterNumber)
+            .Sum(b => (long)b.Experience);
+
+        await this.AddExperienceAsync(player, experience, isCapped: true).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask MiniGameEndedAsync(MiniGameContext miniGame, ICollection<Player> finishers)
+    {
+        if (this.Configuration is not { } configuration
+            || configuration.MiniGameExperience.FirstOrDefault(e => e.MiniGameType == miniGame.Definition.Type) is not { } entry)
         {
-            await this.AddExperienceAsync(player, configuration.MonsterKillsExperience).ConfigureAwait(false);
+            return;
+        }
+
+        foreach (var player in finishers)
+        {
+            if (!RewardEligibility.IsActivePlay(player, configuration.CountMuHelperActivity))
+            {
+                continue;
+            }
+
+            long experience = entry.ParticipationExperience;
+            if (entry.CompletionExperience > 0 && miniGame.HasSucceeded(player, entry.RequiredSuccess))
+            {
+                experience += entry.CompletionExperience;
+            }
+
+            await this.AddExperienceAsync(player, experience).ConfigureAwait(false);
+        }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask BossEncounterEndedAsync(string encounterName, bool isDefeated, IReadOnlyCollection<Player> participants)
+    {
+        if (!isDefeated || this.Configuration is not { } configuration)
+        {
+            return;
+        }
+
+        var experience = configuration.GetBossEncounterExperience(encounterName);
+        if (experience <= 0)
+        {
+            return;
+        }
+
+        foreach (var player in participants.Where(p => RewardEligibility.IsActivePlay(p, configuration.CountMuHelperActivity)))
+        {
+            await this.AddExperienceAsync(player, experience).ConfigureAwait(false);
         }
     }
 
@@ -239,6 +294,12 @@ public class SeasonPassPlugIn :
     {
         if (await this.GetOverviewAsync(player).ConfigureAwait(false) is { } overview)
         {
+            overview = overview with
+            {
+                DisplayName = this.GetDisplayName(player),
+                PointsName = this.GetPointsName(player),
+                PremiumEnabled = this.Configuration?.PremiumEnabled ?? false,
+            };
             await player.InvokeViewPlugInAsync<ISeasonPassViewPlugIn>(p => p.ShowSeasonPassAsync(overview)).ConfigureAwait(false);
         }
     }
@@ -309,7 +370,7 @@ public class SeasonPassPlugIn :
 
             if (added)
             {
-                await player.ShowBlueMessageAsync(Format(this.Configuration.PremiumActivatedMessage, player, season.Name)).ConfigureAwait(false);
+                await player.ShowBlueMessageAsync(this.Format(this.Configuration.PremiumActivatedMessage, player, season.Name)).ConfigureAwait(false);
             }
 
             await this.SendAsync(player).ConfigureAwait(false);
@@ -318,9 +379,41 @@ public class SeasonPassPlugIn :
         return (season, !added);
     }
 
-    private static string Format(LocalizedString template, Player player, params object?[] args)
+    /// <summary>
+    /// Gets the configured name of the pass, in the language of the player.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <returns>The name of the pass.</returns>
+    public string GetDisplayName(Player player)
     {
-        var text = template.GetTranslation(player.Culture) ?? string.Empty;
+        var name = this.Configuration?.DisplayName.GetTranslation(player.Culture);
+        return string.IsNullOrWhiteSpace(name) ? SeasonPassConfiguration.DefaultDisplayName : name;
+    }
+
+    /// <summary>
+    /// Gets the configured name of the points of the pass, in the language of the player.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <returns>The name of the points.</returns>
+    public string GetPointsName(Player player)
+    {
+        var name = this.Configuration?.PointsName.GetTranslation(player.Culture);
+        return string.IsNullOrWhiteSpace(name) ? SeasonPassConfiguration.DefaultPointsName : name;
+    }
+
+    /// <summary>
+    /// Formats a configured message: <c>{name}</c> is replaced by the name of the pass, <c>{points}</c> by the name of its points,
+    /// and the indexed placeholders by the arguments.
+    /// </summary>
+    /// <param name="template">The message.</param>
+    /// <param name="player">The player who gets the message.</param>
+    /// <param name="args">The arguments of the indexed placeholders.</param>
+    /// <returns>The formatted message.</returns>
+    private string Format(LocalizedString template, Player player, params object?[] args)
+    {
+        var text = (template.GetTranslation(player.Culture) ?? string.Empty)
+            .Replace(SeasonPassConfiguration.NamePlaceholder, this.GetDisplayName(player), StringComparison.Ordinal)
+            .Replace(SeasonPassConfiguration.PointsPlaceholder, this.GetPointsName(player), StringComparison.Ordinal);
         try
         {
             return string.Format(text, args);
@@ -384,6 +477,9 @@ public class SeasonPassPlugIn :
             var loaded = await this.Repository.LoadSeasonPassAsync(state.AccountId, season.Id).ConfigureAwait(false);
             state.Experience = loaded.Experience;
             state.PendingExperience = 0;
+            state.CappedExperience = loaded.CappedExperience;
+            state.PendingCappedExperience = 0;
+            state.CapReachedWeek = null;
             state.IsPremium = loaded.IsPremium;
             state.Claims.Clear();
             state.Claims.UnionWith(loaded.Claims.Select(c => (c.Level, c.IsPremium)));
@@ -406,20 +502,27 @@ public class SeasonPassPlugIn :
             .Select(l => new SeasonPassLevelEntry(l, state.Claims.Contains((l.Level, false)), state.Claims.Contains((l.Level, true))))
             .ToList();
         var endUtc = TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(season.End, DateTimeKind.Unspecified), player.GameContext.ServerTimeZone);
-        return new SeasonPassOverview(season, state.Experience, season.GetLevel(state.Experience), state.IsPremium, endUtc, levels);
+        var isPremium = state.IsPremium && this.Configuration?.PremiumEnabled is true;
+        return new SeasonPassOverview(season, state.Experience, season.GetLevel(state.Experience), isPremium, endUtc, levels);
     }
 
-    private async ValueTask AddExperienceAsync(Player player, long experience)
+    /// <summary>
+    /// Adds experience to the pass of the account of the player.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <param name="experience">The experience.</param>
+    /// <param name="isCapped">If set to <c>true</c>, the experience comes from a source with a weekly limit.</param>
+    private async ValueTask AddExperienceAsync(Player player, long experience, bool isCapped = false)
     {
-        if (experience <= 0 || this.GetOrCreateState(player) is not { } state)
+        if (experience <= 0 || this.Configuration is not { } configuration || this.GetOrCreateState(player) is not { } state)
         {
             return;
         }
 
         try
         {
-            SeasonDefinition? reachedLevelSeason = null;
-            int reachedLevel;
+            var reachedLevel = 0;
+            var capReached = false;
             using (await state.Lock.LockAsync().ConfigureAwait(false))
             {
                 if (await this.EnsureLoadedAsync(player, state).ConfigureAwait(false) is not { } season)
@@ -427,30 +530,67 @@ public class SeasonPassPlugIn :
                     return;
                 }
 
-                var previousLevel = season.GetLevel(state.Experience);
-                state.Experience += experience;
-                state.PendingExperience += experience;
-                reachedLevel = season.GetLevel(state.Experience);
-                if (reachedLevel > previousLevel)
+                if (isCapped)
                 {
-                    reachedLevelSeason = season;
+                    (experience, capReached) = this.ApplyWeeklyLimit(player, state, configuration, season, experience);
+                }
 
-                    // A new level is saved immediately, so that it can't get lost.
-                    await this.SaveAsync(player, state).ConfigureAwait(false);
+                if (experience > 0)
+                {
+                    var previousLevel = season.GetLevel(state.Experience);
+                    state.Experience += experience;
+                    state.PendingExperience += experience;
+                    if (season.GetLevel(state.Experience) is var level && level > previousLevel)
+                    {
+                        reachedLevel = level;
+
+                        // A new level is saved immediately, so that it can't get lost.
+                        await this.SaveAsync(player, state).ConfigureAwait(false);
+                    }
                 }
             }
 
-            if (reachedLevelSeason is not null)
+            if (capReached)
             {
-                await player.InvokeViewPlugInAsync<IShowMessagePlugIn>(p => p.ShowMessageAsync(Format(this.Configuration!.LevelUpMessage, player, reachedLevel), MessageType.GoldenCenter)).ConfigureAwait(false);
+                await player.ShowBlueMessageAsync(this.Format(configuration.WeeklyCapReachedMessage, player)).ConfigureAwait(false);
             }
 
-            await this.SendAsync(player).ConfigureAwait(false);
+            if (reachedLevel > 0)
+            {
+                await player.InvokeViewPlugInAsync<IShowMessagePlugIn>(p => p.ShowMessageAsync(this.Format(configuration.LevelUpMessage, player, reachedLevel), MessageType.GoldenCenter)).ConfigureAwait(false);
+            }
+
+            if (experience > 0)
+            {
+                await this.SendAsync(player).ConfigureAwait(false);
+            }
         }
         catch (Exception ex)
         {
             player.Logger.LogError(ex, "Unexpected error when adding experience to the season pass.");
         }
+    }
+
+    /// <summary>
+    /// Limits the experience from sources with a weekly limit to what's left of the limit, and adds it to the capped experience.
+    /// </summary>
+    /// <returns>The experience which can be added, and whether the player has to be told that the limit has been reached.</returns>
+    private (long Experience, bool ShowCapReached) ApplyWeeklyLimit(Player player, SeasonPassPlayerState state, SeasonPassConfiguration configuration, SeasonDefinition season, long experience)
+    {
+        var serverTime = this.GetServerTime(player.GameContext);
+        var remaining = Math.Max(0, season.GetCappedExperienceLimit(serverTime, configuration.WeeklyCappedExperience) - state.CappedExperience);
+        var showCapReached = false;
+        if (experience >= remaining)
+        {
+            experience = remaining;
+            var week = season.GetWeek(serverTime);
+            showCapReached = state.CapReachedWeek != week;
+            state.CapReachedWeek = week;
+        }
+
+        state.CappedExperience += experience;
+        state.PendingCappedExperience += experience;
+        return (experience, showCapReached);
     }
 
     private async ValueTask<int> ClaimReachedLevelsAsync(Player player, SeasonPassPlayerState state, SeasonPassConfiguration configuration, SeasonDefinition season)
@@ -461,7 +601,7 @@ public class SeasonPassPlugIn :
         {
             foreach (var isPremium in new[] { false, true })
             {
-                if ((isPremium && !state.IsPremium) || state.Claims.Contains((entry.Level.Level, isPremium)))
+                if ((isPremium && !(state.IsPremium && configuration.PremiumEnabled)) || state.Claims.Contains((entry.Level.Level, isPremium)))
                 {
                     continue;
                 }
@@ -469,14 +609,14 @@ public class SeasonPassPlugIn :
                 var result = await this.TryClaimAsync(player, state, season, entry.Level, isPremium).ConfigureAwait(false);
                 if (result is null)
                 {
-                    await player.ShowBlueMessageAsync(Format(configuration.RewardPendingMessage, player, entry.Level.Level)).ConfigureAwait(false);
+                    await player.ShowBlueMessageAsync(this.Format(configuration.RewardPendingMessage, player, entry.Level.Level)).ConfigureAwait(false);
                     return claimed;
                 }
 
                 if (result is { Length: > 0 } rewards)
                 {
                     claimed++;
-                    await player.ShowBlueMessageAsync(Format(configuration.ClaimedMessage, player, entry.Level.Level, rewards)).ConfigureAwait(false);
+                    await player.ShowBlueMessageAsync(this.Format(configuration.ClaimedMessage, player, entry.Level.Level, rewards)).ConfigureAwait(false);
                 }
             }
         }
@@ -529,8 +669,10 @@ public class SeasonPassPlugIn :
         try
         {
             var pending = state.PendingExperience;
-            var total = await this.Repository.AddSeasonExperienceAsync(state.AccountId, seasonId, pending).ConfigureAwait(false);
+            var pendingCapped = state.PendingCappedExperience;
+            var total = await this.Repository.AddSeasonExperienceAsync(state.AccountId, seasonId, pending, pendingCapped).ConfigureAwait(false);
             state.PendingExperience -= pending;
+            state.PendingCappedExperience -= pendingCapped;
 
             // Another server may have added experience to the account at the same time.
             state.Experience = Math.Max(state.Experience, total + state.PendingExperience);

@@ -102,6 +102,13 @@ public class AchievementsConfiguration
     public bool ShareKillsWithParty { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the actions while the MU Helper is running count, too.
+    /// Offline leveling never counts.
+    /// </summary>
+    [Display(Name = "Cuenta el MU Helper", Description = "Si está activado, lo que se hace con el MU Helper encendido suma progreso a los logros. El offlevel nunca suma.")]
+    public bool CountMuHelperActivity { get; set; }
+
+    /// <summary>
     /// Gets or sets the maximum of the summed experience bonus of the completed achievements, in percent.
     /// </summary>
     /// <remarks>

@@ -43,7 +43,7 @@ public class SeasonPassChatCommandPlugIn : ChatCommandPlugInBase<SeasonPassChatC
     {
         if (GetActivePlugIn(player) is not { } plugIn)
         {
-            await player.ShowBlueMessageAsync("El pase de temporada no está disponible.").ConfigureAwait(false);
+            await player.ShowBlueMessageAsync("El pase no está disponible.").ConfigureAwait(false);
             return;
         }
 
@@ -92,16 +92,18 @@ public class SeasonPassChatCommandPlugIn : ChatCommandPlugInBase<SeasonPassChatC
         }
 
         var maximumLevel = season.GetMaximumLevel();
+        var points = plugIn.GetPointsName(player);
         var progress = overview.Level >= maximumLevel
             ? "nivel máximo"
-            : $"{overview.Experience % season.ExperiencePerLevel}/{season.ExperiencePerLevel} XP para el nivel {overview.Level + 1}";
-        var premium = overview.IsPremium ? "premium" : "gratis";
+            : $"{overview.Experience % season.ExperiencePerLevel}/{season.ExperiencePerLevel} {points} para el nivel {overview.Level + 1}";
+        var name = plugIn.GetDisplayName(player);
+        var premium = overview.IsPremium ? " (premium)" : string.Empty;
         var remaining = overview.EndUtc - DateTime.UtcNow;
-        await player.ShowBlueMessageAsync($"[Pase] {season.Name} ({premium}): nivel {overview.Level}/{maximumLevel}, {progress}.").ConfigureAwait(false);
-        await player.ShowBlueMessageAsync($"[Pase] Termina en {Math.Max(0, (int)remaining.TotalDays)}d {Math.Max(0, remaining.Hours)}h. Ganás XP completando quests (/weekly) y jugando.").ConfigureAwait(false);
+        await player.ShowBlueMessageAsync($"[{name}] {season.Name}{premium}: nivel {overview.Level}/{maximumLevel}, {progress}.").ConfigureAwait(false);
+        await player.ShowBlueMessageAsync($"[{name}] Termina en {Math.Max(0, (int)remaining.TotalDays)}d {Math.Max(0, remaining.Hours)}h. Ganás {points} con quests (/weekly), eventos y jugando.").ConfigureAwait(false);
         if (overview.ClaimableCount > 0)
         {
-            await player.ShowBlueMessageAsync($"[Pase] Tenés {overview.ClaimableCount} premio(s) para reclamar: /pase reclamar.").ConfigureAwait(false);
+            await player.ShowBlueMessageAsync($"[{name}] Tenés {overview.ClaimableCount} premio(s) para reclamar: /pase reclamar.").ConfigureAwait(false);
         }
 
         // The configuration may have changed since the client got the pass, so the window is refreshed, too.

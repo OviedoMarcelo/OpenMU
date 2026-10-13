@@ -7,6 +7,7 @@ namespace MUnique.OpenMU.Web.Tests.AdminApi;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging.Abstractions;
 using MUnique.OpenMU.GameLogic.PlugIns.Achievements;
+using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 using MUnique.OpenMU.Persistence.InMemory;
 using MUnique.OpenMU.Web.AdminPanel.AdminApi.Configuration;
 
@@ -43,6 +44,20 @@ public class PlugInConfigurationTests
 
         var titleId = this._registry.GetSchema(typeof(TitleDefinition)).Properties.Single(p => p.Name == nameof(TitleDefinition.Id));
         Assert.That(titleId.IsReadOnly, Is.False, "Only ids of entities can't be changed.");
+    }
+
+    /// <summary>
+    /// Tests that a text which holds the key of an object of a list of the root object tells that list, so that it's selected.
+    /// </summary>
+    [Test]
+    public void KeysOfListObjectsHaveTheirSource()
+    {
+        var chapterId = this._registry.GetSchema(typeof(WeeklyQuestDefinition)).Properties.Single(p => p.Name == nameof(WeeklyQuestDefinition.ChapterId));
+        Assert.That(chapterId.Kind, Is.EqualTo(PropertyKind.Text));
+        Assert.That(chapterId.KeySource, Is.EqualTo(new KeySource(nameof(WeeklyQuestsConfiguration.Chapters), "Id", "Name")));
+
+        var name = this._registry.GetSchema(typeof(WeeklyQuestDefinition)).Properties.Single(p => p.Name == nameof(WeeklyQuestDefinition.Name));
+        Assert.That(name.KeySource, Is.Null);
     }
 
     /// <summary>

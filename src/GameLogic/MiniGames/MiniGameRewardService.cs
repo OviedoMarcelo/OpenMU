@@ -128,6 +128,62 @@ internal sealed class MiniGameRewardService
         }
     }
 
+    /// <summary>
+    /// Determines whether the player fulfills the required success at the end of the game.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <param name="requiredSuccess">The required success.</param>
+    /// <returns><c>true</c>, if the player fulfills all required flags.</returns>
+    public bool HasSucceeded(Player player, MiniGameSuccessFlags requiredSuccess)
+    {
+        var winner = this._winnerProvider();
+        if (requiredSuccess.HasFlag(MiniGameSuccessFlags.Alive) && (!player.IsAlive || player.CurrentMap != this._map))
+        {
+            return false;
+        }
+
+        if (requiredSuccess.HasFlag(MiniGameSuccessFlags.Dead) && (player.IsAlive && player.CurrentMap == this._map))
+        {
+            return false;
+        }
+
+        if (requiredSuccess.HasFlag(MiniGameSuccessFlags.WinnerExists) && winner is null)
+        {
+            return false;
+        }
+
+        if (requiredSuccess.HasFlag(MiniGameSuccessFlags.WinnerNotExists) && winner is not null)
+        {
+            return false;
+        }
+
+        if (requiredSuccess.HasFlag(MiniGameSuccessFlags.Winner) && winner != player)
+        {
+            return false;
+        }
+
+        if (requiredSuccess.HasFlag(MiniGameSuccessFlags.Loser)
+            && (winner == player || (player.Party == winner?.Party && player.Party is not null)))
+        {
+            return false;
+        }
+
+        if (requiredSuccess.HasFlag(MiniGameSuccessFlags.WinningParty)
+            && (winner?.Party is null || winner.Party != player.Party))
+        {
+            return false;
+        }
+
+        if (requiredSuccess.HasFlag(MiniGameSuccessFlags.WinnerOrInWinningParty)
+            && (winner?.Party is null || winner.Party != player.Party)
+            && winner != player)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     private async ValueTask<(int BonusScore, int GivenMoney)> GiveRewardAsync(Player player, MiniGameReward reward)
     {
         switch (reward.RewardType)
@@ -207,52 +263,12 @@ internal sealed class MiniGameRewardService
 
     private bool DoesRewardApply(Player player, int playerRank, MiniGameReward reward)
     {
-        var winner = this._winnerProvider();
         if (reward.Rank is not null && reward.Rank != playerRank)
         {
             return false;
         }
 
-        if (reward.RequiredSuccess.HasFlag(MiniGameSuccessFlags.Alive) && (!player.IsAlive || player.CurrentMap != this._map))
-        {
-            return false;
-        }
-
-        if (reward.RequiredSuccess.HasFlag(MiniGameSuccessFlags.Dead) && (player.IsAlive && player.CurrentMap == this._map))
-        {
-            return false;
-        }
-
-        if (reward.RequiredSuccess.HasFlag(MiniGameSuccessFlags.WinnerExists) && winner is null)
-        {
-            return false;
-        }
-
-        if (reward.RequiredSuccess.HasFlag(MiniGameSuccessFlags.WinnerNotExists) && winner is not null)
-        {
-            return false;
-        }
-
-        if (reward.RequiredSuccess.HasFlag(MiniGameSuccessFlags.Winner) && winner != player)
-        {
-            return false;
-        }
-
-        if (reward.RequiredSuccess.HasFlag(MiniGameSuccessFlags.Loser)
-            && (winner == player || (player.Party == winner?.Party && player.Party is not null)))
-        {
-            return false;
-        }
-
-        if (reward.RequiredSuccess.HasFlag(MiniGameSuccessFlags.WinningParty)
-            && (winner?.Party is null || winner.Party != player.Party))
-        {
-            return false;
-        }
-
-        if (reward.RequiredSuccess.HasFlag(MiniGameSuccessFlags.WinnerOrInWinningParty)
-            && (winner?.Party is null || winner.Party != player.Party)
-            && winner != player)
+        if (!this.HasSucceeded(player, reward.RequiredSuccess))
         {
             return false;
         }

@@ -62,6 +62,13 @@ public class WeeklyQuestsConfiguration
     public bool ShareKillsWithParty { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets a value indicating whether the actions while the MU Helper is running count, too.
+    /// Offline leveling never counts.
+    /// </summary>
+    [Display(Name = "Cuenta el MU Helper", Description = "Si está activado, lo que se hace con el MU Helper encendido suma progreso a las quests. El offlevel nunca suma.")]
+    public bool CountMuHelperActivity { get; set; }
+
+    /// <summary>
     /// Gets or sets the bonus which is given when a character completed all of its quests of the week.
     /// Its <see cref="WeeklyQuestDefinition.Name"/>, <see cref="WeeklyQuestDefinition.Description"/> and
     /// <see cref="WeeklyQuestDefinition.Rewards"/> are used. Without rewards, there is no bonus.
@@ -99,6 +106,21 @@ public class WeeklyQuestsConfiguration
     public LocalizedString RewardPendingMessage { get; set; } = "[Quest] Liberá espacio en el inventario para recibir el premio de {0}.";
 
     /// <summary>
+    /// Gets or sets the message which is shown when a chapter has been unlocked.
+    /// Placeholder: {0} = chapter name.
+    /// </summary>
+    [Display(Name = "Mensaje de capítulo nuevo", Description = "{0} = nombre del capítulo.")]
+    public LocalizedString ChapterUnlockedMessage { get; set; } = "[Historia] ¡Nuevo capítulo: {0}!";
+
+    /// <summary>
+    /// Gets or sets the chapters, which make quests available one after another.
+    /// </summary>
+    [Display(Name = "Capítulos", Description = "Opcional. Agrupa quests en capítulos: las quests de un capítulo aparecen recién cuando se completa el capítulo que requiere. Cada quest indica su capítulo en \"Capítulo\".")]
+    [MemberOfAggregate]
+    [ScaffoldColumn(true)]
+    public ICollection<WeeklyQuestChapter> Chapters { get; set; } = new List<WeeklyQuestChapter>();
+
+    /// <summary>
     /// Gets or sets the quests.
     /// </summary>
     [Display(Name = "Quests", Description = "Todas las quests: historia, diarias, semanales, de clase y de zona. El progreso se guarda por el Id, así que no lo cambies en una quest que ya está en curso.")]
@@ -111,6 +133,11 @@ public class WeeklyQuestsConfiguration
     /// </summary>
     public static WeeklyQuestsConfiguration Default => new()
     {
+        Chapters = new List<WeeklyQuestChapter>
+        {
+            new() { Id = "cap-1", Name = "Capítulo I - El regreso de Kundun" },
+            new() { Id = "cap-2", Name = "Capítulo II - Las puertas de Lost Tower", PrerequisiteChapterId = "cap-1" },
+        },
         Quests = new List<WeeklyQuestDefinition>
         {
             new()
@@ -164,6 +191,7 @@ public class WeeklyQuestsConfiguration
                 IsActive = false,
                 Category = QuestCategory.Main,
                 Period = QuestPeriod.Once,
+                ChapterId = "cap-1",
                 SequentialObjectives = true,
                 Objectives = new List<WeeklyQuestObjective>
                 {
@@ -185,7 +213,7 @@ public class WeeklyQuestsConfiguration
                 IsActive = false,
                 Category = QuestCategory.Main,
                 Period = QuestPeriod.Once,
-                PrerequisiteQuestId = "main-1",
+                ChapterId = "cap-2",
                 ObjectiveType = WeeklyQuestObjectiveType.EnterMap,
             },
         },

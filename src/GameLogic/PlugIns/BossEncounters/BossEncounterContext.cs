@@ -890,6 +890,35 @@ public sealed class BossEncounterContext
 
         await this.ShowRankingAsync(participants).ConfigureAwait(false);
         await this.AddToHistoryAsync(outcome, bossDeath, phaseName, participants, rewardedPlayers).ConfigureAwait(false);
+        await this.NotifyEndedAsync(bossDeath is not null, participants).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Tells the plugins (e.g. the quests) which players took part: the ones with at least the minimum share of
+    /// the damage, or of the healing, so that healers count, too.
+    /// </summary>
+    private async ValueTask NotifyEndedAsync(bool isDefeated, IReadOnlyList<BossEncounterParticipant> participants)
+    {
+        if (this._gameContext.PlugInManager.GetPlugInPoint<IBossEncounterEndedPlugIn>() is not { } plugInPoint)
+        {
+            return;
+        }
+
+        var minimum = this._definition.ParticipationMinimumDamagePercent;
+        var players = participants
+            .Where(p => (p.Damage > 0 && p.Percent >= minimum) || (p.Healing > 0 && p.HealingPercent >= minimum))
+            .Select(p => p.Player)
+            .Where(IsInWorld)
+            .Distinct()
+            .ToList();
+        try
+        {
+            await plugInPoint.BossEncounterEndedAsync(this.Name, isDefeated, players).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            this._logger.LogError(ex, "Error in a plugin after the boss encounter {Name} ended.", this.Name);
+        }
     }
 
     private async ValueTask AddToHistoryAsync(BossEncounterOutcome outcome, DeathInformation? bossDeath, string? phaseName, IReadOnlyList<BossEncounterParticipant> participants, HashSet<Player> rewardedPlayers)

@@ -194,10 +194,10 @@ public sealed class ProgressionRepository : IProgressionRepository, IDisposable
         await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
 
         await using var context = new ProgressionContext();
-        var experience = await context.SeasonProgress
+        var progress = await context.SeasonProgress
             .AsNoTracking()
             .Where(p => p.AccountId == accountId && p.SeasonId == seasonId)
-            .Select(p => p.Experience)
+            .Select(p => new { p.Experience, p.CappedExperience })
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
         var claims = await context.SeasonClaims
@@ -208,20 +208,22 @@ public sealed class ProgressionRepository : IProgressionRepository, IDisposable
         var isPremium = await context.SeasonPremiums
             .AnyAsync(p => p.AccountId == accountId && p.SeasonId == seasonId, cancellationToken)
             .ConfigureAwait(false);
-        return new SeasonPassState(experience, claims, isPremium);
+        return new SeasonPassState(progress?.Experience ?? 0, claims, isPremium, progress?.CappedExperience ?? 0);
     }
 
     /// <inheritdoc />
-    public async ValueTask<long> AddSeasonExperienceAsync(Guid accountId, string seasonId, long experience, CancellationToken cancellationToken = default)
+    public async ValueTask<long> AddSeasonExperienceAsync(Guid accountId, string seasonId, long experience, long cappedExperience = 0, CancellationToken cancellationToken = default)
     {
         await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
 
         await using var context = new ProgressionContext();
         var result = await context.Database.SqlQuery<long>(
             $"""
-            INSERT INTO progression."SeasonProgress" ("AccountId", "SeasonId", "Experience")
-            VALUES ({accountId}, {seasonId}, {experience})
-            ON CONFLICT ("AccountId", "SeasonId") DO UPDATE SET "Experience" = progression."SeasonProgress"."Experience" + EXCLUDED."Experience"
+            INSERT INTO progression."SeasonProgress" ("AccountId", "SeasonId", "Experience", "CappedExperience")
+            VALUES ({accountId}, {seasonId}, {experience}, {cappedExperience})
+            ON CONFLICT ("AccountId", "SeasonId") DO UPDATE SET
+                "Experience" = progression."SeasonProgress"."Experience" + EXCLUDED."Experience",
+                "CappedExperience" = progression."SeasonProgress"."CappedExperience" + EXCLUDED."CappedExperience"
             RETURNING "Experience" AS "Value"
             """).ToListAsync(cancellationToken).ConfigureAwait(false);
         return result.FirstOrDefault();

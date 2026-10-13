@@ -29,6 +29,7 @@ public class WeeklyQuestsPlugIn :
     ICharacterMasterLevelUpPlugIn,
     ICharacterResetPlugIn,
     IMiniGameEndedPlugIn,
+    IBossEncounterEndedPlugIn,
     IItemPickedUpPlugIn,
     INpcTalkStartedPlugIn,
     IPlayerTalkToNpcPlugIn,
@@ -160,8 +161,8 @@ public class WeeklyQuestsPlugIn :
     /// <inheritdoc />
     public async ValueTask AttackableGotKilledAsync(IAttackable killed, IAttacker? killer)
     {
-        var player = killer as Player ?? (killer as Monster)?.SummonedBy;
-        if (player is null)
+        var player = RewardEligibility.GetCreditedPlayer(killer);
+        if (player is null || !this.IsActivePlay(player))
         {
             return;
         }
@@ -176,7 +177,7 @@ public class WeeklyQuestsPlugIn :
 
             var mapNumber = monster.CurrentMap?.Definition.Number;
             var monsterNumber = monster.Definition.Number;
-            foreach (var receiver in await this.GetKillReceiversAsync(player).ConfigureAwait(false))
+            foreach (var receiver in (await this.GetKillReceiversAsync(player).ConfigureAwait(false)).Where(this.IsActivePlay))
             {
                 await this.AddProgressAsync(receiver, WeeklyQuestObjectiveType.KillAnyMonster, 1, (_, objective, _) => objective.IsOnMap(mapNumber)).ConfigureAwait(false);
                 await this.AddProgressAsync(
@@ -234,7 +235,7 @@ public class WeeklyQuestsPlugIn :
     public async ValueTask MiniGameEndedAsync(MiniGameContext miniGame, ICollection<Player> finishers)
     {
         var type = miniGame.Definition.Type;
-        foreach (var player in finishers)
+        foreach (var player in finishers.Where(this.IsActivePlay))
         {
             await this.AddProgressAsync(
                 player,
@@ -245,10 +246,28 @@ public class WeeklyQuestsPlugIn :
     }
 
     /// <inheritdoc />
+    public async ValueTask BossEncounterEndedAsync(string encounterName, bool isDefeated, IReadOnlyCollection<Player> participants)
+    {
+        if (!isDefeated)
+        {
+            return;
+        }
+
+        foreach (var player in participants.Where(this.IsActivePlay))
+        {
+            await this.AddProgressAsync(
+                player,
+                WeeklyQuestObjectiveType.DefeatBossEncounter,
+                1,
+                (_, objective, _) => objective.IsBossEncounter(encounterName)).ConfigureAwait(false);
+        }
+    }
+
+    /// <inheritdoc />
     public ValueTask ItemPickedUpAsync(Player player, Item item, bool fromPlayerInventory)
     {
         // Items which were dropped by a player don't count, otherwise the same item could be dropped and picked up again.
-        if (fromPlayerInventory || item.Definition is not { } definition)
+        if (fromPlayerInventory || item.Definition is not { } definition || !this.IsActivePlay(player))
         {
             return ValueTask.CompletedTask;
         }
@@ -533,6 +552,11 @@ public class WeeklyQuestsPlugIn :
     /// <summary>
     /// Gets the index of the objectives of the current configuration, and builds it again when the configuration changed.
     /// </summary>
+    private bool IsActivePlay(Player player)
+    {
+        return RewardEligibility.IsActivePlay(player, this.Configuration?.CountMuHelperActivity ?? false);
+    }
+
     private WeeklyQuestIndex? GetIndex()
     {
         if (this.Configuration is not { } configuration)
@@ -627,6 +651,7 @@ public class WeeklyQuestsPlugIn :
 
             var character = GetCharacterInfo(player);
             var available = this.GetAvailableQuestSet(configuration, index, state, character);
+            var lockedChapters = WeeklyQuestSelector.GetLockedChapters(configuration, character, state.Progress);
             var hasCompleted = false;
             var sendImmediately = false;
             var changedQuests = new List<WeeklyQuestDefinition>();
@@ -702,8 +727,11 @@ public class WeeklyQuestsPlugIn :
                 await this.SaveAsync(player, state).ConfigureAwait(false);
             }
 
+            // A completed quest may unlock others, which the client doesn't know yet, so it gets the whole list again.
+            var hasUnlocked = hasCompleted
+                && await this.ShowUnlockedAsync(player, state, configuration, index, character, available, lockedChapters).ConfigureAwait(false);
             var isNewPeriod = previousPeriods is not null && previousPeriods != state.Periods;
-            await this.SendChangesAsync(player, state, configuration, changedQuests, isNewPeriod, sendImmediately).ConfigureAwait(false);
+            await this.SendChangesAsync(player, state, configuration, changedQuests, isNewPeriod || hasUnlocked, sendImmediately).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -750,10 +778,35 @@ public class WeeklyQuestsPlugIn :
         return bonusQuest;
     }
 
-    private async ValueTask SendChangesAsync(Player player, WeeklyQuestPlayerState state, WeeklyQuestsConfiguration configuration, List<WeeklyQuestDefinition> changedQuests, bool isNewPeriod, bool sendImmediately)
+    /// <summary>
+    /// Shows a message for each chapter which got unlocked by the completed quests.
+    /// </summary>
+    /// <returns><c>true</c>, if any quest became available.</returns>
+    private async ValueTask<bool> ShowUnlockedAsync(
+        Player player,
+        WeeklyQuestPlayerState state,
+        WeeklyQuestsConfiguration configuration,
+        WeeklyQuestIndex index,
+        WeeklyQuestCharacterInfo character,
+        HashSet<WeeklyQuestDefinition> previouslyAvailable,
+        IReadOnlySet<string> previouslyLockedChapters)
     {
-        // After a reset, all quests of the client are outdated, not only the changed ones.
-        if (isNewPeriod)
+        if (previouslyLockedChapters.Count > 0)
+        {
+            var lockedChapters = WeeklyQuestSelector.GetLockedChapters(configuration, character, state.Progress);
+            foreach (var chapter in configuration.Chapters.Where(c => previouslyLockedChapters.Contains(c.Id) && !lockedChapters.Contains(c.Id)))
+            {
+                await ShowGoldenMessageAsync(player, Format(configuration.ChapterUnlockedMessage, player, chapter.Name)).ConfigureAwait(false);
+            }
+        }
+
+        return this.GetAvailableQuestSet(configuration, index, state, character).Any(q => !previouslyAvailable.Contains(q));
+    }
+
+    private async ValueTask SendChangesAsync(Player player, WeeklyQuestPlayerState state, WeeklyQuestsConfiguration configuration, List<WeeklyQuestDefinition> changedQuests, bool sendAll, bool sendImmediately)
+    {
+        // After a reset or when quests got unlocked, the list of the client is outdated, not only the changed quests.
+        if (sendAll)
         {
             state.PendingUpdateIds.Clear();
             var overview = this.CreateOverview(configuration, state, player);
@@ -820,7 +873,7 @@ public class WeeklyQuestsPlugIn :
                 : index.FindQuest(questId);
             if (quest is not null)
             {
-                entries.Add(WeeklyQuestSelector.CreateEntry(quest, state.Progress));
+                entries.Add(WeeklyQuestSelector.CreateEntry(quest, state.Progress) with { ChapterName = WeeklyQuestSelector.GetChapterName(configuration, quest) });
             }
         }
 

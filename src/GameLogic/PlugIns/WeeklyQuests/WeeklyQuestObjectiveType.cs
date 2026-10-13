@@ -68,4 +68,10 @@ public enum WeeklyQuestObjectiveType
     /// </summary>
     [Display(Name = "Entrar a un mapa")]
     EnterMap,
+
+    /// <summary>
+    /// Take part in a boss encounter in which the boss is defeated.
+    /// </summary>
+    [Display(Name = "Derrotar un jefe (encuentro)")]
+    DefeatBossEncounter,
 }
