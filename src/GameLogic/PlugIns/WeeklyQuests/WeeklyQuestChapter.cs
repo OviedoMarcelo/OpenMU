@@ -4,6 +4,8 @@
 
 namespace MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 
+using MUnique.OpenMU.DataModel.Composition;
+
 /// <summary>
 /// A chapter of quests, e.g. of the story. The quests of a chapter are available after the chapter which it requires is completed.
 /// </summary>
@@ -12,7 +14,7 @@ public class WeeklyQuestChapter
     /// <summary>
     /// Gets or sets the identifier of the chapter, which the quests refer to with <see cref="WeeklyQuestDefinition.ChapterId"/>.
     /// </summary>
-    [Display(Name = "Id", Description = "Identificador único y estable, p. ej. \"cap-1\". Las quests del capítulo lo usan en \"Capítulo\".")]
+    [Display(Name = "Id", Description = "Identificador único y estable, p. ej. \"cap-1\". Cada quest elige su capítulo en \"Capítulo\".")]
     [Required]
     [StringLength(64)]
     public string Id { get; set; } = string.Empty;
@@ -27,7 +29,8 @@ public class WeeklyQuestChapter
     /// <summary>
     /// Gets or sets the identifier of the chapter which has to be completed before the quests of this chapter are available.
     /// </summary>
-    [Display(Name = "Requiere capítulo", Description = "Opcional. Id del capítulo que hay que completar antes. Vacío = disponible desde el inicio.")]
+    [Display(Name = "Requiere capítulo", Description = "Opcional. El capítulo que hay que completar antes. Vacío = disponible desde el inicio.")]
+    [KeyOf(nameof(WeeklyQuestsConfiguration.Chapters))]
     [StringLength(64)]
     public string? PrerequisiteChapterId { get; set; }
 

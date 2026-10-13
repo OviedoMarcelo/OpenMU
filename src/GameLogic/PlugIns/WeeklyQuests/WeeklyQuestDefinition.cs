@@ -57,14 +57,16 @@ public class WeeklyQuestDefinition
     /// <summary>
     /// Gets or sets the identifier of the quest which has to be completed before this quest is available.
     /// </summary>
-    [Display(Name = "Requiere quest", Description = "Opcional. Id de la quest que hay que completar antes, p. ej. el capítulo anterior. Hasta entonces, esta quest no se muestra.")]
+    [Display(Name = "Requiere quest", Description = "Opcional. La quest que hay que completar antes. Hasta entonces, esta quest no se muestra.")]
+    [KeyOf(nameof(WeeklyQuestsConfiguration.Quests))]
     [StringLength(64)]
     public string? PrerequisiteQuestId { get; set; }
 
     /// <summary>
     /// Gets or sets the identifier of the <see cref="WeeklyQuestChapter"/> of the quest. The quest is available when the chapter is unlocked.
     /// </summary>
-    [Display(Name = "Capítulo", Description = "Opcional. Id del capítulo de la quest. La quest se muestra recién cuando el capítulo está desbloqueado.")]
+    [Display(Name = "Capítulo", Description = "Opcional. El capítulo de la quest. La quest se muestra recién cuando el capítulo está desbloqueado.")]
+    [KeyOf(nameof(WeeklyQuestsConfiguration.Chapters))]
     [StringLength(64)]
     public string? ChapterId { get; set; }
 

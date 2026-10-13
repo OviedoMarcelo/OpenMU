@@ -53,4 +53,9 @@ public record PropertySchema(
     /// </summary>
     [JsonIgnore]
     public Type? TargetClrType { get; init; }
+
+    /// <summary>
+    /// Gets the objects whose keys the text property holds, so that one of them is selected instead of typing the key.
+    /// </summary>
+    public KeySource? KeySource { get; init; }
 }
