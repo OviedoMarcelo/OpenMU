@@ -638,6 +638,34 @@ public class WeeklyQuestsPlugInTest
     }
 
     /// <summary>
+    /// Tests that a quest to defeat a boss counts only the defeats of its encounter.
+    /// </summary>
+    [Test]
+    public async Task DefeatedBossEncounterCountsForItsQuestAsync()
+    {
+        var repository = new InMemoryWeeklyQuestProgressRepository();
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        var quest = new WeeklyQuestDefinition
+        {
+            Id = "boss",
+            Name = "Cazajefes",
+            ObjectiveType = WeeklyQuestObjectiveType.DefeatBossEncounter,
+            BossEncounterName = "Kundun Reborn",
+            RequiredCount = 2,
+        };
+        var plugIn = CreatePlugIn(repository, quest);
+        var participants = new[] { player };
+
+        await plugIn.BossEncounterEndedAsync("Kundun Reborn", true, participants).ConfigureAwait(false);
+        await plugIn.BossEncounterEndedAsync("Kundun Reborn", false, participants).ConfigureAwait(false);
+        await plugIn.BossEncounterEndedAsync("Selupan", true, participants).ConfigureAwait(false);
+        Assert.That(await GetCountAsync(plugIn, player, "boss").ConfigureAwait(false), Is.EqualTo(1));
+
+        await plugIn.BossEncounterEndedAsync("kundun reborn", true, participants).ConfigureAwait(false);
+        Assert.That((await GetEntryAsync(plugIn, player, "boss").ConfigureAwait(false)).IsCompleted, Is.True);
+    }
+
+    /// <summary>
     /// Tests that completing the last required quest of a chapter unlocks the next chapter right away:
     /// the player gets a message and the whole list again, with the new quests.
     /// </summary>

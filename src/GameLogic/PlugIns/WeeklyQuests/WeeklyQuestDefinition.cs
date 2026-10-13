@@ -184,6 +184,13 @@ public class WeeklyQuestDefinition
     public MiniGameType MiniGameType { get; set; }
 
     /// <summary>
+    /// Gets or sets the name of the boss encounter, for <see cref="WeeklyQuestObjectiveType.DefeatBossEncounter"/>.
+    /// Empty means any encounter.
+    /// </summary>
+    [Display(Name = "Encuentro de jefe", Description = "Solo para \"Derrotar un jefe (encuentro)\": el nombre del encuentro, como en el plugin de boss encounters. Vacío = cualquiera. Cuenta para quien participó con el daño (o la curación) mínimo del encuentro, si el jefe muere.")]
+    public string? BossEncounterName { get; set; }
+
+    /// <summary>
     /// Gets or sets the minimum level of a killed player, for <see cref="WeeklyQuestObjectiveType.KillPlayer"/>.
     /// </summary>
     [Display(Name = "Nivel mínimo de la víctima", Description = "Solo para \"Matar jugadores\". Evita farmear con personajes bajos.")]
@@ -310,6 +317,7 @@ public class WeeklyQuestDefinition
         Item = this.Item,
         MinimumItemLevel = this.MinimumItemLevel,
         MiniGameType = this.MiniGameType,
+        BossEncounterName = this.BossEncounterName,
         MinimumVictimLevel = this.MinimumVictimLevel,
         IgnoreSameIp = this.IgnoreSameIp,
         IgnoreSameGuild = this.IgnoreSameGuild,

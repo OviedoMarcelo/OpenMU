@@ -29,6 +29,7 @@ public class WeeklyQuestsPlugIn :
     ICharacterMasterLevelUpPlugIn,
     ICharacterResetPlugIn,
     IMiniGameEndedPlugIn,
+    IBossEncounterEndedPlugIn,
     IItemPickedUpPlugIn,
     INpcTalkStartedPlugIn,
     IPlayerTalkToNpcPlugIn,
@@ -241,6 +242,24 @@ public class WeeklyQuestsPlugIn :
                 WeeklyQuestObjectiveType.CompleteMiniGame,
                 1,
                 (_, objective, _) => objective.MiniGameType == MiniGameType.Undefined || objective.MiniGameType == type).ConfigureAwait(false);
+        }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask BossEncounterEndedAsync(string encounterName, bool isDefeated, IReadOnlyCollection<Player> participants)
+    {
+        if (!isDefeated)
+        {
+            return;
+        }
+
+        foreach (var player in participants.Where(this.IsActivePlay))
+        {
+            await this.AddProgressAsync(
+                player,
+                WeeklyQuestObjectiveType.DefeatBossEncounter,
+                1,
+                (_, objective, _) => objective.IsBossEncounter(encounterName)).ConfigureAwait(false);
         }
     }
 

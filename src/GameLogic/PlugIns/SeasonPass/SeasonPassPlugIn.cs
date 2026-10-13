@@ -29,6 +29,7 @@ public class SeasonPassPlugIn :
     IQuestCompletedPlugIn,
     IAttackableGotKilledPlugIn,
     IMiniGameEndedPlugIn,
+    IBossEncounterEndedPlugIn,
     IPeriodicTaskPlugIn,
     ISupportCustomConfiguration<SeasonPassConfiguration>,
     ISupportDefaultCustomConfiguration,
@@ -203,6 +204,26 @@ public class SeasonPassPlugIn :
                 experience += entry.CompletionExperience;
             }
 
+            await this.AddExperienceAsync(player, experience).ConfigureAwait(false);
+        }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask BossEncounterEndedAsync(string encounterName, bool isDefeated, IReadOnlyCollection<Player> participants)
+    {
+        if (!isDefeated || this.Configuration is not { } configuration)
+        {
+            return;
+        }
+
+        var experience = configuration.GetBossEncounterExperience(encounterName);
+        if (experience <= 0)
+        {
+            return;
+        }
+
+        foreach (var player in participants.Where(p => RewardEligibility.IsActivePlay(p, configuration.CountMuHelperActivity)))
+        {
             await this.AddExperienceAsync(player, experience).ConfigureAwait(false);
         }
     }

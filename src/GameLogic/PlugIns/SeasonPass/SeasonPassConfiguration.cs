@@ -149,6 +149,14 @@ public class SeasonPassConfiguration
     public ICollection<SeasonPassMiniGameExperience> MiniGameExperience { get; set; } = new List<SeasonPassMiniGameExperience>();
 
     /// <summary>
+    /// Gets or sets the experience of the pass for taking part in boss encounters in which the boss is defeated.
+    /// </summary>
+    [Display(Name = "Puntos por jefes", Description = "Puntos del pase para quien participa en un encuentro de jefe (boss encounters) que termina con el jefe derrotado. Una entrada sin nombre vale para los encuentros sin entrada propia.")]
+    [MemberOfAggregate]
+    [ScaffoldColumn(true)]
+    public ICollection<SeasonPassBossEncounterExperience> BossEncounterExperience { get; set; } = new List<SeasonPassBossEncounterExperience>();
+
+    /// <summary>
     /// Gets or sets a value indicating whether the premium track is available.
     /// </summary>
     [Display(Name = "Premium habilitado", Description = "Si está desactivado, solo existe el pase gratis: no se reclaman ni se muestran premios premium.")]
@@ -211,5 +219,17 @@ public class SeasonPassConfiguration
     public SeasonDefinition? GetRunningSeason(DateTime serverTime)
     {
         return this.Seasons.FirstOrDefault(s => s.IsRunning(serverTime));
+    }
+
+    /// <summary>
+    /// Gets the experience for the participation in the boss encounter.
+    /// </summary>
+    /// <param name="encounterName">The name of the encounter.</param>
+    /// <returns>The experience of its own entry, otherwise of the entry without a name; 0 without one.</returns>
+    public int GetBossEncounterExperience(string encounterName)
+    {
+        var entry = this.BossEncounterExperience.FirstOrDefault(e => !string.IsNullOrWhiteSpace(e.EncounterName) && string.Equals(e.EncounterName.Trim(), encounterName, StringComparison.OrdinalIgnoreCase))
+                    ?? this.BossEncounterExperience.FirstOrDefault(e => string.IsNullOrWhiteSpace(e.EncounterName));
+        return entry?.Experience ?? 0;
     }
 }

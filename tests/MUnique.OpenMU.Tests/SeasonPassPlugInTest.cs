@@ -143,6 +143,27 @@ public class SeasonPassPlugInTest
     }
 
     /// <summary>
+    /// Tests that a defeated boss encounter gives the experience of its own entry, otherwise of the entry without a name,
+    /// and that a boss which retreated gives nothing.
+    /// </summary>
+    [Test]
+    public async Task DefeatedBossEncounterGivesExperienceAsync()
+    {
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        var plugIn = CreatePlugIn(new InMemoryProgressionRepository());
+        plugIn.Configuration!.BossEncounterExperience.Add(new SeasonPassBossEncounterExperience { EncounterName = "Kundun Reborn", Experience = 200 });
+        plugIn.Configuration.BossEncounterExperience.Add(new SeasonPassBossEncounterExperience { Experience = 50 });
+        var participants = new[] { player };
+
+        await plugIn.BossEncounterEndedAsync("kundun reborn", true, participants).ConfigureAwait(false);
+        Assert.That((await plugIn.GetOverviewAsync(player).ConfigureAwait(false))!.Experience, Is.EqualTo(200));
+
+        await plugIn.BossEncounterEndedAsync("Selupan", true, participants).ConfigureAwait(false);
+        await plugIn.BossEncounterEndedAsync("Kundun Reborn", false, participants).ConfigureAwait(false);
+        Assert.That((await plugIn.GetOverviewAsync(player).ConfigureAwait(false))!.Experience, Is.EqualTo(250));
+    }
+
+    /// <summary>
     /// Tests that the premium rewards aren't handed out while the premium track is disabled, even with the premium pass.
     /// </summary>
     [Test]

@@ -46,7 +46,6 @@ public class SeasonPassViewPlugIn : ISeasonPassViewPlugIn
 
     private ValueTask SendStateAsync(IConnection connection, SeasonPassOverview overview)
     {
-
         var culture = this._player.Culture;
         var levels = overview.Season is null ? [] : overview.Levels.Take(SeasonDefinition.MaximumLevel).ToList();
         var experiencePerLevel = Math.Max(1, overview.Season?.ExperiencePerLevel ?? 1);

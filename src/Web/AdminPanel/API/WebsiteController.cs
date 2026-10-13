@@ -442,6 +442,10 @@ public class WebsiteController : Controller
             .Where(e => e.ParticipationExperience > 0 || e.CompletionExperience > 0)
             .Select(e => new { type = e.MiniGameType.ToString(), participation = e.ParticipationExperience, completion = e.CompletionExperience })
             .ToList(),
+        bosses = configuration.BossEncounterExperience
+            .Where(b => b.Experience > 0)
+            .Select(b => new { name = string.IsNullOrWhiteSpace(b.EncounterName) ? null : b.EncounterName.Trim(), experience = b.Experience })
+            .ToList(),
     };
 
     private static object ToJson(SeasonDefinition season, DateTime endUtc, bool premiumEnabled) => new
