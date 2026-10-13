@@ -6627,6 +6627,36 @@ public static class ConnectionExtensions
     }
 
     /// <summary>
+    /// Sends a <see cref="QuestChapter" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="id">The id of the quest.</param>
+    /// <param name="chapterName">The name of the chapter of the quest.</param>
+    /// <remarks>
+    /// Is sent by the server when: Right after the QuestDetails message of a quest which belongs to a chapter, with the same quest id.
+    /// Causes reaction on client side: The client shows the quest under the name of its chapter, e.g. in the tracker of the quests in progress. Clients which don't know this message ignore it.
+    /// </remarks>
+    public static async ValueTask SendQuestChapterAsync(this IConnection? connection, string @id, string @chapterName)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = QuestChapterRef.Length;
+            var packet = new QuestChapterRef(connection.Output.GetSpan(length)[..length]);
+            packet.Id = @id;
+            packet.ChapterName = @chapterName;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Sends a <see cref="EventChipRegistrationResult" /> to this connection.
     /// </summary>
     /// <param name="connection">The connection.</param>

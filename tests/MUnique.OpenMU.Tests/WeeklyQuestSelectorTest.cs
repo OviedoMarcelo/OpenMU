@@ -218,6 +218,21 @@ public class WeeklyQuestSelectorTest
     }
 
     /// <summary>
+    /// Tests that the entries of quests tell the name of their chapter, so that the client can show it.
+    /// </summary>
+    [Test]
+    public void EntriesHaveTheNameOfTheirChapter()
+    {
+        var configuration = CreateChapterConfiguration(questsToComplete: 0);
+        configuration.Quests.Add(new WeeklyQuestDefinition { Id = "free", Period = QuestPeriod.Once });
+
+        var entries = WeeklyQuestSelector.CreateEntries(configuration, Periods(Week1), Character, new Dictionary<string, WeeklyQuestProgress>(), new HashSet<string>());
+
+        Assert.That(entries.Single(e => e.Quest.Id == "1a").ChapterName, Is.EqualTo("Capítulo I"));
+        Assert.That(entries.Single(e => e.Quest.Id == "free").ChapterName, Is.Null);
+    }
+
+    /// <summary>
     /// Tests that unknown chapters don't lock quests, and that chapters which require each other don't hang.
     /// </summary>
     [Test]

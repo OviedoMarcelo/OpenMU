@@ -6843,6 +6843,28 @@ public class PacketStructureTests
     }
 
     /// <summary>
+    /// Tests the packet size calculation for QuestChapter.
+    /// </summary>
+    [Test]
+    public void QuestChapter_PacketSizeValidation()
+    {
+        // Fixed-length packet validation
+        const int expectedLength = 117;
+        var actualLength = QuestChapterRef.Length;
+        
+        Assert.That(actualLength, Is.EqualTo(expectedLength), 
+            "Packet length mismatch: declared length does not match calculated size");
+        
+        // Validate field 'Id' boundary
+        Assert.That(5 + 64, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'Id' exceeds packet boundary");
+        
+        // Validate field 'ChapterName' boundary
+        Assert.That(69 + 48, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'ChapterName' exceeds packet boundary");
+    }
+
+    /// <summary>
     /// Tests the packet size calculation for EventChipRegistrationResult.
     /// </summary>
     [Test]

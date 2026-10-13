@@ -854,7 +854,7 @@ public class WeeklyQuestsPlugIn :
                 : index.FindQuest(questId);
             if (quest is not null)
             {
-                entries.Add(WeeklyQuestSelector.CreateEntry(quest, state.Progress));
+                entries.Add(WeeklyQuestSelector.CreateEntry(quest, state.Progress) with { ChapterName = WeeklyQuestSelector.GetChapterName(configuration, quest) });
             }
         }
 

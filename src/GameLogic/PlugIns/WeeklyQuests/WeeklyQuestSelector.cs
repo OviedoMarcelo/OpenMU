@@ -166,6 +166,23 @@ public static class WeeklyQuestSelector
     }
 
     /// <summary>
+    /// Gets the name of the chapter of the quest.
+    /// </summary>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="quest">The quest.</param>
+    /// <returns>The name of the chapter; <c>null</c> if the quest has no chapter, or it doesn't exist.</returns>
+    public static string? GetChapterName(WeeklyQuestsConfiguration configuration, WeeklyQuestDefinition quest)
+    {
+        if (string.IsNullOrWhiteSpace(quest.ChapterId))
+        {
+            return null;
+        }
+
+        var name = configuration.Chapters.FirstOrDefault(c => c.Id == quest.ChapterId)?.Name;
+        return string.IsNullOrWhiteSpace(name) ? null : name;
+    }
+
+    /// <summary>
     /// Determines whether the character completed the chapter, see <see cref="GetLockedChapters"/>.
     /// </summary>
     /// <param name="configuration">The configuration.</param>
@@ -246,7 +263,7 @@ public static class WeeklyQuestSelector
         IReadOnlyList<WeeklyQuestDefinition> availableQuests,
         IReadOnlyDictionary<string, WeeklyQuestProgress> progress)
     {
-        var entries = availableQuests.Select(quest => CreateEntry(quest, progress)).ToList();
+        var entries = availableQuests.Select(quest => CreateEntry(quest, progress) with { ChapterName = GetChapterName(configuration, quest) }).ToList();
         var weeklyCount = CountBonusQuests(availableQuests);
         if (weeklyCount > 0 && CreateAllCompletedBonusQuest(configuration, weeklyCount) is { } bonusQuest)
         {
