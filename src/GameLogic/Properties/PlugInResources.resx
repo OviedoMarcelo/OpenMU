@@ -1529,4 +1529,28 @@
   <data name="PrestigeChatCommandPlugIn_Description" xml:space="preserve">
     <value>Handles the chat command '/prestigio [confirmar]'. Shows the prestige of the character and does it.</value>
   </data>
+  <data name="BossEncounterPlugIn_Name" xml:space="preserve">
+    <value>Boss encounters</value>
+  </data>
+  <data name="BossEncounterPlugIn_Description" xml:space="preserve">
+    <value>Bosses with phases which appear on a configurable map, at configurable times: pillars, shields, telegraphed area attacks, summons and an enrage. The default configuration contains Kundun Reborn in Kalima 7.</value>
+  </data>
+  <data name="BossEncounterChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Boss encounter chat command</value>
+  </data>
+  <data name="BossEncounterChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Handles the chat command '/boss [iniciar|terminar name]'. Shows the boss encounters, starts one or lets its boss retreat.</value>
+  </data>
+  <data name="BossEncounterHealPlugIn_Name" xml:space="preserve">
+    <value>Boss encounter healing tracking</value>
+  </data>
+  <data name="BossEncounterHealPlugIn_Description" xml:space="preserve">
+    <value>Sums up the health which the players restore to the players in the arena of a boss encounter, for the ranking of the healing and its rewards. It does nothing while no encounter runs.</value>
+  </data>
+  <data name="BossEncounterHitPlugIn_Name" xml:space="preserve">
+    <value>Boss encounter damage tracking</value>
+  </data>
+  <data name="BossEncounterHitPlugIn_Description" xml:space="preserve">
+    <value>Sums up the damage which the players do to the bosses of the encounters, for the rewards for the participation and the ranking. It does nothing while no encounter runs.</value>
+  </data>
 </root>

@@ -112,56 +112,11 @@ public static class WeeklyQuestRewarder
 
     private static ItemDefinition? ResolveItemDefinition(Player player, WeeklyQuestReward reward)
     {
-        if (reward.Item is not { } configured)
-        {
-            return null;
-        }
-
-        // The configuration of the plugin may hold an instance of another context, so we use the one of the game.
-        return player.GameContext.Configuration.Items
-            .FirstOrDefault(i => i.Group == configured.Group && i.Number == configured.Number)
-            ?? configured;
+        return ConfiguredItemFactory.Resolve(player.GameContext, reward.Item);
     }
 
     private static TemporaryItem CreateItem(ItemDefinition itemDefinition, WeeklyQuestReward reward)
     {
-        var item = new TemporaryItem
-        {
-            Definition = itemDefinition,
-            Level = Math.Min(reward.ItemLevel, itemDefinition.MaximumItemLevel),
-            SocketCount = itemDefinition.MaximumSockets,
-        };
-        item.Durability = item.IsStackable() ? 1 : itemDefinition.Durability;
-        item.HasSkill = itemDefinition.Skill is not null && reward.Skill;
-
-        var possibleOptions = itemDefinition.PossibleItemOptions.SelectMany(o => o.PossibleOptions).ToList();
-        if (reward.OptionLevel > 0
-            && possibleOptions.FirstOrDefault(o => o.OptionType == ItemOptionTypes.Option) is { } option)
-        {
-            item.ItemOptions.Add(new ItemOptionLink { ItemOption = option, Level = reward.OptionLevel });
-        }
-
-        if (reward.Luck
-            && possibleOptions.FirstOrDefault(o => o.OptionType == ItemOptionTypes.Luck) is { } luck)
-        {
-            item.ItemOptions.Add(new ItemOptionLink { ItemOption = luck });
-        }
-
-        if (reward.ExcellentOptions > 0)
-        {
-            var excellentOptions = possibleOptions
-                .Where(o => o.OptionType == ItemOptionTypes.Excellent)
-                .Where(o => ((1 << (o.Number - 1)) & reward.ExcellentOptions) > 0)
-                .ToList();
-            foreach (var excellentOption in excellentOptions)
-            {
-                item.ItemOptions.Add(new ItemOptionLink { ItemOption = excellentOption });
-            }
-
-            // Like the /item command: every excellent item has its skill, if the item definition has one.
-            item.HasSkill |= excellentOptions.Count > 0 && itemDefinition.Skill is not null;
-        }
-
-        return item;
+        return ConfiguredItemFactory.Create(itemDefinition, reward.ItemLevel, reward.Skill, reward.Luck, reward.OptionLevel, reward.ExcellentOptions);
     }
 }

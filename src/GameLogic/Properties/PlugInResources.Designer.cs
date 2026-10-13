@@ -4177,5 +4177,29 @@ namespace MUnique.OpenMU.GameLogic.Properties {
         /// <summary>Gets the localized PrestigeChatCommandPlugIn_Description text.</summary>
         public static string PrestigeChatCommandPlugIn_Description => ResourceManager.GetString("PrestigeChatCommandPlugIn_Description", resourceCulture)!;
 
+        /// <summary>Gets the localized BossEncounterPlugIn_Name text.</summary>
+        public static string BossEncounterPlugIn_Name => ResourceManager.GetString("BossEncounterPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized BossEncounterPlugIn_Description text.</summary>
+        public static string BossEncounterPlugIn_Description => ResourceManager.GetString("BossEncounterPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized BossEncounterChatCommandPlugIn_Name text.</summary>
+        public static string BossEncounterChatCommandPlugIn_Name => ResourceManager.GetString("BossEncounterChatCommandPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized BossEncounterChatCommandPlugIn_Description text.</summary>
+        public static string BossEncounterChatCommandPlugIn_Description => ResourceManager.GetString("BossEncounterChatCommandPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized BossEncounterHealPlugIn_Name text.</summary>
+        public static string BossEncounterHealPlugIn_Name => ResourceManager.GetString("BossEncounterHealPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized BossEncounterHealPlugIn_Description text.</summary>
+        public static string BossEncounterHealPlugIn_Description => ResourceManager.GetString("BossEncounterHealPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized BossEncounterHitPlugIn_Name text.</summary>
+        public static string BossEncounterHitPlugIn_Name => ResourceManager.GetString("BossEncounterHitPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized BossEncounterHitPlugIn_Description text.</summary>
+        public static string BossEncounterHitPlugIn_Description => ResourceManager.GetString("BossEncounterHitPlugIn_Description", resourceCulture)!;
+
     }
 }

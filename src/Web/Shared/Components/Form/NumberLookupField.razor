@@ -1,0 +1,23 @@
+@using MUnique.OpenMU.Persistence
+
+@typeparam TObject
+@inherits NotifyableInputBase<short>
+
+<div class="mb-3">
+    <FieldLabel Text="@Label" ValueExpression="@this.ValueExpression" />
+    <Typeahead TItem="TObject" TValue="TObject"
+               @bind-Value="@this.SelectedObject"
+               SearchMethod="@((text, _) => this.LookupController.GetSuggestionsAsync<TObject>(text, this.PersistenceContext))"
+               EnableDropDown="true"
+               MaximumSuggestions="20"
+               Placeholder="@Resources.Search"
+               Id="@this.FieldIdentifier.FieldName">
+        <SelectedTemplate Context="item">
+            @this.GetCaption(item)
+        </SelectedTemplate>
+        <ResultTemplate Context="item">
+            @this.GetCaption(item)
+        </ResultTemplate>
+    </Typeahead>
+    <ValidationMessage For=@this.ValueExpression />
+</div>

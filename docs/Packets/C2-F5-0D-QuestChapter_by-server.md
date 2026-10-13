@@ -1,4 +1,4 @@
-# C2 F5 0A - QuestChapter (by server)
+# C2 F5 0D - QuestChapter (by server)
 
 ## Is sent when
 
@@ -15,6 +15,6 @@ The client shows the quest under the name of its chapter, e.g. in the tracker of
 | 0 | 1 |   Byte   | 0xC2  | [Packet type](PacketTypes.md) |
 | 1 | 2 |    Short   |   117   | Packet header - length of the packet |
 | 3 | 1 |    Byte   | 0xF5  | Packet header - packet type identifier |
-| 4 | 1 |    Byte   | 0x0A  | Packet header - sub packet type identifier |
+| 4 | 1 |    Byte   | 0x0D  | Packet header - sub packet type identifier |
 | 5 | 64 | String |  | Id; The id of the quest. |
 | 69 | 48 | String |  | ChapterName; The name of the chapter of the quest. |

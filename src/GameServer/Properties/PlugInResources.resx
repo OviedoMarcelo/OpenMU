@@ -2543,6 +2543,24 @@
   <data name="PlayerTitleViewPlugIn_Description" xml:space="preserve">
     <value>Sends the title of a player, which the open source client shows below its name.</value>
   </data>
+  <data name="ShowMonsterAppearancePlugIn_Name" xml:space="preserve">
+    <value>Monster appearance view</value>
+  </data>
+  <data name="ShowMonsterAppearancePlugIn_Description" xml:space="preserve">
+    <value>Sends the size, the glow and the name of a monster which looks different than the others of its kind (e.g. a boss), which the open source client shows.</value>
+  </data>
+  <data name="ShowBossHealthPlugIn_Name" xml:space="preserve">
+    <value>Boss health view</value>
+  </data>
+  <data name="ShowBossHealthPlugIn_Description" xml:space="preserve">
+    <value>Sends the health and the phase of the boss of an encounter to the players in its arena, which the open source client shows in a bar.</value>
+  </data>
+  <data name="ShowGroundMarkerPlugIn_Name" xml:space="preserve">
+    <value>Ground marker view</value>
+  </data>
+  <data name="ShowGroundMarkerPlugIn_Description" xml:space="preserve">
+    <value>Sends where an attack of a boss hits after a delay, which the open source client shows as a warning circle on the ground.</value>
+  </data>
   <data name="SeasonPassViewPlugIn_Name" xml:space="preserve">
     <value>Season pass view</value>
   </data>

@@ -4,6 +4,7 @@
 
 namespace MUnique.OpenMU.Web.Shared.Components.Form;
 
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -14,6 +15,7 @@ using MUnique.OpenMU.Persistence;
 using MUnique.OpenMU.Web.Shared;
 using MUnique.OpenMU.Web.Shared.Components.Form.Modal;
 using MUnique.OpenMU.Web.Shared.Components.Modal;
+using MUnique.OpenMU.Web.Shared.Services;
 
 /// <summary>
 /// A component that shows a collection of <typeparamref name="TItem"/> in a table.
@@ -27,6 +29,8 @@ public partial class ItemTable<TItem>
     private bool _isEditable;
 
     private bool _isInlineEditable;
+
+    private bool _isHorizontalLayout;
 
     private bool _isAddingSupported;
 
@@ -51,6 +55,9 @@ public partial class ItemTable<TItem>
     /// </summary>
     [CascadingParameter]
     public IContext PersistenceContext { get; set; } = null!;
+
+    [Inject]
+    private IChangeNotificationService NotificationService { get; set; } = null!;
 
     /// <summary>
     /// Gets the filtered list of items based on the current search term.
@@ -78,10 +85,19 @@ public partial class ItemTable<TItem>
                           ?? false;
         var isMemberOfAggregate = this.ValueExpression!.IsAccessToMemberOfAggregate();
         this._isInlineEditable = this._isEditable && isMemberOfAggregate && this.ValueExpression!.ScaffoldColumn();
+        this._isHorizontalLayout = typeof(TItem).GetCustomAttribute<HorizontalLayoutAttribute>() is not null;
         this._isAddingSupported = !isMemberOfAggregate;
         this._isCreatingSupported = isMemberOfAggregate;
         this._isStartingCollapsed = this.Value is not null && this.Value.Count > this._searchThreshold;
         this._isCollapsed = this._isStartingCollapsed;
+        this.NotificationService.PropertyChanged += this.OnPropertyChanged;
+    }
+
+    /// <inheritdoc />
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        this.NotificationService.PropertyChanged -= this.OnPropertyChanged;
     }
 
     /// <inheritdoc />
@@ -95,6 +111,20 @@ public partial class ItemTable<TItem>
     protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out ICollection<TItem> result, [NotNullWhen(false)] out string? validationErrorMessage)
     {
         throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Shows the items again when another component changed the collection, e.g. removed an item of it.
+    /// </summary>
+    private void OnPropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (sender is not null
+            && sender == this.GetOwnerFromValueExpression()
+            && this.ValueExpression?.Body is MemberExpression { Member.Name: var memberName }
+            && args.PropertyName == memberName)
+        {
+            _ = this.InvokeAsync(this.StateHasChanged);
+        }
     }
 
     private void OnToggleCollapseClick()

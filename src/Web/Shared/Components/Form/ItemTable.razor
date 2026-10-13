@@ -48,7 +48,7 @@
                         @if (this._isInlineEditable)
                         {
                           <td colspan="2">
-                            <EditForm Model="@item.Item"><AutoFields></AutoFields></EditForm>
+                            <EditForm Model="@item.Item"><div class="@(this._isHorizontalLayout ? "horizontal-fields" : null)"><AutoFields></AutoFields></div></EditForm>
                           </td>
                         }
                         else
