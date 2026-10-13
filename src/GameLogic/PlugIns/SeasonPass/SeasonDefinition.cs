@@ -87,6 +87,28 @@ public class SeasonDefinition
     }
 
     /// <summary>
+    /// Gets the week of the season, starting at 1 for the first seven days.
+    /// </summary>
+    /// <param name="serverTime">The point in time, in the time zone of the server.</param>
+    /// <returns>The week of the season.</returns>
+    public int GetWeek(DateTime serverTime)
+    {
+        return serverTime <= this.Start ? 1 : (int)((serverTime - this.Start).TotalDays / 7) + 1;
+    }
+
+    /// <summary>
+    /// Gets the experience from sources with a weekly limit which can be gained up to the specified point in time.
+    /// The limit of the past weeks is kept, so that an account which played less can catch up.
+    /// </summary>
+    /// <param name="serverTime">The point in time, in the time zone of the server.</param>
+    /// <param name="weeklyLimit">The limit per week; 0 means no limit.</param>
+    /// <returns>The limit; <see cref="long.MaxValue"/>, if there is none.</returns>
+    public long GetCappedExperienceLimit(DateTime serverTime, int weeklyLimit)
+    {
+        return weeklyLimit <= 0 ? long.MaxValue : (long)weeklyLimit * this.GetWeek(serverTime);
+    }
+
+    /// <summary>
     /// Determines whether the season is running at the specified point in time.
     /// </summary>
     /// <param name="serverTime">The point in time, in the time zone of the server.</param>

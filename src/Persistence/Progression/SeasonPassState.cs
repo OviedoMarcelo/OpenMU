@@ -10,4 +10,5 @@ namespace MUnique.OpenMU.Persistence.Progression;
 /// <param name="Experience">The experience of the pass.</param>
 /// <param name="Claims">The rewards which have been handed out.</param>
 /// <param name="IsPremium">If set to <c>true</c>, the premium track is active.</param>
-public sealed record SeasonPassState(long Experience, IReadOnlyCollection<SeasonClaim> Claims, bool IsPremium);
+/// <param name="CappedExperience">The part of the experience which came from sources with a weekly limit.</param>
+public sealed record SeasonPassState(long Experience, IReadOnlyCollection<SeasonClaim> Claims, bool IsPremium, long CappedExperience = 0);

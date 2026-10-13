@@ -14,7 +14,7 @@ using MUnique.OpenMU.PlugIns;
 
 /// <summary>
 /// The default implementation of the <see cref="ISeasonPassViewPlugIn"/> which sends a
-/// <see cref="SeasonPassState"/> message to the game client.
+/// <see cref="SeasonPassSettings"/> and a <see cref="SeasonPassState"/> message to the game client.
 /// </summary>
 [PlugIn]
 [Display(Name = nameof(PlugInResources.SeasonPassViewPlugIn_Name), Description = nameof(PlugInResources.SeasonPassViewPlugIn_Description), ResourceType = typeof(PlugInResources))]
@@ -31,12 +31,21 @@ public class SeasonPassViewPlugIn : ISeasonPassViewPlugIn
     public SeasonPassViewPlugIn(RemotePlayer player) => this._player = player;
 
     /// <inheritdoc/>
-    public ValueTask ShowSeasonPassAsync(SeasonPassOverview overview)
+    public async ValueTask ShowSeasonPassAsync(SeasonPassOverview overview)
     {
         if (this._player.Connection is not { Connected: true } connection)
         {
-            return ValueTask.CompletedTask;
+            return;
         }
+
+        // Sent first, so that the client knows the name and the tracks when it shows the pass.
+        // Clients which don't know this message ignore it.
+        await connection.SendSeasonPassSettingsAsync(overview.PremiumEnabled, overview.DisplayName).ConfigureAwait(false);
+        await this.SendStateAsync(connection, overview).ConfigureAwait(false);
+    }
+
+    private ValueTask SendStateAsync(IConnection connection, SeasonPassOverview overview)
+    {
 
         var culture = this._player.Culture;
         var levels = overview.Season is null ? [] : overview.Levels.Take(SeasonDefinition.MaximumLevel).ToList();
@@ -69,7 +78,7 @@ public class SeasonPassViewPlugIn : ISeasonPassViewPlugIn
                 target.IsFreeClaimed = entry.IsFreeClaimed;
                 target.IsPremiumClaimed = entry.IsPremiumClaimed;
                 target.FreeRewards = entry.Level.GetRewardsText(false, culture);
-                target.PremiumRewards = entry.Level.GetRewardsText(true, culture);
+                target.PremiumRewards = overview.PremiumEnabled ? entry.Level.GetRewardsText(true, culture) : string.Empty;
             }
 
             return size;

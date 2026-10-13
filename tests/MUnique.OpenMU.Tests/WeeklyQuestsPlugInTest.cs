@@ -5,6 +5,7 @@
 namespace MUnique.OpenMU.Tests;
 
 using Microsoft.Extensions.Logging.Abstractions;
+using MUnique.OpenMU.AttributeSystem;
 using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.DataModel.Configuration.Items;
 using MUnique.OpenMU.GameLogic;
@@ -348,6 +349,27 @@ public class WeeklyQuestsPlugInTest
         await plugIn.ItemPickedUpAsync(player, new TemporaryItem { Definition = jewel, Level = 0 }, false).ConfigureAwait(false);
         await plugIn.ItemPickedUpAsync(player, new TemporaryItem { Definition = new ItemDefinition { Group = 14, Number = 14 }, Level = 1 }, false).ConfigureAwait(false);
 
+        Assert.That(await GetCountAsync(plugIn, player, "bless").ConfigureAwait(false), Is.EqualTo(1));
+    }
+
+    /// <summary>
+    /// Tests that items which are picked up while the MU Helper is running only count when the configuration allows it.
+    /// </summary>
+    [Test]
+    public async Task CollectItemIgnoresMuHelperUnlessAllowedAsync()
+    {
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        player.Attributes!.AddElement(new SimpleElement(1, AggregateType.AddRaw), Stats.IsMuHelperActive);
+        var jewel = new ItemDefinition { Group = 14, Number = 13 };
+        var plugIn = CreatePlugIn(
+            new InMemoryWeeklyQuestProgressRepository(),
+            new WeeklyQuestDefinition { Id = "bless", Name = "Bless", ObjectiveType = WeeklyQuestObjectiveType.CollectItem, RequiredCount = 10, Item = jewel });
+
+        await plugIn.ItemPickedUpAsync(player, new TemporaryItem { Definition = jewel }, false).ConfigureAwait(false);
+        Assert.That(await GetCountAsync(plugIn, player, "bless").ConfigureAwait(false), Is.EqualTo(0));
+
+        plugIn.Configuration!.CountMuHelperActivity = true;
+        await plugIn.ItemPickedUpAsync(player, new TemporaryItem { Definition = jewel }, false).ConfigureAwait(false);
         Assert.That(await GetCountAsync(plugIn, player, "bless").ConfigureAwait(false), Is.EqualTo(1));
     }
 

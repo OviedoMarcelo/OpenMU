@@ -160,8 +160,8 @@ public class WeeklyQuestsPlugIn :
     /// <inheritdoc />
     public async ValueTask AttackableGotKilledAsync(IAttackable killed, IAttacker? killer)
     {
-        var player = killer as Player ?? (killer as Monster)?.SummonedBy;
-        if (player is null)
+        var player = RewardEligibility.GetCreditedPlayer(killer);
+        if (player is null || !this.IsActivePlay(player))
         {
             return;
         }
@@ -176,7 +176,7 @@ public class WeeklyQuestsPlugIn :
 
             var mapNumber = monster.CurrentMap?.Definition.Number;
             var monsterNumber = monster.Definition.Number;
-            foreach (var receiver in await this.GetKillReceiversAsync(player).ConfigureAwait(false))
+            foreach (var receiver in (await this.GetKillReceiversAsync(player).ConfigureAwait(false)).Where(this.IsActivePlay))
             {
                 await this.AddProgressAsync(receiver, WeeklyQuestObjectiveType.KillAnyMonster, 1, (_, objective, _) => objective.IsOnMap(mapNumber)).ConfigureAwait(false);
                 await this.AddProgressAsync(
@@ -234,7 +234,7 @@ public class WeeklyQuestsPlugIn :
     public async ValueTask MiniGameEndedAsync(MiniGameContext miniGame, ICollection<Player> finishers)
     {
         var type = miniGame.Definition.Type;
-        foreach (var player in finishers)
+        foreach (var player in finishers.Where(this.IsActivePlay))
         {
             await this.AddProgressAsync(
                 player,
@@ -248,7 +248,7 @@ public class WeeklyQuestsPlugIn :
     public ValueTask ItemPickedUpAsync(Player player, Item item, bool fromPlayerInventory)
     {
         // Items which were dropped by a player don't count, otherwise the same item could be dropped and picked up again.
-        if (fromPlayerInventory || item.Definition is not { } definition)
+        if (fromPlayerInventory || item.Definition is not { } definition || !this.IsActivePlay(player))
         {
             return ValueTask.CompletedTask;
         }
@@ -533,6 +533,11 @@ public class WeeklyQuestsPlugIn :
     /// <summary>
     /// Gets the index of the objectives of the current configuration, and builds it again when the configuration changed.
     /// </summary>
+    private bool IsActivePlay(Player player)
+    {
+        return RewardEligibility.IsActivePlay(player, this.Configuration?.CountMuHelperActivity ?? false);
+    }
+
     private WeeklyQuestIndex? GetIndex()
     {
         if (this.Configuration is not { } configuration)

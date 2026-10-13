@@ -6595,6 +6595,36 @@ public static class ConnectionExtensions
     }
 
     /// <summary>
+    /// Sends a <see cref="SeasonPassSettings" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="premiumEnabled">The premium track is available on the server.</param>
+    /// <param name="programName">The name of the pass, in the language of the player; empty to use the default of the client.</param>
+    /// <remarks>
+    /// Is sent by the server when: Before the SeasonPassState, when the client requested the list of available chat commands.
+    /// Causes reaction on client side: The client shows the configured name of the pass on its button and window, and hides the premium track when it's disabled. Clients which don't know this message keep their defaults.
+    /// </remarks>
+    public static async ValueTask SendSeasonPassSettingsAsync(this IConnection? connection, bool @premiumEnabled, string @programName)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = SeasonPassSettingsRef.Length;
+            var packet = new SeasonPassSettingsRef(connection.Output.GetSpan(length)[..length]);
+            packet.PremiumEnabled = @premiumEnabled;
+            packet.ProgramName = @programName;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Sends a <see cref="EventChipRegistrationResult" /> to this connection.
     /// </summary>
     /// <param name="connection">The connection.</param>

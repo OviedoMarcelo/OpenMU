@@ -62,6 +62,13 @@ public class WeeklyQuestsConfiguration
     public bool ShareKillsWithParty { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets a value indicating whether the actions while the MU Helper is running count, too.
+    /// Offline leveling never counts.
+    /// </summary>
+    [Display(Name = "Cuenta el MU Helper", Description = "Si está activado, lo que se hace con el MU Helper encendido suma progreso a las quests. El offlevel nunca suma.")]
+    public bool CountMuHelperActivity { get; set; }
+
+    /// <summary>
     /// Gets or sets the bonus which is given when a character completed all of its quests of the week.
     /// Its <see cref="WeeklyQuestDefinition.Name"/>, <see cref="WeeklyQuestDefinition.Description"/> and
     /// <see cref="WeeklyQuestDefinition.Rewards"/> are used. Without rewards, there is no bonus.

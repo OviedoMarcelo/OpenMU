@@ -85,9 +85,10 @@ public interface IProgressionRepository
     /// <param name="accountId">The identifier of the account.</param>
     /// <param name="seasonId">The identifier of the season.</param>
     /// <param name="experience">The experience which is added.</param>
+    /// <param name="cappedExperience">The part of <paramref name="experience"/> which came from sources with a weekly limit.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The experience of the pass after adding it.</returns>
-    ValueTask<long> AddSeasonExperienceAsync(Guid accountId, string seasonId, long experience, CancellationToken cancellationToken = default);
+    ValueTask<long> AddSeasonExperienceAsync(Guid accountId, string seasonId, long experience, long cappedExperience = 0, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Records that a reward of the pass has been handed out, if it hasn't been yet.

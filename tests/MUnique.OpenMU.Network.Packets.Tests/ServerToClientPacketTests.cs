@@ -6817,6 +6817,28 @@ public class PacketStructureTests
     }
 
     /// <summary>
+    /// Tests the packet size calculation for SeasonPassSettings.
+    /// </summary>
+    [Test]
+    public void SeasonPassSettings_PacketSizeValidation()
+    {
+        // Fixed-length packet validation
+        const int expectedLength = 38;
+        var actualLength = SeasonPassSettingsRef.Length;
+        
+        Assert.That(actualLength, Is.EqualTo(expectedLength), 
+            "Packet length mismatch: declared length does not match calculated size");
+        
+        // Validate field 'PremiumEnabled' boundary
+        Assert.That(5 + 1, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'PremiumEnabled' exceeds packet boundary");
+        
+        // Validate field 'ProgramName' boundary
+        Assert.That(6 + 32, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'ProgramName' exceeds packet boundary");
+    }
+
+    /// <summary>
     /// Tests the packet size calculation for EventChipRegistrationResult.
     /// </summary>
     [Test]

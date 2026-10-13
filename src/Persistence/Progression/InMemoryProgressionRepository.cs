@@ -16,7 +16,7 @@ public class InMemoryProgressionRepository : IProgressionRepository
     private readonly ConcurrentDictionary<(Guid OwnerId, string AchievementId), AchievementProgress> _achievements = new();
     private readonly ConcurrentDictionary<(Guid OwnerId, string TitleId), UnlockedTitle> _titles = new();
     private readonly ConcurrentDictionary<Guid, string> _activeTitles = new();
-    private readonly ConcurrentDictionary<(Guid AccountId, string SeasonId), long> _seasonExperience = new();
+    private readonly ConcurrentDictionary<(Guid AccountId, string SeasonId), (long Experience, long CappedExperience)> _seasonExperience = new();
     private readonly ConcurrentDictionary<(Guid AccountId, string SeasonId, int Level, bool IsPremium), SeasonClaim> _seasonClaims = new();
     private readonly ConcurrentDictionary<(Guid AccountId, string SeasonId), SeasonPremium> _seasonPremiums = new();
     private readonly ConcurrentDictionary<Guid, PrestigeProgress> _prestige = new();
@@ -46,16 +46,22 @@ public class InMemoryProgressionRepository : IProgressionRepository
             .Where(c => c.AccountId == accountId && c.SeasonId == seasonId)
             .Select(Clone)
             .ToList();
+        var progress = this._seasonExperience.GetValueOrDefault((accountId, seasonId));
         return ValueTask.FromResult(new SeasonPassState(
-            this._seasonExperience.GetValueOrDefault((accountId, seasonId)),
+            progress.Experience,
             claims,
-            this._seasonPremiums.ContainsKey((accountId, seasonId))));
+            this._seasonPremiums.ContainsKey((accountId, seasonId)),
+            progress.CappedExperience));
     }
 
     /// <inheritdoc />
-    public ValueTask<long> AddSeasonExperienceAsync(Guid accountId, string seasonId, long experience, CancellationToken cancellationToken = default)
+    public ValueTask<long> AddSeasonExperienceAsync(Guid accountId, string seasonId, long experience, long cappedExperience = 0, CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult(this._seasonExperience.AddOrUpdate((accountId, seasonId), experience, (_, current) => current + experience));
+        var result = this._seasonExperience.AddOrUpdate(
+            (accountId, seasonId),
+            (experience, cappedExperience),
+            (_, current) => (current.Experience + experience, current.CappedExperience + cappedExperience));
+        return ValueTask.FromResult(result.Experience);
     }
 
     /// <inheritdoc />

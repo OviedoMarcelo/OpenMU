@@ -12071,6 +12071,31 @@
       </Structures>
     </Packet>
     <Packet>
+      <HeaderType>C2HeaderWithSubCode</HeaderType>
+      <Code>F5</Code>
+      <SubCode>09</SubCode>
+      <Name>SeasonPassSettings</Name>
+      <Length>38</Length>
+      <Direction>ServerToClient</Direction>
+      <SentWhen>Before the SeasonPassState, when the client requested the list of available chat commands.</SentWhen>
+      <CausedReaction>The client shows the configured name of the pass on its button and window, and hides the premium track when it's disabled. Clients which don't know this message keep their defaults.</CausedReaction>
+      <Fields>
+        <Field>
+          <Index>5</Index>
+          <Type>Boolean</Type>
+          <Name>PremiumEnabled</Name>
+          <Description>The premium track is available on the server.</Description>
+        </Field>
+        <Field>
+          <Index>6</Index>
+          <Type>String</Type>
+          <Name>ProgramName</Name>
+          <Length>32</Length>
+          <Description>The name of the pass, in the language of the player; empty to use the default of the client.</Description>
+        </Field>
+      </Fields>
+    </Packet>
+    <Packet>
       <HeaderType>C1Header</HeaderType>
       <Code>94</Code>
       <Name>EventChipRegistrationResult</Name>

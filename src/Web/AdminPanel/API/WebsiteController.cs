@@ -321,6 +321,9 @@ public class WebsiteController : Controller
     /// </summary>
     /// <returns>
     /// <c>enabled</c>: whether the season pass plugin is active;
+    /// <c>displayName</c>: the configured name of the pass;
+    /// <c>premiumEnabled</c>: whether the premium track is available;
+    /// <c>earning</c>: how the experience of the pass is gained;
     /// <c>season</c>: the running season, or <c>null</c> if none is running.
     /// </returns>
     [HttpGet]
@@ -332,7 +335,14 @@ public class WebsiteController : Controller
             return this.Ok(new { enabled = false, season = (object?)null });
         }
 
-        return this.Ok(new { enabled = true, season = running.Season is null ? null : ToJson(running.Season, running.EndUtc) });
+        return this.Ok(new
+        {
+            enabled = true,
+            displayName = GetDisplayName(running.Configuration),
+            premiumEnabled = running.Configuration.PremiumEnabled,
+            earning = ToEarningJson(running.Configuration),
+            season = running.Season is null ? null : ToJson(running.Season, running.EndUtc, running.Configuration.PremiumEnabled),
+        });
     }
 
     /// <summary>
@@ -341,8 +351,11 @@ public class WebsiteController : Controller
     /// <param name="login">The login name of the account.</param>
     /// <returns>
     /// <c>enabled</c>: whether the season pass plugin is active;
+    /// <c>displayName</c>: the configured name of the pass;
+    /// <c>premiumEnabled</c>: whether the premium track is available;
     /// <c>season</c>: the running season, or <c>null</c> if none is running;
-    /// <c>experience</c>, <c>level</c>, <c>premium</c> and <c>claims</c>: the progress of the account.
+    /// <c>experience</c>, <c>level</c>, <c>premium</c> and <c>claims</c>: the progress of the account;
+    /// <c>cappedExperience</c> and <c>cappedLimit</c>: the experience from sources with a weekly limit, and the limit up to now (<c>null</c> without a limit).
     /// </returns>
     /// <remarks>
     /// The experience of an account which is in the game is saved every minute, so it may be a bit behind.
@@ -356,9 +369,11 @@ public class WebsiteController : Controller
             return this.Ok(new { enabled = false, season = (object?)null });
         }
 
+        var configuration = running.Configuration;
+        var displayName = GetDisplayName(configuration);
         if (running.Season is not { } season)
         {
-            return this.Ok(new { enabled = true, season = (object?)null });
+            return this.Ok(new { enabled = true, displayName, premiumEnabled = configuration.PremiumEnabled, season = (object?)null });
         }
 
         var context = this._gameServers.Values.OfType<GameServer>().First().Context;
@@ -370,18 +385,51 @@ public class WebsiteController : Controller
         }
 
         var state = await repository.LoadSeasonPassAsync(account.GetId(), season.Id).ConfigureAwait(false);
+        var cappedLimit = season.GetCappedExperienceLimit(running.ServerTime, configuration.WeeklyCappedExperience);
         return this.Ok(new
         {
             enabled = true,
-            season = ToJson(season, running.EndUtc),
+            displayName,
+            premiumEnabled = configuration.PremiumEnabled,
+            season = ToJson(season, running.EndUtc, configuration.PremiumEnabled),
             experience = state.Experience,
             level = season.GetLevel(state.Experience),
-            premium = state.IsPremium,
-            claims = state.Claims.Select(c => new { level = c.Level, premium = c.IsPremium }).ToList(),
+            premium = state.IsPremium && configuration.PremiumEnabled,
+            claims = state.Claims
+                .Where(c => !c.IsPremium || configuration.PremiumEnabled)
+                .Select(c => new { level = c.Level, premium = c.IsPremium })
+                .ToList(),
+            cappedExperience = state.CappedExperience,
+            cappedLimit = cappedLimit == long.MaxValue ? (long?)null : cappedLimit,
         });
     }
 
-    private static object ToJson(SeasonDefinition season, DateTime endUtc) => new
+    private static string GetDisplayName(SeasonPassConfiguration configuration)
+    {
+        var name = configuration.DisplayName.GetTranslation(WebsiteCulture);
+        return string.IsNullOrWhiteSpace(name) ? SeasonPassConfiguration.DefaultDisplayName : name;
+    }
+
+    private static object ToEarningJson(SeasonPassConfiguration configuration) => new
+    {
+        dailyQuest = configuration.DailyQuestExperience,
+        weeklyQuest = configuration.WeeklyQuestExperience,
+        onceQuest = configuration.OnceQuestExperience,
+        monsterKills = configuration.MonsterKillsPerExperience,
+        monsterKillsExperience = configuration.MonsterKillsExperience,
+        weeklyCap = configuration.WeeklyCappedExperience,
+        countsMuHelper = configuration.CountMuHelperActivity,
+        monsters = configuration.MonsterBonuses
+            .Where(b => b.Monster is not null && b.Experience > 0)
+            .Select(b => new { name = b.Monster!.Designation.GetTranslation(WebsiteCulture), experience = b.Experience })
+            .ToList(),
+        events = configuration.MiniGameExperience
+            .Where(e => e.ParticipationExperience > 0 || e.CompletionExperience > 0)
+            .Select(e => new { type = e.MiniGameType.ToString(), participation = e.ParticipationExperience, completion = e.CompletionExperience })
+            .ToList(),
+    };
+
+    private static object ToJson(SeasonDefinition season, DateTime endUtc, bool premiumEnabled) => new
     {
         id = season.Id,
         name = season.Name,
@@ -396,7 +444,7 @@ public class WebsiteController : Controller
             {
                 level = l.Level,
                 free = l.GetRewardsText(false, WebsiteCulture),
-                premium = l.GetRewardsText(true, WebsiteCulture),
+                premium = premiumEnabled ? l.GetRewardsText(true, WebsiteCulture) : string.Empty,
             })
             .ToList(),
     };
@@ -404,8 +452,8 @@ public class WebsiteController : Controller
     /// <summary>
     /// Gets the running season of the season pass.
     /// </summary>
-    /// <returns><c>null</c>, if the season pass plugin is not active; otherwise the running season (which may be <c>null</c>) and its end.</returns>
-    private (SeasonDefinition? Season, DateTime EndUtc)? GetRunningSeason()
+    /// <returns><c>null</c>, if the season pass plugin is not active; otherwise its configuration, the running season (which may be <c>null</c>), its end and the current time of the server.</returns>
+    private (SeasonPassConfiguration Configuration, SeasonDefinition? Season, DateTime EndUtc, DateTime ServerTime)? GetRunningSeason()
     {
         var context = this._gameServers.Values.OfType<GameServer>().FirstOrDefault()?.Context;
         var plugInId = typeof(SeasonPassPlugIn).GUID;
@@ -417,11 +465,12 @@ public class WebsiteController : Controller
             return null;
         }
 
-        var season = configuration.GetRunningSeason(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, context.ServerTimeZone));
+        var serverTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, context.ServerTimeZone);
+        var season = configuration.GetRunningSeason(serverTime);
         var endUtc = season is null
             ? DateTime.MinValue
             : TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(season.End, DateTimeKind.Unspecified), context.ServerTimeZone);
-        return (season, endUtc);
+        return (configuration, season, endUtc, serverTime);
     }
 
     private async Task<(bool InGame, string? Character)> FindPlayerAsync(string login)

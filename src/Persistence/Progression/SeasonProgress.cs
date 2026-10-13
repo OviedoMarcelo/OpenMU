@@ -23,4 +23,9 @@ public class SeasonProgress
     /// Gets or sets the experience of the pass.
     /// </summary>
     public long Experience { get; set; }
+
+    /// <summary>
+    /// Gets or sets the part of the <see cref="Experience"/> which came from sources with a weekly limit, e.g. monster kills.
+    /// </summary>
+    public long CappedExperience { get; set; }
 }

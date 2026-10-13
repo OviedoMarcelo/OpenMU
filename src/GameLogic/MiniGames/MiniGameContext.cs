@@ -256,6 +256,18 @@ public class MiniGameContext : AsyncDisposable, IEventStateProvider
     }
 
     /// <summary>
+    /// Determines whether the player fulfills the required success at the end of the game,
+    /// with the same rules as the configured <see cref="MiniGameReward"/>s.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <param name="requiredSuccess">The required success.</param>
+    /// <returns><c>true</c>, if the player fulfills all required flags.</returns>
+    public bool HasSucceeded(Player player, MiniGameSuccessFlags requiredSuccess)
+    {
+        return this._rewards.HasSucceeded(player, requiredSuccess);
+    }
+
+    /// <summary>
     /// Determines whether an item allowed to be equipped during this game.
     /// </summary>
     /// <param name="item">The item.</param>
