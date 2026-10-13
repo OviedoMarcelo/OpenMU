@@ -12,6 +12,8 @@ using MUnique.OpenMU.GameLogic.Attributes;
 using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.GameLogic.PlugIns.SeasonPass;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
+using MUnique.OpenMU.GameLogic.Views;
+using MUnique.OpenMU.Interfaces;
 using MUnique.OpenMU.Persistence;
 using MUnique.OpenMU.Persistence.Progression;
 using MonsterDefinition = MUnique.OpenMU.Persistence.BasicModel.MonsterDefinition;
@@ -174,6 +176,8 @@ public class SeasonPassPlugInTest
         }
 
         Assert.That((await plugIn.GetOverviewAsync(player).ConfigureAwait(false))!.Experience, Is.EqualTo(100));
+        Mock.Get(player.ViewPlugIns.GetPlugIn<IShowMessagePlugIn>()!)
+            .Verify(p => p.ShowMessageAsync(It.Is<string>(m => m.Contains("tope semanal de Cyber Points")), It.IsAny<MessageType>()), Times.Once);
 
         // Two weeks later, the limit of the second week which wasn't used is kept.
         plugIn.UtcNow = () => Now.AddDays(14);

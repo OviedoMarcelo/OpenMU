@@ -31357,7 +31357,7 @@ public readonly ref struct SeasonPassLevelRef
 
 /// <summary>
 /// Is sent by the server when: Before the SeasonPassState, when the client requested the list of available chat commands.
-/// Causes reaction on client side: The client shows the configured name of the pass on its button and window, and hides the premium track when it's disabled. Clients which don't know this message keep their defaults.
+/// Causes reaction on client side: The client shows the configured names of the pass and of its points on its button and window, and hides the premium track when it's disabled. Clients which don't know this message keep their defaults.
 /// </summary>
 public readonly ref struct SeasonPassSettingsRef
 {
@@ -31409,7 +31409,7 @@ public readonly ref struct SeasonPassSettingsRef
     /// <summary>
     /// Gets the initial length of this data packet. When the size is dynamic, this value may be bigger than actually needed.
     /// </summary>
-    public static int Length => 38;
+    public static int Length => 70;
 
     /// <summary>
     /// Gets the header of this packet.
@@ -31432,6 +31432,15 @@ public readonly ref struct SeasonPassSettingsRef
     {
         get => this._data.ExtractString(6, 32, System.Text.Encoding.UTF8);
         set => this._data.Slice(6, 32).WriteString(value, System.Text.Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Gets or sets the name of the points of the pass, in the language of the player; empty to use the default of the client.
+    /// </summary>
+    public string PointsName
+    {
+        get => this._data.ExtractString(38, 32, System.Text.Encoding.UTF8);
+        set => this._data.Slice(38, 32).WriteString(value, System.Text.Encoding.UTF8);
     }
 
     /// <summary>

@@ -46,13 +46,13 @@ public class SeasonDefinition
     /// <summary>
     /// Gets or sets the end of the season, in the time zone of the server.
     /// </summary>
-    [Display(Name = "Fin", Description = "Fecha y hora de fin, en la zona horaria del servidor. Después ya no se gana XP ni se reclaman premios.")]
+    [Display(Name = "Fin", Description = "Fecha y hora de fin, en la zona horaria del servidor. Después ya no se ganan puntos ni se reclaman premios.")]
     public DateTime End { get; set; }
 
     /// <summary>
     /// Gets or sets the experience of the pass which is needed for each level.
     /// </summary>
-    [Display(Name = "XP por nivel")]
+    [Display(Name = "Puntos por nivel")]
     [Range(1, int.MaxValue)]
     public int ExperiencePerLevel { get; set; } = 1000;
 

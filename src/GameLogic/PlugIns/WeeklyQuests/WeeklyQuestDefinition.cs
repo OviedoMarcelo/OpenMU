@@ -219,7 +219,7 @@ public class WeeklyQuestDefinition
     /// Gets or sets the experience of the season pass which the quest gives when it's completed.
     /// 0 means the default of the season pass for the period of the quest.
     /// </summary>
-    [Display(Name = "XP del pase", Description = "XP del pase de temporada al completarla. 0 = la XP por defecto del pase para quests diarias, semanales o de una vez.")]
+    [Display(Name = "Puntos del pase", Description = "Puntos del pase de temporada al completarla. 0 = los puntos por defecto del pase para quests diarias, semanales o de una vez.")]
     [Range(0, int.MaxValue)]
     public int SeasonXp { get; set; }
 

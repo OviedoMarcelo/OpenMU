@@ -24,6 +24,16 @@ public class SeasonPassConfiguration
     public const string NamePlaceholder = "{name}";
 
     /// <summary>
+    /// The name of the points of the pass which is used when none is configured.
+    /// </summary>
+    public const string DefaultPointsName = "Cyber Points";
+
+    /// <summary>
+    /// The placeholder in the messages which is replaced by the <see cref="PointsName"/>.
+    /// </summary>
+    public const string PointsPlaceholder = "{points}";
+
+    /// <summary>
     /// Gets the default configuration, with an example season which is not active.
     /// </summary>
     public static SeasonPassConfiguration Default => new()
@@ -67,37 +77,43 @@ public class SeasonPassConfiguration
     public LocalizedString DisplayName { get; set; } = DefaultDisplayName;
 
     /// <summary>
+    /// Gets or sets the name of the points (the experience) of the pass which is shown to the players, in the game and on the website.
+    /// </summary>
+    [Display(Name = "Nombre de los puntos", Description = "Cómo se llaman los puntos con los que se sube de nivel en el pase (p. ej. \"Cyber Points\"). Hasta 32 caracteres se ven en el juego. En los mensajes se escribe {points}.")]
+    public LocalizedString PointsName { get; set; } = DefaultPointsName;
+
+    /// <summary>
     /// Gets or sets the experience of the pass for a completed daily quest, unless the quest sets its own.
     /// </summary>
-    [Display(Name = "XP por quest diaria", Description = "XP del pase por cada quest diaria completada, salvo que la quest tenga su propia \"XP del pase\".")]
+    [Display(Name = "Puntos por quest diaria", Description = "Puntos del pase por cada quest diaria completada, salvo que la quest tenga sus propios \"Puntos del pase\".")]
     [Range(0, int.MaxValue)]
     public int DailyQuestExperience { get; set; } = 100;
 
     /// <summary>
     /// Gets or sets the experience of the pass for a completed weekly quest, unless the quest sets its own.
     /// </summary>
-    [Display(Name = "XP por quest semanal", Description = "XP del pase por cada quest semanal completada (también el bonus por completarlas todas), salvo que la quest tenga su propia \"XP del pase\".")]
+    [Display(Name = "Puntos por quest semanal", Description = "Puntos del pase por cada quest semanal completada (también el bonus por completarlas todas), salvo que la quest tenga sus propios \"Puntos del pase\".")]
     [Range(0, int.MaxValue)]
     public int WeeklyQuestExperience { get; set; } = 300;
 
     /// <summary>
     /// Gets or sets the experience of the pass for a completed quest which is done once (e.g. a story chapter), unless the quest sets its own.
     /// </summary>
-    [Display(Name = "XP por quest de una vez", Description = "XP del pase por cada quest de una sola vez (p. ej. un capítulo de la historia), salvo que la quest tenga su propia \"XP del pase\".")]
+    [Display(Name = "Puntos por quest de una vez", Description = "Puntos del pase por cada quest de una sola vez (p. ej. un capítulo de la historia), salvo que la quest tenga sus propios \"Puntos del pase\".")]
     [Range(0, int.MaxValue)]
     public int OnceQuestExperience { get; set; } = 200;
 
     /// <summary>
     /// Gets or sets the number of killed monsters which give <see cref="MonsterKillsExperience"/>. 0 means that kills give nothing.
     /// </summary>
-    [Display(Name = "Monstruos por XP", Description = "Cada cuántos monstruos matados se gana XP del pase jugando. 0 = matar monstruos no da XP del pase.")]
+    [Display(Name = "Monstruos por puntos", Description = "Cada cuántos monstruos matados se ganan puntos del pase jugando. 0 = matar monstruos no da puntos del pase.")]
     [Range(0, int.MaxValue)]
     public int MonsterKillsPerExperience { get; set; } = 200;
 
     /// <summary>
     /// Gets or sets the experience of the pass for every <see cref="MonsterKillsPerExperience"/> killed monsters.
     /// </summary>
-    [Display(Name = "XP por monstruos", Description = "XP del pase que se gana cada vez que se llega a \"Monstruos por XP\".")]
+    [Display(Name = "Puntos por monstruos", Description = "Puntos del pase que se ganan cada vez que se llega a \"Monstruos por puntos\".")]
     [Range(0, int.MaxValue)]
     public int MonsterKillsExperience { get; set; } = 10;
 
@@ -105,13 +121,13 @@ public class SeasonPassConfiguration
     /// Gets or sets a value indicating whether the actions while the MU Helper is running count, too.
     /// Offline leveling never counts.
     /// </summary>
-    [Display(Name = "Cuenta el MU Helper", Description = "Si está activado, lo que se hace con el MU Helper encendido suma XP del pase. El offlevel nunca suma.")]
+    [Display(Name = "Cuenta el MU Helper", Description = "Si está activado, lo que se hace con el MU Helper encendido suma puntos del pase. El offlevel nunca suma.")]
     public bool CountMuHelperActivity { get; set; }
 
     /// <summary>
     /// Gets or sets the experience of the pass for each killed monster of a specific kind, e.g. bosses and monsters of invasions.
     /// </summary>
-    [Display(Name = "Bonus por monstruo", Description = "XP del pase por matar monstruos específicos, p. ej. jefes o monstruos de invasiones (Golden, Red Dragon, White Wizard). Se suma a la XP por monstruos y cuenta para el tope semanal.")]
+    [Display(Name = "Bonus por monstruo", Description = "Puntos del pase por matar monstruos específicos, p. ej. jefes o monstruos de invasiones (Golden, Red Dragon, White Wizard). Se suman a los puntos por monstruos y cuenta para el tope semanal.")]
     [MemberOfAggregate]
     [ScaffoldColumn(true)]
     public ICollection<SeasonPassMonsterBonus> MonsterBonuses { get; set; } = new List<SeasonPassMonsterBonus>();
@@ -120,14 +136,14 @@ public class SeasonPassConfiguration
     /// Gets or sets the experience of the pass for each week of the season which can be gained from sources with a weekly limit.
     /// The limit of the weeks which an account didn't use is kept. 0 means no limit.
     /// </summary>
-    [Display(Name = "Tope semanal", Description = "XP del pase que se puede ganar por semana matando monstruos (incluye los bonus por monstruo). Lo que no se usa se acumula para las semanas siguientes. Las quests y los eventos no tienen tope. 0 = sin tope.")]
+    [Display(Name = "Tope semanal", Description = "Puntos del pase que se pueden ganar por semana matando monstruos (incluye los bonus por monstruo). Lo que no se usa se acumula para las semanas siguientes. Las quests y los eventos no tienen tope. 0 = sin tope.")]
     [Range(0, int.MaxValue)]
     public int WeeklyCappedExperience { get; set; } = 500;
 
     /// <summary>
     /// Gets or sets the experience of the pass at the end of mini games, e.g. Blood Castle.
     /// </summary>
-    [Display(Name = "XP por eventos", Description = "XP del pase al terminar un evento: por participar (seguir adentro hasta el final) y adicional por completarlo.")]
+    [Display(Name = "Puntos por eventos", Description = "Puntos del pase al terminar un evento: por participar (seguir adentro hasta el final) y adicional por completarlo.")]
     [MemberOfAggregate]
     [ScaffoldColumn(true)]
     public ICollection<SeasonPassMiniGameExperience> MiniGameExperience { get; set; } = new List<SeasonPassMiniGameExperience>();
@@ -162,8 +178,8 @@ public class SeasonPassConfiguration
     /// <summary>
     /// Gets or sets the message which is shown when the weekly limit has been reached.
     /// </summary>
-    [Display(Name = "Mensaje de tope semanal", Description = "Se muestra una vez al llegar al tope semanal de XP por monstruos.")]
-    public LocalizedString WeeklyCapReachedMessage { get; set; } = "[{name}] Llegaste al tope semanal de XP por monstruos. Las quests y los eventos siguen sumando.";
+    [Display(Name = "Mensaje de tope semanal", Description = "Se muestra una vez al llegar al tope semanal de puntos por monstruos.")]
+    public LocalizedString WeeklyCapReachedMessage { get; set; } = "[{name}] Llegaste al tope semanal de {points} por monstruos. Las quests y los eventos siguen sumando.";
 
     /// <summary>
     /// Gets or sets the message which is shown when entering the game while there are rewards to claim.

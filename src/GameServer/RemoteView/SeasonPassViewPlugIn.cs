@@ -40,7 +40,7 @@ public class SeasonPassViewPlugIn : ISeasonPassViewPlugIn
 
         // Sent first, so that the client knows the name and the tracks when it shows the pass.
         // Clients which don't know this message ignore it.
-        await connection.SendSeasonPassSettingsAsync(overview.PremiumEnabled, overview.DisplayName).ConfigureAwait(false);
+        await connection.SendSeasonPassSettingsAsync(overview.PremiumEnabled, overview.DisplayName, overview.PointsName).ConfigureAwait(false);
         await this.SendStateAsync(connection, overview).ConfigureAwait(false);
     }
 

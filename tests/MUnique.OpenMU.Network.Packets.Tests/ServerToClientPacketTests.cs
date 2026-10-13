@@ -6823,7 +6823,7 @@ public class PacketStructureTests
     public void SeasonPassSettings_PacketSizeValidation()
     {
         // Fixed-length packet validation
-        const int expectedLength = 38;
+        const int expectedLength = 70;
         var actualLength = SeasonPassSettingsRef.Length;
         
         Assert.That(actualLength, Is.EqualTo(expectedLength), 
@@ -6836,6 +6836,10 @@ public class PacketStructureTests
         // Validate field 'ProgramName' boundary
         Assert.That(6 + 32, Is.LessThanOrEqualTo(expectedLength), 
             "Field 'ProgramName' exceeds packet boundary");
+        
+        // Validate field 'PointsName' boundary
+        Assert.That(38 + 32, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'PointsName' exceeds packet boundary");
     }
 
     /// <summary>

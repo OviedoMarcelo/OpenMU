@@ -6600,11 +6600,12 @@ public static class ConnectionExtensions
     /// <param name="connection">The connection.</param>
     /// <param name="premiumEnabled">The premium track is available on the server.</param>
     /// <param name="programName">The name of the pass, in the language of the player; empty to use the default of the client.</param>
+    /// <param name="pointsName">The name of the points of the pass, in the language of the player; empty to use the default of the client.</param>
     /// <remarks>
     /// Is sent by the server when: Before the SeasonPassState, when the client requested the list of available chat commands.
-    /// Causes reaction on client side: The client shows the configured name of the pass on its button and window, and hides the premium track when it's disabled. Clients which don't know this message keep their defaults.
+    /// Causes reaction on client side: The client shows the configured names of the pass and of its points on its button and window, and hides the premium track when it's disabled. Clients which don't know this message keep their defaults.
     /// </remarks>
-    public static async ValueTask SendSeasonPassSettingsAsync(this IConnection? connection, bool @premiumEnabled, string @programName)
+    public static async ValueTask SendSeasonPassSettingsAsync(this IConnection? connection, bool @premiumEnabled, string @programName, string @pointsName)
     {
         if (connection is null)
         {
@@ -6617,6 +6618,7 @@ public static class ConnectionExtensions
             var packet = new SeasonPassSettingsRef(connection.Output.GetSpan(length)[..length]);
             packet.PremiumEnabled = @premiumEnabled;
             packet.ProgramName = @programName;
+            packet.PointsName = @pointsName;
 
             return packet.Header.Length;
         }

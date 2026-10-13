@@ -92,14 +92,15 @@ public class SeasonPassChatCommandPlugIn : ChatCommandPlugInBase<SeasonPassChatC
         }
 
         var maximumLevel = season.GetMaximumLevel();
+        var points = plugIn.GetPointsName(player);
         var progress = overview.Level >= maximumLevel
             ? "nivel máximo"
-            : $"{overview.Experience % season.ExperiencePerLevel}/{season.ExperiencePerLevel} XP para el nivel {overview.Level + 1}";
+            : $"{overview.Experience % season.ExperiencePerLevel}/{season.ExperiencePerLevel} {points} para el nivel {overview.Level + 1}";
         var name = plugIn.GetDisplayName(player);
         var premium = overview.IsPremium ? " (premium)" : string.Empty;
         var remaining = overview.EndUtc - DateTime.UtcNow;
         await player.ShowBlueMessageAsync($"[{name}] {season.Name}{premium}: nivel {overview.Level}/{maximumLevel}, {progress}.").ConfigureAwait(false);
-        await player.ShowBlueMessageAsync($"[{name}] Termina en {Math.Max(0, (int)remaining.TotalDays)}d {Math.Max(0, remaining.Hours)}h. Ganás XP con quests (/weekly), eventos y jugando.").ConfigureAwait(false);
+        await player.ShowBlueMessageAsync($"[{name}] Termina en {Math.Max(0, (int)remaining.TotalDays)}d {Math.Max(0, remaining.Hours)}h. Ganás {points} con quests (/weekly), eventos y jugando.").ConfigureAwait(false);
         if (overview.ClaimableCount > 0)
         {
             await player.ShowBlueMessageAsync($"[{name}] Tenés {overview.ClaimableCount} premio(s) para reclamar: /pase reclamar.").ConfigureAwait(false);

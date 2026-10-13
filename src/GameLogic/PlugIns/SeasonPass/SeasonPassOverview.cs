@@ -32,6 +32,11 @@ public sealed record SeasonPassOverview(
     public string DisplayName { get; init; } = string.Empty;
 
     /// <summary>
+    /// Gets the configured name of the points of the pass, in the language of the player.
+    /// </summary>
+    public string PointsName { get; init; } = string.Empty;
+
+    /// <summary>
     /// Gets a value indicating whether the premium track is available on the server.
     /// </summary>
     public bool PremiumEnabled { get; init; }

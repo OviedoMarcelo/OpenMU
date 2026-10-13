@@ -18,14 +18,14 @@ public class SeasonPassMiniGameExperience
     /// <summary>
     /// Gets or sets the experience for staying in the game until its end.
     /// </summary>
-    [Display(Name = "XP por participar", Description = "XP del pase para quien sigue en el evento cuando termina.")]
+    [Display(Name = "Puntos por participar", Description = "Puntos del pase para quien sigue en el evento cuando termina.")]
     [Range(0, int.MaxValue)]
     public int ParticipationExperience { get; set; }
 
     /// <summary>
     /// Gets or sets the additional experience for completing the game, see <see cref="RequiredSuccess"/>.
     /// </summary>
-    [Display(Name = "XP por completar", Description = "XP del pase adicional para quien además cumple \"Éxito requerido\".")]
+    [Display(Name = "Puntos por completar", Description = "Puntos del pase adicionales para quien además cumple \"Éxito requerido\".")]
     [Range(0, int.MaxValue)]
     public int CompletionExperience { get; set; }
 

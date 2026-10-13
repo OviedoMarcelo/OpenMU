@@ -18,7 +18,7 @@ public class SeasonPassMonsterBonus
     /// <summary>
     /// Gets or sets the experience for each kill of the monster.
     /// </summary>
-    [Display(Name = "XP por kill", Description = "XP del pase por cada kill de este monstruo. Cuenta para el tope semanal.")]
+    [Display(Name = "Puntos por kill", Description = "Puntos del pase por cada kill de este monstruo. Cuentan para el tope semanal.")]
     [Range(0, int.MaxValue)]
     public int Experience { get; set; }
 

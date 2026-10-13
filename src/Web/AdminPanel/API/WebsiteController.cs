@@ -329,6 +329,7 @@ public class WebsiteController : Controller
     /// <returns>
     /// <c>enabled</c>: whether the season pass plugin is active;
     /// <c>displayName</c>: the configured name of the pass;
+    /// <c>pointsName</c>: the configured name of the points (experience) of the pass;
     /// <c>premiumEnabled</c>: whether the premium track is available;
     /// <c>earning</c>: how the experience of the pass is gained;
     /// <c>season</c>: the running season, or <c>null</c> if none is running.
@@ -346,6 +347,7 @@ public class WebsiteController : Controller
         {
             enabled = true,
             displayName = GetDisplayName(running.Configuration),
+            pointsName = GetPointsName(running.Configuration),
             premiumEnabled = running.Configuration.PremiumEnabled,
             earning = ToEarningJson(running.Configuration),
             season = running.Season is null ? null : ToJson(running.Season, running.EndUtc, running.Configuration.PremiumEnabled),
@@ -415,6 +417,12 @@ public class WebsiteController : Controller
     {
         var name = configuration.DisplayName.GetTranslation(WebsiteCulture);
         return string.IsNullOrWhiteSpace(name) ? SeasonPassConfiguration.DefaultDisplayName : name;
+    }
+
+    private static string GetPointsName(SeasonPassConfiguration configuration)
+    {
+        var name = configuration.PointsName.GetTranslation(WebsiteCulture);
+        return string.IsNullOrWhiteSpace(name) ? SeasonPassConfiguration.DefaultPointsName : name;
     }
 
     private static object ToEarningJson(SeasonPassConfiguration configuration) => new

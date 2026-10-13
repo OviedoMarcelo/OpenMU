@@ -276,6 +276,7 @@ public class SeasonPassPlugIn :
             overview = overview with
             {
                 DisplayName = this.GetDisplayName(player),
+                PointsName = this.GetPointsName(player),
                 PremiumEnabled = this.Configuration?.PremiumEnabled ?? false,
             };
             await player.InvokeViewPlugInAsync<ISeasonPassViewPlugIn>(p => p.ShowSeasonPassAsync(overview)).ConfigureAwait(false);
@@ -369,7 +370,19 @@ public class SeasonPassPlugIn :
     }
 
     /// <summary>
-    /// Formats a configured message: <c>{name}</c> is replaced by the name of the pass, and the indexed placeholders by the arguments.
+    /// Gets the configured name of the points of the pass, in the language of the player.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <returns>The name of the points.</returns>
+    public string GetPointsName(Player player)
+    {
+        var name = this.Configuration?.PointsName.GetTranslation(player.Culture);
+        return string.IsNullOrWhiteSpace(name) ? SeasonPassConfiguration.DefaultPointsName : name;
+    }
+
+    /// <summary>
+    /// Formats a configured message: <c>{name}</c> is replaced by the name of the pass, <c>{points}</c> by the name of its points,
+    /// and the indexed placeholders by the arguments.
     /// </summary>
     /// <param name="template">The message.</param>
     /// <param name="player">The player who gets the message.</param>
@@ -378,7 +391,8 @@ public class SeasonPassPlugIn :
     private string Format(LocalizedString template, Player player, params object?[] args)
     {
         var text = (template.GetTranslation(player.Culture) ?? string.Empty)
-            .Replace(SeasonPassConfiguration.NamePlaceholder, this.GetDisplayName(player), StringComparison.Ordinal);
+            .Replace(SeasonPassConfiguration.NamePlaceholder, this.GetDisplayName(player), StringComparison.Ordinal)
+            .Replace(SeasonPassConfiguration.PointsPlaceholder, this.GetPointsName(player), StringComparison.Ordinal);
         try
         {
             return string.Format(text, args);
