@@ -56,11 +56,21 @@ public class WeeklyQuestDefinition
 
     /// <summary>
     /// Gets or sets the identifier of the quest which has to be completed before this quest is available.
+    /// It's required in addition to one of the <see cref="PrerequisiteOptions"/>.
     /// </summary>
-    [Display(Name = "Requiere quest", Description = "Opcional. La quest que hay que completar antes. Hasta entonces, esta quest no se muestra.")]
+    [Display(Name = "Requiere quest", Description = "Opcional. La quest que hay que completar antes. Hasta entonces, esta quest no se muestra. Si además hay \"Requisitos (caminos)\", hacen falta esta quest y uno de los caminos.")]
     [KeyOf(nameof(WeeklyQuestsConfiguration.Quests))]
     [StringLength(64)]
     public string? PrerequisiteQuestId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the options of the prerequisites. The quest is available when all quests of one of the options are completed.
+    /// If empty, only the <see cref="PrerequisiteQuestId"/> is required.
+    /// </summary>
+    [Display(Name = "Requisitos (caminos)", Description = "Opcional. Cada fila es un camino para desbloquear esta quest, y en cada fila se eligen una o más quests: hay que completarlas todas. Alcanza con completar una de las filas. P. ej. fila 1 = A y B, fila 2 = C: se desbloquea al completar A y B, o al completar solo C.")]
+    [MemberOfAggregate]
+    [ScaffoldColumn(true)]
+    public ICollection<WeeklyQuestPrerequisite> PrerequisiteOptions { get; set; } = new List<WeeklyQuestPrerequisite>();
 
     /// <summary>
     /// Gets or sets the identifier of the <see cref="WeeklyQuestChapter"/> of the quest. The quest is available when the chapter is unlocked.
@@ -156,6 +166,14 @@ public class WeeklyQuestDefinition
     /// </summary>
     [Display(Name = "Monstruo / NPC", Description = "Solo para \"Matar monstruo\" y \"Hablar con NPC\".")]
     public virtual MonsterDefinition? Monster { get; set; }
+
+    /// <summary>
+    /// Gets or sets the text which the NPC says when the talk counts, for <see cref="WeeklyQuestObjectiveType.TalkToNpc"/>.
+    /// Each line is said as a phrase of its own, see <see cref="NpcPhrases.Split"/>.
+    /// </summary>
+    [Display(Name = "Texto del NPC", Description = NpcPhrases.FieldDescription)]
+    [DataType(DataType.MultilineText)]
+    public string? NpcText { get; set; }
 
     /// <summary>
     /// Gets or sets the map on which the kills have to happen. If empty, kills on every map count.
@@ -313,6 +331,7 @@ public class WeeklyQuestDefinition
         ObjectiveType = this.ObjectiveType,
         RequiredCount = this.RequiredCount,
         Monster = this.Monster,
+        NpcText = this.NpcText,
         Map = this.Map,
         Item = this.Item,
         MinimumItemLevel = this.MinimumItemLevel,

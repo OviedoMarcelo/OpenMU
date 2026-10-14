@@ -162,6 +162,61 @@ public class WeeklyQuestSelectorTest
     }
 
     /// <summary>
+    /// Tests the options of the prerequisites: "(a and b) or c" unlocks with a and b, or with c, but not with a alone.
+    /// </summary>
+    /// <param name="completed">The completed quests, separated by commas.</param>
+    /// <param name="isLocked">If set to <c>true</c>, the quest is expected to be locked.</param>
+    [TestCase("", true)]
+    [TestCase("a", true)]
+    [TestCase("b", true)]
+    [TestCase("a,b", false)]
+    [TestCase("c", false)]
+    [TestCase("a,c", false)]
+    public void PrerequisiteOptionsAreAndWithinAndOrBetween(string completed, bool isLocked)
+    {
+        var quest = new WeeklyQuestDefinition
+        {
+            Id = "final",
+            PrerequisiteOptions =
+            {
+                new WeeklyQuestPrerequisite { QuestIds = { "a", "b" } },
+                new WeeklyQuestPrerequisite { QuestIds = { "c" } },
+            },
+        };
+        var progress = new Dictionary<string, WeeklyQuestProgress>();
+        foreach (var id in completed.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            Complete(progress, id);
+        }
+
+        Assert.That(WeeklyQuestSelector.IsLocked(quest, progress), Is.EqualTo(isLocked));
+    }
+
+    /// <summary>
+    /// Tests that the single prerequisite is required in addition to one of the options, and that options without quests are ignored.
+    /// </summary>
+    [Test]
+    public void PrerequisiteQuestIsRequiredBesidesTheOptions()
+    {
+        var quest = new WeeklyQuestDefinition
+        {
+            Id = "final",
+            PrerequisiteQuestId = "intro",
+            PrerequisiteOptions = { new WeeklyQuestPrerequisite(), new WeeklyQuestPrerequisite { QuestIds = { "c" } } },
+        };
+        var progress = new Dictionary<string, WeeklyQuestProgress>();
+
+        Complete(progress, "c");
+        Assert.That(WeeklyQuestSelector.IsLocked(quest, progress), Is.True);
+
+        Complete(progress, "intro");
+        Assert.That(WeeklyQuestSelector.IsLocked(quest, progress), Is.False);
+
+        quest.PrerequisiteOptions.Last().QuestIds.Clear();
+        Assert.That(WeeklyQuestSelector.IsLocked(quest, new Dictionary<string, WeeklyQuestProgress> { ["intro"] = progress["intro"] }), Is.False);
+    }
+
+    /// <summary>
     /// Tests that the quests of a chapter are hidden until the required number of quests of the previous chapter are completed.
     /// </summary>
     [Test]

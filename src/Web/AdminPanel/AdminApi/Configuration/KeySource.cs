@@ -5,7 +5,7 @@
 namespace MUnique.OpenMU.Web.AdminPanel.AdminApi.Configuration;
 
 /// <summary>
-/// The objects whose keys a text property can hold, see <see cref="DataModel.Composition.KeyOfAttribute"/>.
+/// The objects whose keys a text property (or a list of texts) can hold, see <see cref="DataModel.Composition.KeyOfAttribute"/>.
 /// </summary>
 /// <param name="Collection">The name of the collection property of the root object.</param>
 /// <param name="Key">The name of the property of the objects which holds the key.</param>

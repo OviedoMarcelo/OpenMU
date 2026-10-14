@@ -14,6 +14,7 @@ using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.GameLogic.PlugIns;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 using MUnique.OpenMU.GameLogic.Views;
+using MUnique.OpenMU.GameLogic.Views.NPC;
 using MUnique.OpenMU.Persistence;
 using MUnique.OpenMU.Persistence.WeeklyQuests;
 using MUnique.OpenMU.Interfaces;
@@ -556,6 +557,64 @@ public class WeeklyQuestsPlugInTest
 
         await plugIn.NpcTalkStartedAsync(player, guardianNpc).ConfigureAwait(false);
         Assert.That(player.Money, Is.EqualTo(1000));
+    }
+
+    /// <summary>
+    /// Tests that the NPC says its configured text when the talk counts, but not after the objective is done.
+    /// </summary>
+    [Test]
+    public async Task TalkToNpcShowsTheConfiguredTextAsync()
+    {
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        var guardian = new MonsterDefinition { Number = 240 };
+        var plugIn = CreatePlugIn(new InMemoryWeeklyQuestProgressRepository(), CreateStoryQuest(
+            new WeeklyQuestObjective { ObjectiveType = WeeklyQuestObjectiveType.TalkToNpc, Monster = guardian, NpcText = "Kundun volvió." }));
+        var guardianNpc = new NonPlayerCharacter(null!, guardian, null!);
+
+        await plugIn.NpcTalkStartedAsync(player, guardianNpc).ConfigureAwait(false);
+        await plugIn.NpcTalkStartedAsync(player, guardianNpc).ConfigureAwait(false);
+
+        Mock.Get(player.ViewPlugIns.GetPlugIn<IShowMessageOfObjectPlugIn>()!)
+            .Verify(p => p.ShowMessageOfObjectAsync("Kundun volvió.", guardianNpc), Times.Once);
+    }
+
+    /// <summary>
+    /// Tests that the NPC says each line of its text, one after another.
+    /// </summary>
+    [Test]
+    public async Task TalkToNpcShowsEachLineAsAPhraseAsync()
+    {
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        var guardian = new MonsterDefinition { Number = 240 };
+        var plugIn = CreatePlugIn(new InMemoryWeeklyQuestProgressRepository(), CreateStoryQuest(
+            new WeeklyQuestObjective { ObjectiveType = WeeklyQuestObjectiveType.TalkToNpc, Monster = guardian, NpcText = "Hola.\r\n\r\nKundun volvió.\nAndá a Lorencia." }));
+        plugIn.NpcPhraseInterval = TimeSpan.FromMilliseconds(10);
+        var guardianNpc = new NonPlayerCharacter(null!, guardian, player.CurrentMap!);
+        var shown = new List<string>();
+        Mock.Get(player.ViewPlugIns.GetPlugIn<IShowMessageOfObjectPlugIn>()!)
+            .Setup(p => p.ShowMessageOfObjectAsync(It.IsAny<string>(), guardianNpc))
+            .Callback<string, MUnique.OpenMU.GameLogic.IIdentifiable>((message, _) => { lock (shown) { shown.Add(message); } })
+            .Returns(ValueTask.CompletedTask);
+
+        await plugIn.NpcTalkStartedAsync(player, guardianNpc).ConfigureAwait(false);
+        Assert.That(shown, Is.EqualTo(new[] { "Hola." }));
+
+        Assert.That(() => { lock (shown) { return shown.ToList(); } }, Is.EqualTo(new[] { "Hola.", "Kundun volvió.", "Andá a Lorencia." }).After(2000, 10));
+    }
+
+    /// <summary>
+    /// Tests that a line which doesn't fit into one message is split at its spaces.
+    /// </summary>
+    [Test]
+    public void LongNpcLineIsSplitAtSpaces()
+    {
+        var line = string.Join(' ', Enumerable.Repeat("Kundun", 30));
+
+        var phrases = NpcPhrases.Split(line);
+
+        Assert.That(phrases, Has.Count.GreaterThan(1));
+        Assert.That(phrases.Select(p => System.Text.Encoding.UTF8.GetByteCount(p)), Has.All.LessThanOrEqualTo(89));
+        Assert.That(string.Join(' ', phrases), Is.EqualTo(line));
     }
 
     /// <summary>

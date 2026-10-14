@@ -412,9 +412,10 @@ public class ConfigurationTypeRegistry
         {
             Property = property,
             TargetClrType = target,
-            KeySource = kind == PropertyKind.Text && property.GetCustomAttribute<KeyOfAttribute>() is { } keyOf
+            KeySource = (kind == PropertyKind.Text || (kind == PropertyKind.ValueList && valueType == typeof(string))) && property.GetCustomAttribute<KeyOfAttribute>() is { } keyOf
                 ? new KeySource(keyOf.Collection, keyOf.KeyProperty, keyOf.CaptionProperty)
                 : null,
+            IsMultiline = kind == PropertyKind.Text && property.GetCustomAttribute<DataTypeAttribute>()?.DataType == DataType.MultilineText,
         };
     }
 }

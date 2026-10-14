@@ -55,7 +55,12 @@ public record PropertySchema(
     public Type? TargetClrType { get; init; }
 
     /// <summary>
-    /// Gets the objects whose keys the text property holds, so that one of them is selected instead of typing the key.
+    /// Gets the objects whose keys the text property (or the list of texts) holds, so that they are selected instead of typing the keys.
     /// </summary>
     public KeySource? KeySource { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether the text can have several lines, because of <see cref="DataType.MultilineText"/>.
+    /// </summary>
+    public bool IsMultiline { get; init; }
 }

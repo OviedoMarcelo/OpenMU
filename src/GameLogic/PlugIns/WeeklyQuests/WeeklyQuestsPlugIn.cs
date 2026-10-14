@@ -10,6 +10,7 @@ using MUnique.OpenMU.GameLogic.Attributes;
 using MUnique.OpenMU.GameLogic.MiniGames;
 using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.GameLogic.Views;
+using MUnique.OpenMU.GameLogic.Views.NPC;
 using MUnique.OpenMU.Interfaces;
 using MUnique.OpenMU.Persistence;
 using MUnique.OpenMU.Persistence.WeeklyQuests;
@@ -98,6 +99,11 @@ public class WeeklyQuestsPlugIn :
     /// are sent together, instead of one message per kill. Completed steps and quests are sent immediately.
     /// </summary>
     internal TimeSpan UpdateDelay { get; set; } = TimeSpan.FromMilliseconds(500);
+
+    /// <summary>
+    /// Gets or sets the time between the phrases of an NPC. If it's <c>null</c>, the <see cref="WeeklyQuestsConfiguration.NpcPhraseIntervalSeconds"/> are used.
+    /// </summary>
+    internal TimeSpan? NpcPhraseInterval { get; set; }
 
     /// <summary>
     /// Gets the repository. It's resolved on each use, because the host may set it after the plugin has been created.
@@ -285,15 +291,42 @@ public class WeeklyQuestsPlugIn :
     }
 
     /// <inheritdoc />
-    public ValueTask NpcTalkStartedAsync(Player player, NonPlayerCharacter npc)
+    public async ValueTask NpcTalkStartedAsync(Player player, NonPlayerCharacter npc)
     {
         var npcNumber = npc.Definition.Number;
         var mapNumber = npc.CurrentMap?.Definition.Number;
-        return this.AddProgressAsync(
+        List<string>? phrases = null;
+        await this.AddProgressAsync(
             player,
             WeeklyQuestObjectiveType.TalkToNpc,
             1,
-            (_, objective, _) => objective.Monster is not null && objective.Monster.Number == npcNumber && objective.IsOnMap(mapNumber));
+            (_, objective, _) =>
+            {
+                if (objective.Monster is null || objective.Monster.Number != npcNumber || !objective.IsOnMap(mapNumber))
+                {
+                    return false;
+                }
+
+                // The filter is the last check, so the talk counts for this objective.
+                if (NpcPhrases.Split(objective.NpcText) is { Count: > 0 } objectivePhrases)
+                {
+                    (phrases ??= []).AddRange(objectivePhrases);
+                }
+
+                return true;
+            }).ConfigureAwait(false);
+
+        if (phrases is null)
+        {
+            return;
+        }
+
+        await ShowNpcPhraseAsync(player, npc, phrases[0]).ConfigureAwait(false);
+        if (phrases.Count > 1)
+        {
+            // The progress doesn't wait for the conversation.
+            _ = this.ShowNpcPhrasesLaterAsync(player, npc, phrases.Skip(1).ToList());
+        }
     }
 
     /// <inheritdoc />
@@ -514,6 +547,11 @@ public class WeeklyQuestsPlugIn :
         }
 
         return null;
+    }
+
+    private static ValueTask ShowNpcPhraseAsync(Player player, NonPlayerCharacter npc, string phrase)
+    {
+        return player.InvokeViewPlugInAsync<IShowMessageOfObjectPlugIn>(p => p.ShowMessageOfObjectAsync(phrase, npc));
     }
 
     private static string Format(LocalizedString template, Player player, params object?[] args)
@@ -835,6 +873,30 @@ public class WeeklyQuestsPlugIn :
         {
             state.IsUpdateScheduled = true;
             _ = this.SendPendingUpdatesLaterAsync(player, state);
+        }
+    }
+
+    private async Task ShowNpcPhrasesLaterAsync(Player player, NonPlayerCharacter npc, IReadOnlyList<string> phrases)
+    {
+        try
+        {
+            var interval = this.NpcPhraseInterval ?? TimeSpan.FromSeconds(Math.Max(1, this.Configuration?.NpcPhraseIntervalSeconds ?? 4));
+            foreach (var phrase in phrases)
+            {
+                await Task.Delay(interval).ConfigureAwait(false);
+
+                // The conversation ends when the player leaves the game or the map of the NPC.
+                if (player.PlayerState.CurrentState != PlayerState.EnteredWorld || player.CurrentMap != npc.CurrentMap)
+                {
+                    return;
+                }
+
+                await ShowNpcPhraseAsync(player, npc, phrase).ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            player.Logger.LogError(ex, "Unexpected error when showing the phrases of an NPC.");
         }
     }
 

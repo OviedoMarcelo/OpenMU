@@ -56,6 +56,13 @@ public class WeeklyQuestsConfiguration
     public int HistoryWeeks { get; set; } = 8;
 
     /// <summary>
+    /// Gets or sets the seconds between the phrases of an NPC, see <see cref="WeeklyQuestObjective.NpcText"/>.
+    /// </summary>
+    [Display(Name = "Pausa entre frases del NPC (segundos)", Description = "Cuando el texto de un NPC tiene varias frases, el tiempo entre una y la siguiente.")]
+    [Range(1, 60)]
+    public int NpcPhraseIntervalSeconds { get; set; } = 4;
+
+    /// <summary>
     /// Gets or sets a value indicating whether the monster kills count for the party members nearby, like the experience.
     /// </summary>
     [Display(Name = "Kills compartidos en party", Description = "Los kills de monstruos cuentan para los miembros de la party que estén cerca, igual que la experiencia.")]
@@ -195,7 +202,7 @@ public class WeeklyQuestsConfiguration
                 SequentialObjectives = true,
                 Objectives = new List<WeeklyQuestObjective>
                 {
-                    new() { Description = "Habla con el Guardián", ObjectiveType = WeeklyQuestObjectiveType.TalkToNpc },
+                    new() { Description = "Habla con el Guardián", ObjectiveType = WeeklyQuestObjectiveType.TalkToNpc, NpcText = "Los Skeletons están inquietos.\nAlgo los despertó en Lorencia.\nAndá y averiguá qué pasa." },
                     new() { Description = "Mata 50 Skeletons", ObjectiveType = WeeklyQuestObjectiveType.KillMonster, RequiredCount = 50 },
                     new() { Description = "Encuentra el Fragmento del Chaos", ObjectiveType = WeeklyQuestObjectiveType.CollectItem },
                     new() { Description = "Derrota al jefe", ObjectiveType = WeeklyQuestObjectiveType.KillMonster },
