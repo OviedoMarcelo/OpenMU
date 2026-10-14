@@ -30,6 +30,19 @@ public class TargetedSkillDefaultPlugin : TargetedSkillPluginBase
         { 36, 151 }, // Soldier
     };
 
+    /// <summary>
+    /// The skills of the rage fighter whose animation hits twice: the client sends one request per hit,
+    /// so each of them is half an attack for the speed check.
+    /// </summary>
+    private static readonly HashSet<short> SkillsWithTwoHitsPerUse =
+    [
+        261, // Beast Uppercut
+        262, // Chain Drive
+        552, // Beast Uppercut Strengthener
+        555, // Beast Uppercut Mastery
+        558, // Chain Drive Strengthener
+    ];
+
     /// <inheritdoc/>
     public override short Key => 0;
 
@@ -75,7 +88,7 @@ public class TargetedSkillDefaultPlugin : TargetedSkillPluginBase
         {
             if (player.GameContext.PlugInManager.GetPlugInPoint<ISpeedHackCheatCheckPlugIn>() is { } speedCheck)
             {
-                var eventArgs = new SpeedHackCheckEventArgs();
+                var eventArgs = new SpeedHackCheckEventArgs { AttackCost = GetAttackCost(skill) };
                 await speedCheck.AttackCheatCheckAsync(player, eventArgs).ConfigureAwait(false);
                 if (eventArgs.IsCheatDetected)
                 {
@@ -246,6 +259,8 @@ public class TargetedSkillDefaultPlugin : TargetedSkillPluginBase
 
         return Enumerable.Empty<IAttackable>();
     }
+
+    private static double GetAttackCost(Skill skill) => SkillsWithTwoHitsPerUse.Contains(skill.Number) ? 0.5 : 1.0;
 
     private async ValueTask<bool> ApplySkillAsync(Player player, IAttackable targetedTarget, SkillEntry skillEntry)
     {

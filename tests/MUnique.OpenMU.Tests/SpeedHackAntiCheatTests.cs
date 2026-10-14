@@ -169,6 +169,29 @@ public class SpeedHackAntiCheatTests
     }
 
     /// <summary>
+    /// Tests that the requests of a skill which hits twice per use (the client sends one per hit, e.g. the
+    /// beast uppercut of the rage fighter) count as half an attack each: twice as many of them fit in the
+    /// same burst before the check triggers.
+    /// </summary>
+    [Test]
+    public async Task TestHalfCostAttacksAllowTwiceTheBurstAsync()
+    {
+        var player = await CreatePlayerWithSpeedAttributesAsync().ConfigureAwait(false);
+        player.Attributes![Stats.AttackSpeed] = 20;
+
+        var speedCheck = player.GameContext.PlugInManager.GetPlugInPoint<ISpeedHackCheatCheckPlugIn>();
+        Assert.That(speedCheck, Is.Not.Null);
+
+        // Five full attacks don't fit in the burst (see above); the same in half attacks do.
+        for (int i = 0; i < 10; i++)
+        {
+            var args = new SpeedHackCheckEventArgs { AttackCost = 0.5 };
+            await speedCheck!.AttackCheatCheckAsync(player, args).ConfigureAwait(false);
+            Assert.That(args.IsCheatDetected, Is.False, $"request {i + 1}");
+        }
+    }
+
+    /// <summary>
     /// Tests that teleporting/warping to a different coordinate clears recent walks
     /// and doesn't trigger speed hack warnings on subsequent movements.
     /// </summary>
