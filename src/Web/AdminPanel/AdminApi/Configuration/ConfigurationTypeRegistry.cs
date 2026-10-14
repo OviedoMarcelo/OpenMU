@@ -278,6 +278,27 @@ public class ConfigurationTypeRegistry
         };
     }
 
+    /// <summary>
+    /// Some plain objects (e.g. the configurations of plugins) reference monsters and maps by their
+    /// number, marked with the MonsterNumber and MapNumber attributes of the data model. They're
+    /// recognized by name, so this works with data models which don't have them.
+    /// </summary>
+    private static string? GetNumberOf(PropertyInfo property)
+    {
+        foreach (var attribute in property.GetCustomAttributes(true))
+        {
+            switch (attribute.GetType().Name)
+            {
+                case "MonsterNumberAttribute":
+                    return nameof(MonsterDefinition);
+                case "MapNumberAttribute":
+                    return nameof(GameMapDefinition);
+            }
+        }
+
+        return null;
+    }
+
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
 
     private void Register(Type type)
@@ -408,7 +429,8 @@ public class ConfigurationTypeRegistry
             enumType is null ? null : GetEnumValues(enumType),
             target is null ? null : this.GetName(target),
             target is not null && this.IsBrowsable(target),
-            IsReadOnly(property, kind, target is not null && this.IsBrowsable(target)))
+            IsReadOnly(property, kind, target is not null && this.IsBrowsable(target)),
+            kind == PropertyKind.Integer ? GetNumberOf(property) : null)
         {
             Property = property,
             TargetClrType = target,
