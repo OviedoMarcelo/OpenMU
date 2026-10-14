@@ -10,4 +10,5 @@ namespace MUnique.OpenMU.Web.AdminPanel.AdminApi.Configuration;
 /// <param name="Collection">The name of the collection property of the root object.</param>
 /// <param name="Key">The name of the property of the objects which holds the key.</param>
 /// <param name="Caption">The name of the property of the objects which is shown.</param>
-public record KeySource(string Collection, string Key, string Caption);
+/// <param name="PlugIn">The full type name of the plugin whose configuration has the collection; <c>null</c> for the root object.</param>
+public record KeySource(string Collection, string Key, string Caption, string? PlugIn = null);

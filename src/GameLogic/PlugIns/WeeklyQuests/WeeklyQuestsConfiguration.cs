@@ -153,8 +153,10 @@ public class WeeklyQuestsConfiguration
                 Name = "Cazador",
                 Description = "Matá 500 monstruos.",
                 IsActive = false,
-                ObjectiveType = WeeklyQuestObjectiveType.KillAnyMonster,
-                RequiredCount = 500,
+                Objectives = new List<WeeklyQuestObjective>
+                {
+                    new() { ObjectiveType = WeeklyQuestObjectiveType.KillAnyMonster, RequiredCount = 500 },
+                },
                 Rewards = new List<WeeklyQuestReward>
                 {
                     new() { RewardType = WeeklyQuestRewardType.Money, Amount = 5_000_000 },
@@ -166,9 +168,10 @@ public class WeeklyQuestsConfiguration
                 Name = "Defensor del castillo",
                 Description = "Terminá 3 Blood Castle.",
                 IsActive = false,
-                ObjectiveType = WeeklyQuestObjectiveType.CompleteMiniGame,
-                MiniGameType = MiniGameType.BloodCastle,
-                RequiredCount = 3,
+                Objectives = new List<WeeklyQuestObjective>
+                {
+                    new() { ObjectiveType = WeeklyQuestObjectiveType.CompleteMiniGame, MiniGameType = MiniGameType.BloodCastle, RequiredCount = 3 },
+                },
                 Rewards = new List<WeeklyQuestReward>
                 {
                     new() { RewardType = WeeklyQuestRewardType.Experience, Amount = 1_000_000 },
@@ -182,8 +185,10 @@ public class WeeklyQuestsConfiguration
                 IsActive = false,
                 Category = QuestCategory.Daily,
                 Period = QuestPeriod.Daily,
-                ObjectiveType = WeeklyQuestObjectiveType.KillAnyMonster,
-                RequiredCount = 100,
+                Objectives = new List<WeeklyQuestObjective>
+                {
+                    new() { ObjectiveType = WeeklyQuestObjectiveType.KillAnyMonster, RequiredCount = 100 },
+                },
                 Rewards = new List<WeeklyQuestReward>
                 {
                     new() { RewardType = WeeklyQuestRewardType.Money, Amount = 500_000 },
@@ -221,7 +226,10 @@ public class WeeklyQuestsConfiguration
                 Category = QuestCategory.Main,
                 Period = QuestPeriod.Once,
                 ChapterId = "cap-2",
-                ObjectiveType = WeeklyQuestObjectiveType.EnterMap,
+                Objectives = new List<WeeklyQuestObjective>
+                {
+                    new() { ObjectiveType = WeeklyQuestObjectiveType.EnterMap },
+                },
             },
         },
     };

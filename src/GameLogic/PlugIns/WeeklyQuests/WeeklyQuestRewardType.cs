@@ -32,4 +32,11 @@ public enum WeeklyQuestRewardType
     /// </summary>
     [Display(Name = "Experiencia master")]
     MasterExperience,
+
+    /// <summary>
+    /// Points of the season pass. They're given by the season pass when a quest is completed
+    /// (see <see cref="IQuestCompletedPlugIn"/>), instead of the default points for the period of the quest.
+    /// </summary>
+    [Display(Name = "Puntos del pase")]
+    SeasonPoints,
 }

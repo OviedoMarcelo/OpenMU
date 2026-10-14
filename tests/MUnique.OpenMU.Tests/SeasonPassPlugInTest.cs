@@ -44,6 +44,18 @@ public class SeasonPassPlugInTest
         var overview = await plugIn.GetOverviewAsync(player).ConfigureAwait(false);
         Assert.That(overview!.Experience, Is.EqualTo(57));
         Assert.That(overview.Level, Is.EqualTo(0));
+
+        var quest = new WeeklyQuestDefinition
+        {
+            Period = QuestPeriod.Daily,
+            Rewards = new List<WeeklyQuestReward>
+            {
+                new() { RewardType = WeeklyQuestRewardType.SeasonPoints, Amount = 20 },
+                new() { RewardType = WeeklyQuestRewardType.SeasonPoints, Amount = 5 },
+            },
+        };
+        await plugIn.QuestCompletedAsync(player, quest).ConfigureAwait(false);
+        Assert.That((await plugIn.GetOverviewAsync(player).ConfigureAwait(false))!.Experience, Is.EqualTo(57 + 25), "The rewards of points replace the default for the period.");
     }
 
     /// <summary>

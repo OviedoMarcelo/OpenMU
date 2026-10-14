@@ -4,6 +4,9 @@
 
 namespace MUnique.OpenMU.GameLogic.PlugIns.SeasonPass;
 
+using MUnique.OpenMU.DataModel.Composition;
+using MUnique.OpenMU.GameLogic.PlugIns.BossEncounters;
+
 /// <summary>
 /// The experience of the season pass for taking part in a boss encounter in which the boss is defeated.
 /// </summary>
@@ -12,7 +15,8 @@ public class SeasonPassBossEncounterExperience
     /// <summary>
     /// Gets or sets the name of the boss encounter. Empty means any encounter which has no entry of its own.
     /// </summary>
-    [Display(Name = "Encuentro de jefe", Description = "El nombre del encuentro, como en el plugin de boss encounters. Vacío = cualquier encuentro que no tenga su propia entrada.")]
+    [Display(Name = "Encuentro de jefe", Description = "Un encuentro del plugin de boss encounters. Vacío = cualquier encuentro que no tenga su propia entrada.")]
+    [KeyOf(nameof(BossEncounterConfiguration.Encounters), PlugIn = typeof(BossEncounterPlugIn), KeyProperty = nameof(BossEncounterDefinition.Name), CaptionProperty = nameof(BossEncounterDefinition.Name))]
     public string? EncounterName { get; set; }
 
     /// <summary>
