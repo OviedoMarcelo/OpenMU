@@ -599,6 +599,9 @@ public class WeeklyQuestsPlugInTest
         await plugIn.NpcTalkStartedAsync(player, guardianNpc).ConfigureAwait(false);
         Assert.That(shown, Is.EqualTo(new[] { "Hola." }));
 
+        // The NPC keeps talking while its window (e.g. a store) is open.
+        Assert.That(await player.PlayerState.TryAdvanceToAsync(PlayerState.NpcDialogOpened).ConfigureAwait(false), Is.True);
+
         Assert.That(() => { lock (shown) { return shown.ToList(); } }, Is.EqualTo(new[] { "Hola.", "Kundun volvió.", "Andá a Lorencia." }).After(2000, 10));
     }
 

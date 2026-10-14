@@ -886,7 +886,9 @@ public class WeeklyQuestsPlugIn :
                 await Task.Delay(interval).ConfigureAwait(false);
 
                 // The conversation ends when the player leaves the game or the map of the NPC.
-                if (player.PlayerState.CurrentState != PlayerState.EnteredWorld || player.CurrentMap != npc.CurrentMap)
+                // The window of the NPC (e.g. the store of a merchant) may be open meanwhile.
+                var state = player.PlayerState.CurrentState;
+                if ((state != PlayerState.EnteredWorld && state != PlayerState.NpcDialogOpened) || player.CurrentMap != npc.CurrentMap)
                 {
                     return;
                 }
