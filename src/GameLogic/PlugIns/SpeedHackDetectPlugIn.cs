@@ -154,6 +154,7 @@ public class SpeedHackDetectPlugIn : IFeaturePlugIn, ISupportCustomConfiguration
         var now = DateTime.UtcNow;
 
         var minIntervalMs = Math.Max(config.AttackSpeedMinIntervalMs, config.AttackSpeedBaseDelayMs - (attackSpeed * config.AttackSpeedScalingFactor));
+        var cost = Math.Clamp(eventArgs.AttackCost, 0.0, 1.0);
         var state = this.GetState(player);
         bool shouldRecordViolation = false;
 
@@ -162,7 +163,7 @@ public class SpeedHackDetectPlugIn : IFeaturePlugIn, ISupportCustomConfiguration
             if (state.LastAttackTokenUpdateTime == DateTime.MinValue)
             {
                 state.LastAttackTokenUpdateTime = now;
-                state.AttackTokens = config.MaxAttackTokens - 1.0;
+                state.AttackTokens = config.MaxAttackTokens - cost;
                 return;
             }
 
@@ -172,9 +173,9 @@ public class SpeedHackDetectPlugIn : IFeaturePlugIn, ISupportCustomConfiguration
             var regen = elapsedMs / minIntervalMs;
             state.AttackTokens = Math.Min(config.MaxAttackTokens, state.AttackTokens + regen);
 
-            if (state.AttackTokens >= 1.0)
+            if (state.AttackTokens >= cost)
             {
-                state.AttackTokens -= 1.0;
+                state.AttackTokens -= cost;
                 return;
             }
 
@@ -183,6 +184,11 @@ public class SpeedHackDetectPlugIn : IFeaturePlugIn, ISupportCustomConfiguration
 
         if (shouldRecordViolation)
         {
+            player.Logger.LogWarning(
+                "Speedhack detected on attack for player {0}: attack speed {1}, at most one attack every {2:0}ms is expected.",
+                player.Name,
+                attackSpeed,
+                minIntervalMs);
             eventArgs.IsCheatDetected = true;
             await this.RecordViolationAsync(player, state, config).ConfigureAwait(false);
         }
