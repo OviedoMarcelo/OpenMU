@@ -40,6 +40,14 @@ public class WeeklyQuestObjective
     public virtual MonsterDefinition? Monster { get; set; }
 
     /// <summary>
+    /// Gets or sets the text which the NPC says when the talk counts, for <see cref="WeeklyQuestObjectiveType.TalkToNpc"/>.
+    /// Each line is said as a phrase of its own, see <see cref="NpcPhrases.Split"/>.
+    /// </summary>
+    [Display(Name = "Texto del NPC", Description = NpcPhrases.FieldDescription)]
+    [DataType(DataType.MultilineText)]
+    public string? NpcText { get; set; }
+
+    /// <summary>
     /// Gets or sets the map on which the objective has to be done. If empty, every map counts.
     /// For <see cref="WeeklyQuestObjectiveType.EnterMap"/>, it's the map to enter.
     /// </summary>

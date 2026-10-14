@@ -5,7 +5,7 @@
 namespace MUnique.OpenMU.DataModel.Composition;
 
 /// <summary>
-/// Marks a text property which holds the key of an object of a collection of the root object, e.g. the id of a chapter
+/// Marks a text property (or a list of texts) which holds the key of an object of a collection of the root object, e.g. the id of a chapter
 /// of a plugin configuration. The admin panel shows a selection of the objects of the collection instead of a text field.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]

@@ -53,7 +53,7 @@ public static class WeeklyQuestSelector
     /// <param name="character">The character.</param>
     /// <param name="hasProgress">If set to <c>true</c>, the character already made progress in the quest.</param>
     /// <param name="isBlockedByAccount">If set to <c>true</c>, another character of the account already received the rewards of the quest.</param>
-    /// <param name="isLocked">If set to <c>true</c>, the <see cref="WeeklyQuestDefinition.PrerequisiteQuestId"/> is not completed yet.</param>
+    /// <param name="isLocked">If set to <c>true</c>, the prerequisites are not completed yet, see <see cref="IsLocked"/>.</param>
     /// <returns><c>true</c>, if the quest is available.</returns>
     /// <remarks>
     /// The minimum level and resets are not checked here: such quests are shown, but don't make progress yet.
@@ -81,8 +81,12 @@ public static class WeeklyQuestSelector
     }
 
     /// <summary>
-    /// Determines whether the prerequisite of the quest is not completed yet, or its chapter is locked.
+    /// Determines whether the prerequisites of the quest are not completed yet, or its chapter is locked.
     /// </summary>
+    /// <remarks>
+    /// The <see cref="WeeklyQuestDefinition.PrerequisiteQuestId"/> is required, and one of the <see cref="WeeklyQuestDefinition.PrerequisiteOptions"/>.
+    /// Options without quests are ignored.
+    /// </remarks>
     /// <param name="quest">The quest.</param>
     /// <param name="progress">The progress of the character in the current periods, per quest id.</param>
     /// <param name="lockedChapters">The ids of the locked chapters, see <see cref="GetLockedChapters"/>.</param>
@@ -94,8 +98,24 @@ public static class WeeklyQuestSelector
             return true;
         }
 
-        return !string.IsNullOrWhiteSpace(quest.PrerequisiteQuestId)
-               && !IsCompleted(quest.PrerequisiteQuestId, progress);
+        if (!string.IsNullOrWhiteSpace(quest.PrerequisiteQuestId)
+            && !IsCompleted(quest.PrerequisiteQuestId, progress))
+        {
+            return true;
+        }
+
+        var hasOptions = false;
+        foreach (var option in quest.PrerequisiteOptions)
+        {
+            if (option.IsFulfilled(id => IsCompleted(id, progress)))
+            {
+                return false;
+            }
+
+            hasOptions |= option.QuestIds.Any(id => !string.IsNullOrWhiteSpace(id));
+        }
+
+        return hasOptions;
     }
 
     /// <summary>
