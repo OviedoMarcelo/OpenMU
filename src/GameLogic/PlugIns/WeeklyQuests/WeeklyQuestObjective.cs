@@ -5,7 +5,9 @@
 namespace MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 
 using System.Globalization;
+using MUnique.OpenMU.DataModel.Composition;
 using MUnique.OpenMU.DataModel.Configuration.Items;
+using MUnique.OpenMU.GameLogic.PlugIns.BossEncounters;
 
 /// <summary>
 /// An objective (step) of a <see cref="WeeklyQuestDefinition"/>, e.g. "Kill 50 Skeletons".
@@ -78,7 +80,8 @@ public class WeeklyQuestObjective
     /// Gets or sets the name of the boss encounter, for <see cref="WeeklyQuestObjectiveType.DefeatBossEncounter"/>.
     /// Empty means any encounter.
     /// </summary>
-    [Display(Name = "Encuentro de jefe", Description = "Solo para \"Derrotar un jefe (encuentro)\": el nombre del encuentro, como en el plugin de boss encounters. Vacío = cualquiera. Cuenta para quien participó con el daño (o la curación) mínimo del encuentro, si el jefe muere.")]
+    [Display(Name = "Encuentro de jefe", Description = "Solo para \"Derrotar un jefe (encuentro)\": un encuentro del plugin de boss encounters. Vacío = cualquiera. Cuenta para quien participó con el daño (o la curación) mínimo del encuentro, si el jefe muere.")]
+    [KeyOf(nameof(BossEncounterConfiguration.Encounters), PlugIn = typeof(BossEncounterPlugIn), KeyProperty = nameof(BossEncounterDefinition.Name), CaptionProperty = nameof(BossEncounterDefinition.Name))]
     public string? BossEncounterName { get; set; }
 
     /// <summary>

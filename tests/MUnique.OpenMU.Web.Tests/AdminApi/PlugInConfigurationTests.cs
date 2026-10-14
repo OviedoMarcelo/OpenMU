@@ -7,6 +7,7 @@ namespace MUnique.OpenMU.Web.Tests.AdminApi;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging.Abstractions;
 using MUnique.OpenMU.GameLogic.PlugIns.Achievements;
+using MUnique.OpenMU.GameLogic.PlugIns.BossEncounters;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 using MUnique.OpenMU.Persistence.InMemory;
 using MUnique.OpenMU.Web.AdminPanel.AdminApi.Configuration;
@@ -58,6 +59,21 @@ public class PlugInConfigurationTests
 
         var name = this._registry.GetSchema(typeof(WeeklyQuestDefinition)).Properties.Single(p => p.Name == nameof(WeeklyQuestDefinition.Name));
         Assert.That(name.KeySource, Is.Null);
+    }
+
+    /// <summary>
+    /// Tests that a text which holds the key of an object of the configuration of another plugin tells that plugin,
+    /// and that the single objective of a quest, which was replaced by its steps, isn't shown anymore.
+    /// </summary>
+    [Test]
+    public void KeysOfOtherPlugInsHaveTheirPlugIn()
+    {
+        var encounterName = this._registry.GetSchema(typeof(WeeklyQuestObjective)).Properties.Single(p => p.Name == nameof(WeeklyQuestObjective.BossEncounterName));
+        Assert.That(encounterName.KeySource, Is.EqualTo(new KeySource(nameof(BossEncounterConfiguration.Encounters), "Name", "Name", typeof(BossEncounterPlugIn).FullName)));
+
+        var questProperties = this._registry.GetSchema(typeof(WeeklyQuestDefinition)).Properties.Select(p => p.Name).ToList();
+        Assert.That(questProperties, Does.Not.Contain(nameof(WeeklyQuestDefinition.ObjectiveType)));
+        Assert.That(questProperties, Does.Contain(nameof(WeeklyQuestDefinition.Objectives)));
     }
 
     /// <summary>

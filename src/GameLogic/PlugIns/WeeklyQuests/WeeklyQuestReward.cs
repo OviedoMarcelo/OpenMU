@@ -15,13 +15,13 @@ public class WeeklyQuestReward
     /// <summary>
     /// Gets or sets the type of the reward.
     /// </summary>
-    [Display(Name = "Tipo")]
+    [Display(Name = "Tipo", Description = "\"Puntos del pase\" solo vale en las quests: reemplaza los puntos por defecto del pase para el período de la quest.")]
     public WeeklyQuestRewardType RewardType { get; set; }
 
     /// <summary>
     /// Gets or sets the amount: zen or experience points, or the number of items.
     /// </summary>
-    [Display(Name = "Cantidad", Description = "Zen, puntos de experiencia o cantidad de items.")]
+    [Display(Name = "Cantidad", Description = "Zen, puntos de experiencia, cantidad de items o puntos del pase.")]
     [Range(1, int.MaxValue)]
     public int Amount { get; set; } = 1;
 
@@ -81,6 +81,7 @@ public class WeeklyQuestReward
             WeeklyQuestRewardType.Money => $"{this.Amount.ToString("N0", culture)} Zen",
             WeeklyQuestRewardType.Experience => $"{this.Amount.ToString("N0", culture)} EXP",
             WeeklyQuestRewardType.MasterExperience => $"{this.Amount.ToString("N0", culture)} Master EXP",
+            WeeklyQuestRewardType.SeasonPoints => $"{this.Amount.ToString("N0", culture)} puntos del pase",
             _ => this.Amount.ToString("N0", culture),
         };
     }

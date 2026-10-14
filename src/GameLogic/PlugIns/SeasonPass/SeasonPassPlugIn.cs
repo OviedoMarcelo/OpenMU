@@ -137,8 +137,8 @@ public class SeasonPassPlugIn :
             return ValueTask.CompletedTask;
         }
 
-        var experience = quest.SeasonXp > 0
-            ? quest.SeasonXp
+        var experience = quest.GetSeasonPoints() is var points and > 0
+            ? points
             : quest.Period switch
             {
                 QuestPeriod.Daily => configuration.DailyQuestExperience,

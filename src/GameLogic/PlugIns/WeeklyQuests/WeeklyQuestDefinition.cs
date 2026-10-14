@@ -4,6 +4,7 @@
 
 namespace MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 
+using System.ComponentModel;
 using MUnique.OpenMU.DataModel.Composition;
 using MUnique.OpenMU.DataModel.Configuration.Items;
 
@@ -135,7 +136,7 @@ public class WeeklyQuestDefinition
     /// Gets or sets the objectives (steps) of the quest. If empty, the single objective of the fields
     /// <see cref="ObjectiveType"/>, <see cref="RequiredCount"/> etc. is used.
     /// </summary>
-    [Display(Name = "Pasos", Description = "Opcional. Varios objetivos, p. ej. hablar con un NPC, matar 50 Skeletons y derrotar al jefe. Si está vacío, se usa el objetivo simple de abajo.")]
+    [Display(Name = "Pasos", Description = "Lo que hay que hacer para completar la quest: uno o más pasos, p. ej. hablar con un NPC, matar 50 Skeletons y derrotar al jefe.")]
     [MemberOfAggregate]
     [ScaffoldColumn(true)]
     public ICollection<WeeklyQuestObjective> Objectives { get; set; } = new List<WeeklyQuestObjective>();
@@ -147,105 +148,113 @@ public class WeeklyQuestDefinition
     [Display(Name = "Pasos en orden", Description = "Cada paso cuenta recién cuando se completó el anterior.")]
     public bool SequentialObjectives { get; set; }
 
+    // The fields of the single objective below are only read from configurations which were saved before
+    // the objectives were always a list of steps. The update plugin MigrateWeeklyQuestLegacyFieldsPlugIn
+    // moves them into the steps; they are hidden from the admin panel, so new quests always use steps.
+
     /// <summary>
     /// Gets or sets the type of the objective.
     /// </summary>
-    [Display(Name = "Tipo de objetivo", Description = "Objetivo simple: solo se usa si la quest no tiene pasos.")]
+    [Browsable(false)]
     public WeeklyQuestObjectiveType ObjectiveType { get; set; }
 
     /// <summary>
     /// Gets or sets the required count to complete the objective.
     /// </summary>
-    [Display(Name = "Cantidad requerida")]
     [Range(1, int.MaxValue)]
+    [Browsable(false)]
     public int RequiredCount { get; set; } = 1;
 
     /// <summary>
     /// Gets or sets the monster which has to be killed, for <see cref="WeeklyQuestObjectiveType.KillMonster"/>,
     /// or the NPC to talk to, for <see cref="WeeklyQuestObjectiveType.TalkToNpc"/>.
     /// </summary>
-    [Display(Name = "Monstruo / NPC", Description = "Solo para \"Matar monstruo\" y \"Hablar con NPC\".")]
+    [Browsable(false)]
     public virtual MonsterDefinition? Monster { get; set; }
 
     /// <summary>
     /// Gets or sets the text which the NPC says when the talk counts, for <see cref="WeeklyQuestObjectiveType.TalkToNpc"/>.
     /// Each line is said as a phrase of its own, see <see cref="NpcPhrases.Split"/>.
     /// </summary>
-    [Display(Name = "Texto del NPC", Description = NpcPhrases.FieldDescription)]
     [DataType(DataType.MultilineText)]
+    [Browsable(false)]
     public string? NpcText { get; set; }
 
     /// <summary>
     /// Gets or sets the map on which the kills have to happen. If empty, kills on every map count.
     /// </summary>
-    [Display(Name = "Mapa", Description = "Obligatorio para \"Entrar a un mapa\". Para los demás es opcional: vacío = cualquier mapa.")]
+    [Browsable(false)]
     public virtual GameMapDefinition? Map { get; set; }
 
     /// <summary>
     /// Gets or sets the item which has to be picked up, for <see cref="WeeklyQuestObjectiveType.CollectItem"/>.
     /// </summary>
-    [Display(Name = "Item", Description = "Solo para \"Juntar items\". Solo cuentan los items que dropean monstruos o eventos, no los que tira un jugador.")]
+    [Browsable(false)]
     public virtual ItemDefinition? Item { get; set; }
 
     /// <summary>
     /// Gets or sets the minimum level of the picked up item, for <see cref="WeeklyQuestObjectiveType.CollectItem"/>.
     /// </summary>
-    [Display(Name = "Nivel mínimo del item", Description = "Solo para \"Juntar items\".")]
     [Range(0, 15)]
+    [Browsable(false)]
     public int MinimumItemLevel { get; set; }
 
     /// <summary>
     /// Gets or sets the type of the mini game, for <see cref="WeeklyQuestObjectiveType.CompleteMiniGame"/>.
     /// <see cref="DataModel.Configuration.MiniGameType.Undefined"/> means any mini game.
     /// </summary>
-    [Display(Name = "Evento", Description = "Solo para \"Completar evento\". Undefined = cualquier evento.")]
+    [Browsable(false)]
     public MiniGameType MiniGameType { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the boss encounter, for <see cref="WeeklyQuestObjectiveType.DefeatBossEncounter"/>.
     /// Empty means any encounter.
     /// </summary>
-    [Display(Name = "Encuentro de jefe", Description = "Solo para \"Derrotar un jefe (encuentro)\": el nombre del encuentro, como en el plugin de boss encounters. Vacío = cualquiera. Cuenta para quien participó con el daño (o la curación) mínimo del encuentro, si el jefe muere.")]
+    [Browsable(false)]
     public string? BossEncounterName { get; set; }
 
     /// <summary>
     /// Gets or sets the minimum level of a killed player, for <see cref="WeeklyQuestObjectiveType.KillPlayer"/>.
     /// </summary>
-    [Display(Name = "Nivel mínimo de la víctima", Description = "Solo para \"Matar jugadores\". Evita farmear con personajes bajos.")]
     [Range(0, int.MaxValue)]
+    [Browsable(false)]
     public int MinimumVictimLevel { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether kills of players with the same IP address don't count, for <see cref="WeeklyQuestObjectiveType.KillPlayer"/>.
     /// </summary>
-    [Display(Name = "Ignorar misma IP", Description = "Solo para \"Matar jugadores\". No cuentan las víctimas conectadas desde la misma IP.")]
+    [Browsable(false)]
     public bool IgnoreSameIp { get; set; } = true;
 
     /// <summary>
     /// Gets or sets a value indicating whether kills of players of the same guild don't count, for <see cref="WeeklyQuestObjectiveType.KillPlayer"/>.
     /// </summary>
-    [Display(Name = "Ignorar misma guild", Description = "Solo para \"Matar jugadores\".")]
+    [Browsable(false)]
     public bool IgnoreSameGuild { get; set; } = true;
 
     /// <summary>
     /// Gets or sets a value indicating whether kills of players of the same party don't count, for <see cref="WeeklyQuestObjectiveType.KillPlayer"/>.
     /// </summary>
-    [Display(Name = "Ignorar misma party", Description = "Solo para \"Matar jugadores\".")]
+    [Browsable(false)]
     public bool IgnoreSameParty { get; set; } = true;
 
     /// <summary>
     /// Gets or sets the minutes until the same victim counts again, for <see cref="WeeklyQuestObjectiveType.KillPlayer"/>. 0 means no cooldown.
     /// </summary>
-    [Display(Name = "Cooldown por víctima (minutos)", Description = "Solo para \"Matar jugadores\". 0 = sin cooldown. Matar otra vez a la misma víctima no cuenta hasta que pase este tiempo.")]
     [Range(0, int.MaxValue)]
+    [Browsable(false)]
     public int VictimCooldownMinutes { get; set; }
 
     /// <summary>
     /// Gets or sets the experience of the season pass which the quest gives when it's completed.
     /// 0 means the default of the season pass for the period of the quest.
     /// </summary>
-    [Display(Name = "Puntos del pase", Description = "Puntos del pase de temporada al completarla. 0 = los puntos por defecto del pase para quests diarias, semanales o de una vez.")]
+    /// <remarks>
+    /// Only read from configurations which were saved before the points were a reward of the type
+    /// <see cref="WeeklyQuestRewardType.SeasonPoints"/>; the update plugin MigrateWeeklyQuestLegacyFieldsPlugIn moves it into the rewards.
+    /// </remarks>
     [Range(0, int.MaxValue)]
+    [Browsable(false)]
     public int SeasonXp { get; set; }
 
     /// <summary>
@@ -321,6 +330,17 @@ public class WeeklyQuestDefinition
     public string GetRewardsText(System.Globalization.CultureInfo culture)
     {
         return string.Join(", ", this.Rewards.Select(r => r.GetDisplayText(culture)));
+    }
+
+    /// <summary>
+    /// Gets the points of the season pass which the quest gives instead of the default for its period:
+    /// the sum of its rewards of the type <see cref="WeeklyQuestRewardType.SeasonPoints"/>, or else <see cref="SeasonXp"/>.
+    /// </summary>
+    /// <returns>The points; 0 means the default of the season pass for the period of the quest.</returns>
+    public int GetSeasonPoints()
+    {
+        var points = this.Rewards.Where(r => r.RewardType == WeeklyQuestRewardType.SeasonPoints).Sum(r => (long)r.Amount);
+        return points > 0 ? (int)Math.Min(points, int.MaxValue) : this.SeasonXp;
     }
 
     /// <inheritdoc />

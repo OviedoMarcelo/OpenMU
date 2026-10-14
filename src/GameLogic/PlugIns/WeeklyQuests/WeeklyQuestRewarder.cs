@@ -93,7 +93,8 @@ public static class WeeklyQuestRewarder
                     await player.AddMasterExperienceAsync(reward.Amount, null).ConfigureAwait(false);
                     break;
                 default:
-                    // Items and money are handled above.
+                    // Items and money are handled above. The points of the season pass are given by the
+                    // season pass when the quest is completed (see WeeklyQuestDefinition.GetSeasonPoints).
                     break;
             }
         }

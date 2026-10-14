@@ -7,6 +7,7 @@ namespace MUnique.OpenMU.DataModel.Composition;
 /// <summary>
 /// Marks a text property (or a list of texts) which holds the key of an object of a collection of the root object, e.g. the id of a chapter
 /// of a plugin configuration. The admin panel shows a selection of the objects of the collection instead of a text field.
+/// With <see cref="PlugIn"/>, the collection is one of the configuration of another plugin, e.g. the boss encounters.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class KeyOfAttribute : Attribute
@@ -24,6 +25,12 @@ public sealed class KeyOfAttribute : Attribute
     /// Gets the name of the collection property of the root object.
     /// </summary>
     public string Collection { get; }
+
+    /// <summary>
+    /// Gets or sets the type of the plugin whose custom configuration has the <see cref="Collection"/>.
+    /// If it's <c>null</c>, the collection is one of the root object of the edited configuration.
+    /// </summary>
+    public Type? PlugIn { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the property of the objects of the collection which holds the key.
