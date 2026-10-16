@@ -94,6 +94,9 @@ public static class GameConfigurationHelper
         },
         { typeof(MonsterDefinition), c => c.Monsters },
         { typeof(ItemStorage), c => c.Monsters.Select(m => m.MerchantStore).WhereNotNull() },
+
+        // The items of the merchant stores, so a changed item (e.g. its price) reaches the running game.
+        { typeof(Item), c => c.Monsters.Select(m => m.MerchantStore).WhereNotNull().SelectMany(s => s.Items) },
         { typeof(ItemCrafting), c => c.Monsters.SelectMany(m => m.ItemCraftings) },
         { typeof(MonsterAttribute), c => c.Monsters.SelectMany(m => m.Attributes) },
         { typeof(QuestDefinition), c => c.Monsters.SelectMany(m => m.Quests) },
