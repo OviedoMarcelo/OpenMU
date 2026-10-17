@@ -17,6 +17,11 @@ using MUnique.OpenMU.PlugIns;
 [Guid("8B2CD316-C4B0-452F-8C7D-CE696356D437")]
 public class WanderingMerchantsPlugIn : PeriodicTaskBasePlugIn<WanderingMerchantsConfiguration, WanderingMerchantsState>, ISupportDefaultCustomConfiguration
 {
+    /// <summary>
+    /// Gets <c>null</c>, because the merchants move at random times instead of the timetable.
+    /// </summary>
+    public override PeriodicTaskConfiguration? ScheduleConfiguration => null;
+
     /// <inheritdoc />
     public object CreateDefaultConfig()
     {

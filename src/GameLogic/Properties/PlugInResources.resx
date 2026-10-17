@@ -1553,4 +1553,22 @@
   <data name="BossEncounterHitPlugIn_Description" xml:space="preserve">
     <value>Sums up the damage which the players do to the bosses of the encounters, for the rewards for the participation and the ranking. It does nothing while no encounter runs.</value>
   </data>
+  <data name="EventScheduleSyncPlugIn_Name" xml:space="preserve">
+    <value>Event schedule sync</value>
+  </data>
+  <data name="EventScheduleSyncPlugIn_Description" xml:space="preserve">
+    <value>Sends the timetables of the events again to the players in the game when a timetable changes or an event is (de)activated, so that the open source client shows the right next starts. Its configuration tells in which time zone the players see the times.</value>
+  </data>
+  <data name="EventScheduleConfiguration_DisplayTimeZoneId_Name" xml:space="preserve">
+    <value>Time zone shown to the players</value>
+  </data>
+  <data name="EventScheduleConfiguration_DisplayTimeZoneId_Description" xml:space="preserve">
+    <value>The time zone in which the players see the times of the events, e.g. America/Argentina/Buenos_Aires. The timetables are still configured in the time zone of the server. Empty for the time zone of the server.</value>
+  </data>
+  <data name="EventScheduleConfiguration_DisplayTimeZoneName_Name" xml:space="preserve">
+    <value>Name of the time zone</value>
+  </data>
+  <data name="EventScheduleConfiguration_DisplayTimeZoneName_Description" xml:space="preserve">
+    <value>The name of the time zone which the players see, e.g. Argentina.</value>
+  </data>
 </root>

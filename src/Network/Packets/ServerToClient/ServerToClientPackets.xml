@@ -12252,6 +12252,83 @@
       </Fields>
     </Packet>
     <Packet>
+      <HeaderType>C2HeaderWithSubCode</HeaderType>
+      <Code>F5</Code>
+      <SubCode>0F</SubCode>
+      <Name>EventScheduleEntry</Name>
+      <Direction>ServerToClient</Direction>
+      <SentWhen>After the client requested the list of available chat commands, one message is sent for each active event which starts at fixed times of the day (e.g. Blood Castle or an invasion). When a timetable changes or an event is (de)activated, the whole list is sent again.</SentWhen>
+      <CausedReaction>The client shows the events with their next start, e.g. in a window. Clients which don't know this message ignore it.</CausedReaction>
+      <Fields>
+        <Field>
+          <Index>5</Index>
+          <Type>Byte</Type>
+          <Name>Index</Name>
+          <Description>The index of this event within the list, starting at 0.</Description>
+        </Field>
+        <Field>
+          <Index>6</Index>
+          <Type>Byte</Type>
+          <Name>Count</Name>
+          <Description>The total number of events, so that the client knows when it received all of them. An empty list is sent as one message with a count of 0, so that the client forgets the previous events.</Description>
+        </Field>
+        <Field>
+          <Index>7</Index>
+          <Type>Byte</Type>
+          <Name>StartCount</Name>
+        </Field>
+        <Field>
+          <Index>8</Index>
+          <Type>ShortLittleEndian</Type>
+          <Name>DurationMinutes</Name>
+          <Description>How long the event lasts after each start, in minutes.</Description>
+        </Field>
+        <Field>
+          <Index>10</Index>
+          <Type>IntegerLittleEndian</Type>
+          <Name>ServerSecondOfDay</Name>
+          <Description>The current time when the message was sent, as seconds since midnight in the time zone of the times, so that the client can tell the next start without depending on its own clock.</Description>
+        </Field>
+        <Field>
+          <Index>14</Index>
+          <Type>String</Type>
+          <Name>Name</Name>
+          <Length>32</Length>
+          <Description>The name of the event.</Description>
+        </Field>
+        <Field>
+          <Index>46</Index>
+          <Type>String</Type>
+          <Name>TimeZoneName</Name>
+          <Length>24</Length>
+          <Description>The name of the time zone of the times, e.g. 'Argentina'. It's empty when the times are in the time zone of the server.</Description>
+        </Field>
+        <Field>
+          <Index>70</Index>
+          <Type>Structure[]</Type>
+          <TypeName>EventStartTime</TypeName>
+          <Name>Starts</Name>
+          <ItemCountField>StartCount</ItemCountField>
+          <Description>The times of the day at which the event starts, in the time zone of the times, sorted.</Description>
+        </Field>
+      </Fields>
+      <Structures>
+        <Structure>
+          <Name>EventStartTime</Name>
+          <Description>A time of the day at which an event starts.</Description>
+          <Length>2</Length>
+          <Fields>
+            <Field>
+              <Index>0</Index>
+              <Type>ShortLittleEndian</Type>
+              <Name>MinuteOfDay</Name>
+              <Description>The minutes since midnight, in the time zone of the times.</Description>
+            </Field>
+          </Fields>
+        </Structure>
+      </Structures>
+    </Packet>
+    <Packet>
       <HeaderType>C1Header</HeaderType>
       <Code>94</Code>
       <Name>EventChipRegistrationResult</Name>

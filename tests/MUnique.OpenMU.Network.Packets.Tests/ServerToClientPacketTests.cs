@@ -6963,6 +6963,44 @@ public class PacketStructureTests
     }
 
     /// <summary>
+    /// Tests the packet size calculation for EventScheduleEntry.
+    /// </summary>
+    [Test]
+    public void EventScheduleEntry_PacketSizeValidation()
+    {
+        // Basic packet validation
+        // Validate header type and field boundaries
+        
+        // Field 'Index' starts at index 5 with size 1
+        Assert.That(5, Is.GreaterThanOrEqualTo(0), 
+            "Field 'Index' has invalid negative index");
+        
+        // Field 'Count' starts at index 6 with size 1
+        Assert.That(6, Is.GreaterThanOrEqualTo(0), 
+            "Field 'Count' has invalid negative index");
+        
+        // Field 'StartCount' starts at index 7 with size 1
+        Assert.That(7, Is.GreaterThanOrEqualTo(0), 
+            "Field 'StartCount' has invalid negative index");
+        
+        // Field 'DurationMinutes' starts at index 8 with size 2
+        Assert.That(8, Is.GreaterThanOrEqualTo(0), 
+            "Field 'DurationMinutes' has invalid negative index");
+        
+        // Field 'ServerSecondOfDay' starts at index 10 with size 4
+        Assert.That(10, Is.GreaterThanOrEqualTo(0), 
+            "Field 'ServerSecondOfDay' has invalid negative index");
+        
+        // Field 'Name' starts at index 14 with size 32
+        Assert.That(14, Is.GreaterThanOrEqualTo(0), 
+            "Field 'Name' has invalid negative index");
+        
+        // Field 'TimeZoneName' starts at index 46 with size 24
+        Assert.That(46, Is.GreaterThanOrEqualTo(0), 
+            "Field 'TimeZoneName' has invalid negative index");
+    }
+
+    /// <summary>
     /// Tests the packet size calculation for EventChipRegistrationResult.
     /// </summary>
     [Test]

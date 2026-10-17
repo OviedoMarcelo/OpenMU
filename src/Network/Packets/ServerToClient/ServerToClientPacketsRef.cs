@@ -31912,6 +31912,185 @@ public readonly ref struct QuestChapterRef
 
 
 /// <summary>
+/// Is sent by the server when: After the client requested the list of available chat commands, one message is sent for each active event which starts at fixed times of the day (e.g. Blood Castle or an invasion). When a timetable changes or an event is (de)activated, the whole list is sent again.
+/// Causes reaction on client side: The client shows the events with their next start, e.g. in a window. Clients which don't know this message ignore it.
+/// </summary>
+public readonly ref struct EventScheduleEntryRef
+{
+    private readonly Span<byte> _data;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EventScheduleEntryRef"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    public EventScheduleEntryRef(Span<byte> data)
+        : this(data, true)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EventScheduleEntryRef"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    /// <param name="initialize">If set to <c>true</c>, the header data is automatically initialized and written to the underlying span.</param>
+    private EventScheduleEntryRef(Span<byte> data, bool initialize)
+    {
+        this._data = data;
+        if (initialize)
+        {
+            var header = this.Header;
+            header.Type = HeaderType;
+            header.Code = Code;
+            header.Length = (ushort)data.Length;
+            header.SubCode = SubCode;
+        }
+    }
+
+    /// <summary>
+    /// Gets the header type of this data packet.
+    /// </summary>
+    public static byte HeaderType => 0xC2;
+
+    /// <summary>
+    /// Gets the operation code of this data packet.
+    /// </summary>
+    public static byte Code => 0xF5;
+
+    /// <summary>
+    /// Gets the operation sub-code of this data packet.
+    /// The <see cref="Code" /> is used as a grouping key.
+    /// </summary>
+    public static byte SubCode => 0x0F;
+
+    /// <summary>
+    /// Gets the header of this packet.
+    /// </summary>
+    public C2HeaderWithSubCodeRef Header => new (this._data);
+
+    /// <summary>
+    /// Gets or sets the index of this event within the list, starting at 0.
+    /// </summary>
+    public byte Index
+    {
+        get => this._data[5];
+        set => this._data[5] = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the total number of events, so that the client knows when it received all of them. An empty list is sent as one message with a count of 0, so that the client forgets the previous events.
+    /// </summary>
+    public byte Count
+    {
+        get => this._data[6];
+        set => this._data[6] = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the start count.
+    /// </summary>
+    public byte StartCount
+    {
+        get => this._data[7];
+        set => this._data[7] = value;
+    }
+
+    /// <summary>
+    /// Gets or sets how long the event lasts after each start, in minutes.
+    /// </summary>
+    public ushort DurationMinutes
+    {
+        get => ReadUInt16LittleEndian(this._data[8..]);
+        set => WriteUInt16LittleEndian(this._data[8..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the current time when the message was sent, as seconds since midnight in the time zone of the times, so that the client can tell the next start without depending on its own clock.
+    /// </summary>
+    public uint ServerSecondOfDay
+    {
+        get => ReadUInt32LittleEndian(this._data[10..]);
+        set => WriteUInt32LittleEndian(this._data[10..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the name of the event.
+    /// </summary>
+    public string Name
+    {
+        get => this._data.ExtractString(14, 32, System.Text.Encoding.UTF8);
+        set => this._data.Slice(14, 32).WriteString(value, System.Text.Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Gets or sets the name of the time zone of the times, e.g. 'Argentina'. It's empty when the times are in the time zone of the server.
+    /// </summary>
+    public string TimeZoneName
+    {
+        get => this._data.ExtractString(46, 24, System.Text.Encoding.UTF8);
+        set => this._data.Slice(46, 24).WriteString(value, System.Text.Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Gets the <see cref="EventStartTimeRef"/> of the specified index.
+    /// </summary>
+        public EventStartTimeRef this[int index] => new (this._data[(70 + index * EventStartTimeRef.Length)..]);
+
+    /// <summary>
+    /// Performs an implicit conversion from a Span of bytes to a <see cref="EventScheduleEntry"/>.
+    /// </summary>
+    /// <param name="packet">The packet as span.</param>
+    /// <returns>The packet as struct.</returns>
+    public static implicit operator EventScheduleEntryRef(Span<byte> packet) => new (packet, false);
+
+    /// <summary>
+    /// Performs an implicit conversion from <see cref="EventScheduleEntry"/> to a Span of bytes.
+    /// </summary>
+    /// <param name="packet">The packet as struct.</param>
+    /// <returns>The packet as byte span.</returns>
+    public static implicit operator Span<byte>(EventScheduleEntryRef packet) => packet._data; 
+
+    /// <summary>
+    /// Calculates the size of the packet for the specified count of <see cref="EventStartTimeRef"/>.
+    /// </summary>
+    /// <param name="startsCount">The count of <see cref="EventStartTimeRef"/> from which the size will be calculated.</param>
+        
+    public static int GetRequiredSize(int startsCount) => startsCount * EventStartTimeRef.Length + 70;
+
+
+/// <summary>
+/// A time of the day at which an event starts..
+/// </summary>
+public readonly ref struct EventStartTimeRef
+{
+    private readonly Span<byte> _data;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EventStartTimeRef"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    public EventStartTimeRef(Span<byte> data)
+    {
+        this._data = data;
+    }
+
+    /// <summary>
+    /// Gets the initial length of this data packet. When the size is dynamic, this value may be bigger than actually needed.
+    /// </summary>
+    public static int Length => 2;
+
+    /// <summary>
+    /// Gets or sets the minutes since midnight, in the time zone of the times.
+    /// </summary>
+    public ushort MinuteOfDay
+    {
+        get => ReadUInt16LittleEndian(this._data);
+        set => WriteUInt16LittleEndian(this._data, value);
+    }
+}
+}
+
+
+/// <summary>
 /// Is sent by the server when: The player receives the result of registering Rena or Event Chips at the Golden Archer NPC.
 /// Causes reaction on client side: The client updates the Golden Archer interface with total registered count and remaining count in inventory.
 /// </summary>

@@ -7349,5 +7349,11 @@ namespace MUnique.OpenMU.GameServer.Properties {
         /// <summary>Gets the localized SeasonPassViewPlugIn_Description text.</summary>
         public static string SeasonPassViewPlugIn_Description => ResourceManager.GetString("SeasonPassViewPlugIn_Description", resourceCulture)!;
 
+        /// <summary>Gets the localized EventScheduleViewPlugIn_Name text.</summary>
+        public static string EventScheduleViewPlugIn_Name => ResourceManager.GetString("EventScheduleViewPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized EventScheduleViewPlugIn_Description text.</summary>
+        public static string EventScheduleViewPlugIn_Description => ResourceManager.GetString("EventScheduleViewPlugIn_Description", resourceCulture)!;
+
     }
 }
