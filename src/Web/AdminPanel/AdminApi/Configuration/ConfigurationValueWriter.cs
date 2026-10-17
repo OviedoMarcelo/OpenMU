@@ -191,8 +191,34 @@ public class ConfigurationValueWriter
             return value.GetValue<string>();
         }
 
+        // Times are sent as texts, e.g. the timetable of an event ["00:00:00", "12:30:00"].
+        if (valueType == typeof(TimeOnly) || valueType == typeof(DateOnly) || valueType == typeof(TimeSpan))
+        {
+            return ParseTimeListValue(value, valueType);
+        }
+
         var isInteger = valueType != typeof(float) && valueType != typeof(double) && valueType != typeof(decimal);
         return ConvertNumber(ReadNumber(value), property with { Minimum = null, Maximum = null }, valueType, isInteger);
+    }
+
+    private static object ParseTimeListValue(JsonNode value, Type valueType)
+    {
+        var text = value.GetValueKind() == JsonValueKind.String ? value.GetValue<string>() : null;
+        object? result = null;
+        if (valueType == typeof(TimeOnly) && TimeOnly.TryParse(text, CultureInfo.InvariantCulture, out var time))
+        {
+            result = time;
+        }
+        else if (valueType == typeof(DateOnly) && DateOnly.TryParse(text, CultureInfo.InvariantCulture, out var date))
+        {
+            result = date;
+        }
+        else if (valueType == typeof(TimeSpan) && TimeSpan.TryParse(text, CultureInfo.InvariantCulture, out var span))
+        {
+            result = span;
+        }
+
+        return result ?? throw new InvalidValueException($"\"{text ?? value.ToJsonString()}\" no es una hora válida.");
     }
 
     private static object? ConvertScalar(JsonNode? node, PropertySchema property, object? currentValue)

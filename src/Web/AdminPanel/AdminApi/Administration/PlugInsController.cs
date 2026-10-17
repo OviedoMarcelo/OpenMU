@@ -91,6 +91,33 @@ public class PlugInsController : ControllerBase
     }
 
     /// <summary>
+    /// Gets the time zone of the server (<see cref="SystemConfiguration.TimeZoneId"/>), in which the timetables
+    /// of the events are interpreted, and its current offset to UTC.
+    /// </summary>
+    /// <returns>The time zone.</returns>
+    [HttpGet("server-time")]
+    public async Task<ServerTime> GetServerTimeAsync()
+    {
+        using var context = this._contextProvider.CreateNewTypedContext(typeof(SystemConfiguration), false);
+        var timeZoneId = (await context.GetAsync<SystemConfiguration>(this.HttpContext.RequestAborted).ConfigureAwait(false)).FirstOrDefault()?.TimeZoneId;
+        var timeZone = TimeZoneInfo.Utc;
+        if (!string.IsNullOrWhiteSpace(timeZoneId))
+        {
+            try
+            {
+                timeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            }
+            catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
+            {
+                // Like the game server, which uses UTC then.
+            }
+        }
+
+        var now = DateTime.UtcNow;
+        return new ServerTime(timeZone.Id, (int)timeZone.GetUtcOffset(now).TotalMinutes, TimeZoneInfo.ConvertTimeFromUtc(now, timeZone));
+    }
+
+    /// <summary>
     /// Gets a plugin with its custom configuration.
     /// </summary>
     /// <param name="id">The id of the plugin configuration.</param>
@@ -333,4 +360,12 @@ public class PlugInsController : ControllerBase
     /// </summary>
     /// <param name="IsActive">If set to <c>true</c>, the plugin is active.</param>
     public record ActiveRequest(bool IsActive);
+
+    /// <summary>
+    /// The time zone of the server.
+    /// </summary>
+    /// <param name="TimeZoneId">The id of the time zone, UTC if none is configured.</param>
+    /// <param name="UtcOffsetMinutes">The current offset to UTC, in minutes.</param>
+    /// <param name="Now">The current time of the server.</param>
+    public record ServerTime(string TimeZoneId, int UtcOffsetMinutes, DateTime Now);
 }
