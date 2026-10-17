@@ -9,6 +9,7 @@ using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.PlugIns;
 using MUnique.OpenMU.GameLogic.PlugIns.Achievements;
 using MUnique.OpenMU.GameLogic.PlugIns.ChatCommands;
+using MUnique.OpenMU.GameLogic.PlugIns.CosmeticSets;
 using MUnique.OpenMU.GameLogic.PlugIns.PeriodicTasks;
 using MUnique.OpenMU.GameLogic.PlugIns.SeasonPass;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
@@ -63,5 +64,11 @@ internal class ChatCommandListRequestHandlerPlugIn : ISubPacketHandlerPlugIn
 
         // ... and when the events start.
         await EventSchedule.SendAsync(player).ConfigureAwait(false);
+
+        // ... and the cosmetic sets of the character.
+        if (CosmeticSetsPlugIn.GetActivePlugIn(player) is { } cosmeticSets)
+        {
+            await cosmeticSets.SendSetsAsync(player).ConfigureAwait(false);
+        }
     }
 }

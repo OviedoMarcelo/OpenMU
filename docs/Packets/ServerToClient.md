@@ -302,6 +302,7 @@
   * [C2 F5 0B - GroundMarker (by server)](C2-F5-0B-GroundMarker_by-server.md)
   * [C2 F5 0C - SeasonPassSettings (by server)](C2-F5-0C-SeasonPassSettings_by-server.md)
   * [C2 F5 0D - QuestChapter (by server)](C2-F5-0D-QuestChapter_by-server.md)
+  * [C2 F5 0E - CosmeticSets (by server)](C2-F5-0E-CosmeticSets_by-server.md)
   * [C2 F5 0F - EventScheduleEntry (by server)](C2-F5-0F-EventScheduleEntry_by-server.md)
   * [C1 F6 03 - QuestEventResponse (by server)](C1-F6-03-QuestEventResponse_by-server.md)
   * [C1 F6 0A - AvailableQuests (by server)](C1-F6-0A-AvailableQuests_by-server.md)

@@ -85,6 +85,7 @@ public class Startup
         services.AddScoped<AdminUserManagementService>();
         services.AddScoped<CastleSiegeManagementService>();
         services.AddScoped<BossEncounterManagementService>();
+        services.AddScoped<CosmeticSetManagementService>();
         services.AddAdminPanelAuth(this.Configuration);
     }
 

@@ -32,6 +32,13 @@ public class WeeklyQuestReward
     public virtual ItemDefinition? Item { get; set; }
 
     /// <summary>
+    /// Gets or sets the number of the cosmetic set, for <see cref="WeeklyQuestRewardType.CosmeticSet"/>.
+    /// </summary>
+    [Display(Name = "Set cosmético", Description = "Solo para premios de tipo Set cosmético: el Número del set en la configuración del plugin Cosmetic sets.")]
+    [Range(0, short.MaxValue)]
+    public short CosmeticSetNumber { get; set; }
+
+    /// <summary>
     /// Gets or sets the level of the item.
     /// </summary>
     [Display(Name = "Nivel del item")]
@@ -82,6 +89,7 @@ public class WeeklyQuestReward
             WeeklyQuestRewardType.Experience => $"{this.Amount.ToString("N0", culture)} EXP",
             WeeklyQuestRewardType.MasterExperience => $"{this.Amount.ToString("N0", culture)} Master EXP",
             WeeklyQuestRewardType.SeasonPoints => $"{this.Amount.ToString("N0", culture)} puntos del pase",
+            WeeklyQuestRewardType.CosmeticSet => $"Set cosmético #{this.CosmeticSetNumber}",
             _ => this.Amount.ToString("N0", culture),
         };
     }

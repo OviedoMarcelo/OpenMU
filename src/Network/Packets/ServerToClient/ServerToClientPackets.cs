@@ -33663,6 +33663,194 @@ public readonly struct QuestChapter
 
 
 /// <summary>
+/// Is sent by the server when: After the client requested the list of available chat commands, after entering the game, and when the cosmetic sets of the character changed: a set was unlocked or removed, or the worn set changed.
+/// Causes reaction on client side: The client shows the sets in the cosmetic sets window, and shows the pieces of the worn set instead of the armor of the own character. The other players see the set through the usual appearance data.
+/// </summary>
+public readonly struct CosmeticSets
+{
+    private readonly Memory<byte> _data;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CosmeticSets"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    public CosmeticSets(Memory<byte> data)
+        : this(data, true)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CosmeticSets"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    /// <param name="initialize">If set to <c>true</c>, the header data is automatically initialized and written to the underlying span.</param>
+    private CosmeticSets(Memory<byte> data, bool initialize)
+    {
+        this._data = data;
+        if (initialize)
+        {
+            var header = this.Header;
+            header.Type = HeaderType;
+            header.Code = Code;
+            header.Length = (ushort)data.Length;
+            header.SubCode = SubCode;
+        }
+    }
+
+    /// <summary>
+    /// Gets the header type of this data packet.
+    /// </summary>
+    public static byte HeaderType => 0xC2;
+
+    /// <summary>
+    /// Gets the operation code of this data packet.
+    /// </summary>
+    public static byte Code => 0xF5;
+
+    /// <summary>
+    /// Gets the operation sub-code of this data packet.
+    /// The <see cref="Code" /> is used as a grouping key.
+    /// </summary>
+    public static byte SubCode => 0x0E;
+
+    /// <summary>
+    /// Gets the header of this packet.
+    /// </summary>
+    public C2HeaderWithSubCode Header => new (this._data);
+
+    /// <summary>
+    /// Gets or sets the set count.
+    /// </summary>
+    public byte SetCount
+    {
+        get => this._data.Span[5];
+        set => this._data.Span[5] = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the number of the set which the character wears; 0, if it wears none.
+    /// </summary>
+    public ushort ActiveSetNumber
+    {
+        get => ReadUInt16LittleEndian(this._data.Span[6..]);
+        set => WriteUInt16LittleEndian(this._data.Span[6..], value);
+    }
+
+    /// <summary>
+    /// Gets the <see cref="CosmeticSet"/> of the specified index.
+    /// </summary>
+        public CosmeticSet this[int index] => new (this._data.Slice(8 + index * CosmeticSet.Length));
+
+    /// <summary>
+    /// Performs an implicit conversion from a Memory of bytes to a <see cref="CosmeticSets"/>.
+    /// </summary>
+    /// <param name="packet">The packet as span.</param>
+    /// <returns>The packet as struct.</returns>
+    public static implicit operator CosmeticSets(Memory<byte> packet) => new (packet, false);
+
+    /// <summary>
+    /// Performs an implicit conversion from <see cref="CosmeticSets"/> to a Memory of bytes.
+    /// </summary>
+    /// <param name="packet">The packet as struct.</param>
+    /// <returns>The packet as byte span.</returns>
+    public static implicit operator Memory<byte>(CosmeticSets packet) => packet._data; 
+
+    /// <summary>
+    /// Calculates the size of the packet for the specified count of <see cref="CosmeticSet"/>.
+    /// </summary>
+    /// <param name="setsCount">The count of <see cref="CosmeticSet"/> from which the size will be calculated.</param>
+        
+    public static int GetRequiredSize(int setsCount) => setsCount * CosmeticSet.Length + 8;
+
+
+/// <summary>
+/// A cosmetic set which a character can wear over its armor..
+/// </summary>
+public readonly struct CosmeticSet
+{
+    private readonly Memory<byte> _data;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CosmeticSet"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    public CosmeticSet(Memory<byte> data)
+    {
+        this._data = data;
+    }
+
+    /// <summary>
+    /// Gets the initial length of this data packet. When the size is dynamic, this value may be bigger than actually needed.
+    /// </summary>
+    public static int Length => 40;
+
+    /// <summary>
+    /// Gets or sets the number of the set, which is used to wear it.
+    /// </summary>
+    public ushort Number
+    {
+        get => ReadUInt16LittleEndian(this._data.Span);
+        set => WriteUInt16LittleEndian(this._data.Span, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the number of the pieces in the item groups of helms (7), armors (8), pants (9), gloves (10) and boots (11).
+    /// </summary>
+    public ushort ItemNumber
+    {
+        get => ReadUInt16LittleEndian(this._data.Span[2..]);
+        set => WriteUInt16LittleEndian(this._data.Span[2..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the level which the pieces show, 0 to 15.
+    /// </summary>
+    public byte Level
+    {
+        get => this._data.Span[4];
+        set => this._data.Span[4] = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the pieces glow like excellent items.
+    /// </summary>
+    public bool IsExcellent
+    {
+        get => this._data.Span[5..].GetBoolean();
+        set => this._data.Span[5..].SetBoolean(value);
+    }
+
+    /// <summary>
+    /// Gets or sets the character unlocked the set.
+    /// </summary>
+    public bool IsUnlocked
+    {
+        get => this._data.Span[6..].GetBoolean();
+        set => this._data.Span[6..].SetBoolean(value);
+    }
+
+    /// <summary>
+    /// Gets or sets the class of the character can wear the set.
+    /// </summary>
+    public bool CanWear
+    {
+        get => this._data.Span[7..].GetBoolean();
+        set => this._data.Span[7..].SetBoolean(value);
+    }
+
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    public string Name
+    {
+        get => this._data.Span.ExtractString(8, 32, System.Text.Encoding.UTF8);
+        set => this._data.Slice(8, 32).Span.WriteString(value, System.Text.Encoding.UTF8);
+    }
+}
+}
+
+
+/// <summary>
 /// Is sent by the server when: After the client requested the list of available chat commands, one message is sent for each active event which starts at fixed times of the day (e.g. Blood Castle or an invasion). When a timetable changes or an event is (de)activated, the whole list is sent again.
 /// Causes reaction on client side: The client shows the events with their next start, e.g. in a window. Clients which don't know this message ignore it.
 /// </summary>

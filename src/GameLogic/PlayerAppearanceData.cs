@@ -4,6 +4,8 @@
 
 namespace MUnique.OpenMU.GameLogic;
 
+using MUnique.OpenMU.GameLogic.PlugIns.CosmeticSets;
+
 /// <summary>
 /// The appearance data of a <see cref="Player"/>, which is based on the
 /// currently selected character and its equipped items.
@@ -35,19 +37,36 @@ internal sealed class PlayerAppearanceData : IAppearanceData
     public CharacterPose Pose => this._player.SelectedCharacter?.Pose ?? default;
 
     /// <inheritdoc />
-    public bool FullAncientSetEquipped => (this._fullAncientSetEquipped ??= this._player.SelectedCharacter?.HasFullAncientSetEquipped()) ?? false;
+    public bool FullAncientSetEquipped => !PlayerCosmetics.IsWearingSet(this._player)
+                                          && ((this._fullAncientSetEquipped ??= this._player.SelectedCharacter?.HasFullAncientSetEquipped()) ?? false);
 
     /// <inheritdoc />
     public IEnumerable<ItemAppearance> EquippedItems
     {
         get
         {
-            if (this._player.Inventory != null)
+            if (this._player.Inventory is null)
             {
-                return this._player.Inventory.EquippedItems.Select(item => item.GetAppearance());
+                return Enumerable.Empty<ItemAppearance>();
             }
 
-            return Enumerable.Empty<ItemAppearance>();
+            var items = this._player.Inventory.EquippedItems.Select(item => item.GetAppearance());
+            if (!PlayerCosmetics.IsWearingSet(this._player))
+            {
+                return items;
+            }
+
+            // The pieces of the cosmetic set are shown instead of the real items, and also in empty slots.
+            var result = items.Where(item => PlayerCosmetics.GetPiece(this._player, item.ItemSlot) is null).ToList();
+            for (var slot = InventoryConstants.HelmSlot; slot <= InventoryConstants.BootsSlot; slot++)
+            {
+                if (PlayerCosmetics.GetPiece(this._player, slot) is { } piece)
+                {
+                    result.Add(piece);
+                }
+            }
+
+            return result;
         }
     }
 

@@ -308,6 +308,88 @@ public sealed class ProgressionRepository : IProgressionRepository, IDisposable
             cancellationToken).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
+    public async ValueTask<IList<UnlockedCosmeticSet>> LoadUnlockedCosmeticSetsAsync(Guid characterId, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        return await context.UnlockedCosmeticSets
+            .AsNoTracking()
+            .Where(s => s.CharacterId == characterId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<bool> AddUnlockedCosmeticSetAsync(UnlockedCosmeticSet set, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+
+        // A game master and a reward may unlock the same set at the same time, so the database decides.
+        var added = await context.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO progression."UnlockedCosmeticSet" ("CharacterId", "SetNumber", "UnlockedAt", "Source")
+            VALUES ({set.CharacterId}, {set.SetNumber}, {set.UnlockedAt}, {set.Source})
+            ON CONFLICT DO NOTHING
+            """,
+            cancellationToken).ConfigureAwait(false);
+        return added > 0;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<bool> RemoveUnlockedCosmeticSetAsync(Guid characterId, short setNumber, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        var removed = await context.UnlockedCosmeticSets
+            .Where(s => s.CharacterId == characterId && s.SetNumber == setNumber)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return removed > 0;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<short?> LoadActiveCosmeticSetAsync(Guid characterId, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        return await context.ActiveCosmeticSets
+            .AsNoTracking()
+            .Where(s => s.CharacterId == characterId)
+            .Select(s => (short?)s.SetNumber)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask SetActiveCosmeticSetAsync(Guid characterId, short? setNumber, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        if (setNumber is not { } number)
+        {
+            await context.ActiveCosmeticSets
+                .Where(s => s.CharacterId == characterId)
+                .ExecuteDeleteAsync(cancellationToken)
+                .ConfigureAwait(false);
+            return;
+        }
+
+        await context.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO progression."ActiveCosmeticSet" ("CharacterId", "SetNumber")
+            VALUES ({characterId}, {number})
+            ON CONFLICT ("CharacterId") DO UPDATE SET "SetNumber" = EXCLUDED."SetNumber"
+            """,
+            cancellationToken).ConfigureAwait(false);
+    }
+
     private async ValueTask EnsureAvailableStorageAsync(CancellationToken cancellationToken)
     {
         if (this._isStorageReady)

@@ -867,4 +867,58 @@
   <data name="ImperialGuardianLevelTooLow" xml:space="preserve">
     <value>You need at least level {0} to enter the Fortress of Imperial Guardian.</value>
   </data>
+  <data name="CosmeticSetsNotAvailable" xml:space="preserve">
+    <value>The cosmetic sets are not available.</value>
+  </data>
+  <data name="CosmeticSetUsage" xml:space="preserve">
+    <value>Use /cosmetico &lt;number&gt; or /cosmetico off. /cosmeticos lists your sets.</value>
+  </data>
+  <data name="CosmeticSetChanged" xml:space="preserve">
+    <value>You now wear the cosmetic set {0}.</value>
+  </data>
+  <data name="CosmeticSetRemoved" xml:space="preserve">
+    <value>You don't wear a cosmetic set anymore.</value>
+  </data>
+  <data name="CosmeticSetNotUnlocked" xml:space="preserve">
+    <value>You haven't unlocked the cosmetic set {0} yet.</value>
+  </data>
+  <data name="CosmeticSetUnknown" xml:space="preserve">
+    <value>There is no cosmetic set {0}. /cosmeticos lists your sets.</value>
+  </data>
+  <data name="CosmeticSetNotQualified" xml:space="preserve">
+    <value>Your class can't wear the cosmetic set {0}.</value>
+  </data>
+  <data name="CosmeticSetChangeFailed" xml:space="preserve">
+    <value>The cosmetic set couldn't be changed. Try again later.</value>
+  </data>
+  <data name="CosmeticSetListHeader" xml:space="preserve">
+    <value>Your cosmetic sets:</value>
+  </data>
+  <data name="CosmeticSetListEntry" xml:space="preserve">
+    <value>{0} - {1}</value>
+  </data>
+  <data name="CosmeticSetListEntryWorn" xml:space="preserve">
+    <value>{0} - {1} (worn)</value>
+  </data>
+  <data name="CosmeticSetListEmpty" xml:space="preserve">
+    <value>You haven't unlocked any cosmetic set yet.</value>
+  </data>
+  <data name="GiveCosmeticSetUsage" xml:space="preserve">
+    <value>Use /darcosmetico &lt;character&gt; &lt;number&gt;.</value>
+  </data>
+  <data name="CosmeticSetGiven" xml:space="preserve">
+    <value>{0} unlocked the cosmetic set {1}.</value>
+  </data>
+  <data name="CosmeticSetGiveFailed" xml:space="preserve">
+    <value>The cosmetic set {0} couldn't be given. Check that it exists in the configuration of the cosmetic sets plugin.</value>
+  </data>
+  <data name="RevokeCosmeticSetUsage" xml:space="preserve">
+    <value>Use /quitarcosmetico &lt;character&gt; &lt;number&gt;.</value>
+  </data>
+  <data name="CosmeticSetRevoked" xml:space="preserve">
+    <value>{0} lost the cosmetic set {1}.</value>
+  </data>
+  <data name="CosmeticSetRevokeFailed" xml:space="preserve">
+    <value>{0} doesn't have the cosmetic set {1}.</value>
+  </data>
 </root>

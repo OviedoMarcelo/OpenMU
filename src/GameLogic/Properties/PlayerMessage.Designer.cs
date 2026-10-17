@@ -2309,5 +2309,167 @@ namespace MUnique.OpenMU.GameLogic.Properties {
                 return ResourceManager.GetString("CharacterNotStrongEnoughMessage", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The cosmetic sets are not available..
+        /// </summary>
+        public static string CosmeticSetsNotAvailable {
+            get {
+                return ResourceManager.GetString("CosmeticSetsNotAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use /cosmetico &lt;number&gt; or /cosmetico off. /cosmeticos lists your sets..
+        /// </summary>
+        public static string CosmeticSetUsage {
+            get {
+                return ResourceManager.GetString("CosmeticSetUsage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You now wear the cosmetic set {0}..
+        /// </summary>
+        public static string CosmeticSetChanged {
+            get {
+                return ResourceManager.GetString("CosmeticSetChanged", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You don't wear a cosmetic set anymore..
+        /// </summary>
+        public static string CosmeticSetRemoved {
+            get {
+                return ResourceManager.GetString("CosmeticSetRemoved", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You haven't unlocked the cosmetic set {0} yet..
+        /// </summary>
+        public static string CosmeticSetNotUnlocked {
+            get {
+                return ResourceManager.GetString("CosmeticSetNotUnlocked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to There is no cosmetic set {0}. /cosmeticos lists your sets..
+        /// </summary>
+        public static string CosmeticSetUnknown {
+            get {
+                return ResourceManager.GetString("CosmeticSetUnknown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Your class can't wear the cosmetic set {0}..
+        /// </summary>
+        public static string CosmeticSetNotQualified {
+            get {
+                return ResourceManager.GetString("CosmeticSetNotQualified", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The cosmetic set couldn't be changed. Try again later..
+        /// </summary>
+        public static string CosmeticSetChangeFailed {
+            get {
+                return ResourceManager.GetString("CosmeticSetChangeFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Your cosmetic sets:.
+        /// </summary>
+        public static string CosmeticSetListHeader {
+            get {
+                return ResourceManager.GetString("CosmeticSetListHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} - {1}.
+        /// </summary>
+        public static string CosmeticSetListEntry {
+            get {
+                return ResourceManager.GetString("CosmeticSetListEntry", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} - {1} (worn).
+        /// </summary>
+        public static string CosmeticSetListEntryWorn {
+            get {
+                return ResourceManager.GetString("CosmeticSetListEntryWorn", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You haven't unlocked any cosmetic set yet..
+        /// </summary>
+        public static string CosmeticSetListEmpty {
+            get {
+                return ResourceManager.GetString("CosmeticSetListEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use /darcosmetico &lt;character&gt; &lt;number&gt;..
+        /// </summary>
+        public static string GiveCosmeticSetUsage {
+            get {
+                return ResourceManager.GetString("GiveCosmeticSetUsage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} unlocked the cosmetic set {1}..
+        /// </summary>
+        public static string CosmeticSetGiven {
+            get {
+                return ResourceManager.GetString("CosmeticSetGiven", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The cosmetic set {0} couldn't be given. Check that it exists in the configuration of the cosmetic sets plugin..
+        /// </summary>
+        public static string CosmeticSetGiveFailed {
+            get {
+                return ResourceManager.GetString("CosmeticSetGiveFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use /quitarcosmetico &lt;character&gt; &lt;number&gt;..
+        /// </summary>
+        public static string RevokeCosmeticSetUsage {
+            get {
+                return ResourceManager.GetString("RevokeCosmeticSetUsage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} lost the cosmetic set {1}..
+        /// </summary>
+        public static string CosmeticSetRevoked {
+            get {
+                return ResourceManager.GetString("CosmeticSetRevoked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} doesn't have the cosmetic set {1}..
+        /// </summary>
+        public static string CosmeticSetRevokeFailed {
+            get {
+                return ResourceManager.GetString("CosmeticSetRevokeFailed", resourceCulture);
+            }
+        }
     }
 }

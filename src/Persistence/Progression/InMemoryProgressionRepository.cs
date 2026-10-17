@@ -20,6 +20,51 @@ public class InMemoryProgressionRepository : IProgressionRepository
     private readonly ConcurrentDictionary<(Guid AccountId, string SeasonId, int Level, bool IsPremium), SeasonClaim> _seasonClaims = new();
     private readonly ConcurrentDictionary<(Guid AccountId, string SeasonId), SeasonPremium> _seasonPremiums = new();
     private readonly ConcurrentDictionary<Guid, PrestigeProgress> _prestige = new();
+    private readonly ConcurrentDictionary<(Guid CharacterId, short SetNumber), UnlockedCosmeticSet> _cosmeticSets = new();
+    private readonly ConcurrentDictionary<Guid, short> _activeCosmeticSets = new();
+
+    /// <inheritdoc />
+    public ValueTask<IList<UnlockedCosmeticSet>> LoadUnlockedCosmeticSetsAsync(Guid characterId, CancellationToken cancellationToken = default)
+    {
+        IList<UnlockedCosmeticSet> result = this._cosmeticSets.Values
+            .Where(s => s.CharacterId == characterId)
+            .Select(Clone)
+            .ToList();
+        return ValueTask.FromResult(result);
+    }
+
+    /// <inheritdoc />
+    public ValueTask<bool> AddUnlockedCosmeticSetAsync(UnlockedCosmeticSet set, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(this._cosmeticSets.TryAdd((set.CharacterId, set.SetNumber), Clone(set)));
+    }
+
+    /// <inheritdoc />
+    public ValueTask<bool> RemoveUnlockedCosmeticSetAsync(Guid characterId, short setNumber, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(this._cosmeticSets.TryRemove((characterId, setNumber), out _));
+    }
+
+    /// <inheritdoc />
+    public ValueTask<short?> LoadActiveCosmeticSetAsync(Guid characterId, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(this._activeCosmeticSets.TryGetValue(characterId, out var setNumber) ? setNumber : (short?)null);
+    }
+
+    /// <inheritdoc />
+    public ValueTask SetActiveCosmeticSetAsync(Guid characterId, short? setNumber, CancellationToken cancellationToken = default)
+    {
+        if (setNumber is { } number)
+        {
+            this._activeCosmeticSets[characterId] = number;
+        }
+        else
+        {
+            this._activeCosmeticSets.TryRemove(characterId, out _);
+        }
+
+        return ValueTask.CompletedTask;
+    }
 
     /// <inheritdoc />
     public ValueTask<IList<PrestigeProgress>> LoadPrestigeAsync(IReadOnlyCollection<Guid> characterIds, CancellationToken cancellationToken = default)
@@ -171,6 +216,14 @@ public class InMemoryProgressionRepository : IProgressionRepository
         Level = prestige.Level,
         Points = prestige.Points,
         LastPrestigeAt = prestige.LastPrestigeAt,
+    };
+
+    private static UnlockedCosmeticSet Clone(UnlockedCosmeticSet set) => new()
+    {
+        CharacterId = set.CharacterId,
+        SetNumber = set.SetNumber,
+        UnlockedAt = set.UnlockedAt,
+        Source = set.Source,
     };
 
     private static SeasonClaim Clone(SeasonClaim claim) => new()

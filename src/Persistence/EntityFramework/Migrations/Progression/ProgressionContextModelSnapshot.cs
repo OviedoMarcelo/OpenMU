@@ -51,6 +51,20 @@ namespace MUnique.OpenMU.Persistence.EntityFramework.Migrations.Progression
                     b.ToTable("AchievementProgress", "progression");
                 });
 
+            modelBuilder.Entity("MUnique.OpenMU.Persistence.Progression.ActiveCosmeticSet", b =>
+                {
+                    b.Property<Guid>("CharacterId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<short>("SetNumber")
+                        .HasColumnType("smallint");
+
+                    b.HasKey("CharacterId");
+
+                    b.ToTable("ActiveCosmeticSet", "progression");
+                });
+
             modelBuilder.Entity("MUnique.OpenMU.Persistence.Progression.ActiveTitle", b =>
                 {
                     b.Property<Guid>("CharacterId")
@@ -157,6 +171,26 @@ namespace MUnique.OpenMU.Persistence.EntityFramework.Migrations.Progression
                     b.HasKey("AccountId", "SeasonId");
 
                     b.ToTable("SeasonProgress", "progression");
+                });
+
+            modelBuilder.Entity("MUnique.OpenMU.Persistence.Progression.UnlockedCosmeticSet", b =>
+                {
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<short>("SetNumber")
+                        .HasColumnType("smallint");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("UnlockedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("CharacterId", "SetNumber");
+
+                    b.ToTable("UnlockedCosmeticSet", "progression");
                 });
 
             modelBuilder.Entity("MUnique.OpenMU.Persistence.Progression.UnlockedTitle", b =>

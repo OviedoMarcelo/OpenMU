@@ -79,4 +79,58 @@
   <data name="LearnSkillRequirementsNotMet" xml:space="preserve">
     <value>Todavía no cumples los requisitos para aprender esta habilidad.</value>
   </data>
+  <data name="CosmeticSetsNotAvailable" xml:space="preserve">
+    <value>Los sets cosméticos no están disponibles.</value>
+  </data>
+  <data name="CosmeticSetUsage" xml:space="preserve">
+    <value>Usa /cosmetico &lt;número&gt; o /cosmetico off. Con /cosmeticos ves tus sets.</value>
+  </data>
+  <data name="CosmeticSetChanged" xml:space="preserve">
+    <value>Ahora usas el set cosmético {0}.</value>
+  </data>
+  <data name="CosmeticSetRemoved" xml:space="preserve">
+    <value>Ya no usas ningún set cosmético.</value>
+  </data>
+  <data name="CosmeticSetNotUnlocked" xml:space="preserve">
+    <value>Todavía no desbloqueaste el set cosmético {0}.</value>
+  </data>
+  <data name="CosmeticSetUnknown" xml:space="preserve">
+    <value>No existe el set cosmético {0}. Con /cosmeticos ves tus sets.</value>
+  </data>
+  <data name="CosmeticSetNotQualified" xml:space="preserve">
+    <value>Tu clase no puede usar el set cosmético {0}.</value>
+  </data>
+  <data name="CosmeticSetChangeFailed" xml:space="preserve">
+    <value>No se pudo cambiar el set cosmético. Intenta de nuevo en un rato.</value>
+  </data>
+  <data name="CosmeticSetListHeader" xml:space="preserve">
+    <value>Tus sets cosméticos:</value>
+  </data>
+  <data name="CosmeticSetListEntry" xml:space="preserve">
+    <value>{0} - {1}</value>
+  </data>
+  <data name="CosmeticSetListEntryWorn" xml:space="preserve">
+    <value>{0} - {1} (en uso)</value>
+  </data>
+  <data name="CosmeticSetListEmpty" xml:space="preserve">
+    <value>Todavía no desbloqueaste ningún set cosmético.</value>
+  </data>
+  <data name="GiveCosmeticSetUsage" xml:space="preserve">
+    <value>Usa /darcosmetico &lt;personaje&gt; &lt;número&gt;.</value>
+  </data>
+  <data name="CosmeticSetGiven" xml:space="preserve">
+    <value>{0} desbloqueó el set cosmético {1}.</value>
+  </data>
+  <data name="CosmeticSetGiveFailed" xml:space="preserve">
+    <value>No se pudo dar el set cosmético {0}. Revisa que exista en la configuración del plugin de sets cosméticos.</value>
+  </data>
+  <data name="RevokeCosmeticSetUsage" xml:space="preserve">
+    <value>Usa /quitarcosmetico &lt;personaje&gt; &lt;número&gt;.</value>
+  </data>
+  <data name="CosmeticSetRevoked" xml:space="preserve">
+    <value>{0} perdió el set cosmético {1}.</value>
+  </data>
+  <data name="CosmeticSetRevokeFailed" xml:space="preserve">
+    <value>{0} no tiene el set cosmético {1}.</value>
+  </data>
 </root>
