@@ -8,6 +8,7 @@ using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging.Abstractions;
 using MUnique.OpenMU.GameLogic.PlugIns.Achievements;
 using MUnique.OpenMU.GameLogic.PlugIns.BossEncounters;
+using MUnique.OpenMU.GameLogic.PlugIns.PeriodicTasks;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 using MUnique.OpenMU.Persistence.InMemory;
 using MUnique.OpenMU.Web.AdminPanel.AdminApi.Configuration;
@@ -112,5 +113,40 @@ public class PlugInConfigurationTests
         var serializer = new ConfigurationValueSerializer(this._registry, NullLogger<ConfigurationValueSerializer>.Instance);
         var values = serializer.SerializeObject(configuration, typeof(AchievementsConfiguration))["values"]!.AsObject();
         Assert.That(values["Titles"]!.AsArray(), Has.Count.EqualTo(3));
+    }
+
+    /// <summary>
+    /// Tests that the timetable of an event, a list of times, is read as texts and written back the same way.
+    /// </summary>
+    [Test]
+    public async Task TimetablesAreTextsAsync()
+    {
+        var schema = this._registry.GetSchema(typeof(BloodCastleStartConfiguration));
+        var timetable = schema.Properties.Single(p => p.Name == nameof(BloodCastleStartConfiguration.Timetable));
+        Assert.That(timetable.Kind, Is.EqualTo(PropertyKind.ValueList));
+        Assert.That(timetable.ValueType, Is.EqualTo(nameof(TimeOnly)));
+
+        var configuration = BloodCastleStartConfiguration.Default;
+        var writer = new ConfigurationValueWriter(this._registry);
+        using var context = new InMemoryPersistenceContextProvider().CreateNewContext();
+        await writer.ApplyAsync(
+            configuration,
+            typeof(BloodCastleStartConfiguration),
+            new JsonObject { ["Timetable"] = new JsonArray("08:30:00", "21:00") },
+            context,
+            plainObjects: true).ConfigureAwait(false);
+
+        Assert.That(configuration.Timetable, Is.EqualTo(new[] { new TimeOnly(8, 30), new TimeOnly(21, 0) }));
+
+        var serializer = new ConfigurationValueSerializer(this._registry, NullLogger<ConfigurationValueSerializer>.Instance);
+        var values = serializer.SerializeObject(configuration, typeof(BloodCastleStartConfiguration))["values"]!.AsObject();
+        Assert.That(values["Timetable"]!.AsArray().Select(v => v!.GetValue<string>()), Is.EqualTo(new[] { "08:30:00", "21:00:00" }));
+
+        Assert.ThrowsAsync<ConfigurationValidationException>(() => writer.ApplyAsync(
+            configuration,
+            typeof(BloodCastleStartConfiguration),
+            new JsonObject { ["Timetable"] = new JsonArray("25:00") },
+            context,
+            plainObjects: true));
     }
 }
