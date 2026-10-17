@@ -4201,5 +4201,23 @@ namespace MUnique.OpenMU.GameLogic.Properties {
         /// <summary>Gets the localized BossEncounterHitPlugIn_Description text.</summary>
         public static string BossEncounterHitPlugIn_Description => ResourceManager.GetString("BossEncounterHitPlugIn_Description", resourceCulture)!;
 
+        /// <summary>Gets the localized EventScheduleSyncPlugIn_Name text.</summary>
+        public static string EventScheduleSyncPlugIn_Name => ResourceManager.GetString("EventScheduleSyncPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized EventScheduleSyncPlugIn_Description text.</summary>
+        public static string EventScheduleSyncPlugIn_Description => ResourceManager.GetString("EventScheduleSyncPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized EventScheduleConfiguration_DisplayTimeZoneId_Name text.</summary>
+        public static string EventScheduleConfiguration_DisplayTimeZoneId_Name => ResourceManager.GetString("EventScheduleConfiguration_DisplayTimeZoneId_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized EventScheduleConfiguration_DisplayTimeZoneId_Description text.</summary>
+        public static string EventScheduleConfiguration_DisplayTimeZoneId_Description => ResourceManager.GetString("EventScheduleConfiguration_DisplayTimeZoneId_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized EventScheduleConfiguration_DisplayTimeZoneName_Name text.</summary>
+        public static string EventScheduleConfiguration_DisplayTimeZoneName_Name => ResourceManager.GetString("EventScheduleConfiguration_DisplayTimeZoneName_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized EventScheduleConfiguration_DisplayTimeZoneName_Description text.</summary>
+        public static string EventScheduleConfiguration_DisplayTimeZoneName_Description => ResourceManager.GetString("EventScheduleConfiguration_DisplayTimeZoneName_Description", resourceCulture)!;
+
     }
 }

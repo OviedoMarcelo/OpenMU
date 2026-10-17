@@ -9,6 +9,7 @@ using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.PlugIns;
 using MUnique.OpenMU.GameLogic.PlugIns.Achievements;
 using MUnique.OpenMU.GameLogic.PlugIns.ChatCommands;
+using MUnique.OpenMU.GameLogic.PlugIns.PeriodicTasks;
 using MUnique.OpenMU.GameLogic.PlugIns.SeasonPass;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 using MUnique.OpenMU.GameLogic.Views;
@@ -59,5 +60,8 @@ internal class ChatCommandListRequestHandlerPlugIn : ISubPacketHandlerPlugIn
         {
             await seasonPass.SendAsync(player).ConfigureAwait(false);
         }
+
+        // ... and when the events start.
+        await EventSchedule.SendAsync(player).ConfigureAwait(false);
     }
 }
