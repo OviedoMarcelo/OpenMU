@@ -53,6 +53,16 @@ public class ProgressionContext : DbContext
     /// </summary>
     public DbSet<PrestigeProgress> Prestige { get; set; } = null!;
 
+    /// <summary>
+    /// Gets or sets the unlocked cosmetic pieces.
+    /// </summary>
+    public DbSet<UnlockedCosmeticPiece> UnlockedCosmeticPieces { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the cosmetic pieces which the characters wear.
+    /// </summary>
+    public DbSet<WornCosmeticPiece> WornCosmeticPieces { get; set; } = null!;
+
     /// <inheritdoc />
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -113,6 +123,17 @@ public class ProgressionContext : DbContext
             entity.ToTable(nameof(PrestigeProgress), SchemaNames.Progression);
             entity.HasKey(p => p.CharacterId);
             entity.HasIndex(p => p.Level);
+        });
+        modelBuilder.Entity<UnlockedCosmeticPiece>(entity =>
+        {
+            entity.ToTable(nameof(UnlockedCosmeticPiece), SchemaNames.Progression);
+            entity.HasKey(p => new { p.CharacterId, p.PieceNumber });
+            entity.Property(p => p.Source).HasMaxLength(64);
+        });
+        modelBuilder.Entity<WornCosmeticPiece>(entity =>
+        {
+            entity.ToTable(nameof(WornCosmeticPiece), SchemaNames.Progression);
+            entity.HasKey(p => new { p.CharacterId, p.ItemSlot });
         });
     }
 }

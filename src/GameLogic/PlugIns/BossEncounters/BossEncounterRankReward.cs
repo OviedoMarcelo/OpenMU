@@ -42,6 +42,13 @@ public class BossEncounterRankReward : BossEncounterDrop
     public int Money { get; set; }
 
     /// <summary>
+    /// Gets or sets the number of the cosmetic piece which each of the players unlocks; 0 for none.
+    /// </summary>
+    [Display(Name = "Pieza cosmética", Description = "Número de la pieza del plugin Cosmetics que desbloquea cada jugador. 0 = ninguna.", Order = 10)]
+    [Range(0, short.MaxValue)]
+    public short CosmeticPieceNumber { get; set; }
+
+    /// <summary>
     /// Gets a value indicating whether the place gets this reward.
     /// </summary>
     /// <param name="rank">The place in the ranking, starting with 1.</param>

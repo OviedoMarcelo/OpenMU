@@ -2573,4 +2573,10 @@
   <data name="EventScheduleViewPlugIn_Description" xml:space="preserve">
     <value>Sends the timetables of the events, which the open source client shows in a window (key H).</value>
   </data>
+  <data name="ShowCosmeticsPlugIn_Name" xml:space="preserve">
+    <value>Cosmetics view</value>
+  </data>
+  <data name="ShowCosmeticsPlugIn_Description" xml:space="preserve">
+    <value>Sends the cosmetic pieces of the character, which the open source client shows in its window and wears over the armor.</value>
+  </data>
 </root>

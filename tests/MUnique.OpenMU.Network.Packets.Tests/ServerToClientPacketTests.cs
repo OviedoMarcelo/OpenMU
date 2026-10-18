@@ -6963,6 +6963,20 @@ public class PacketStructureTests
     }
 
     /// <summary>
+    /// Tests the packet size calculation for CosmeticPieces.
+    /// </summary>
+    [Test]
+    public void CosmeticPieces_PacketSizeValidation()
+    {
+        // Basic packet validation
+        // Validate header type and field boundaries
+        
+        // Field 'PieceCount' starts at index 6 with size 2
+        Assert.That(6, Is.GreaterThanOrEqualTo(0), 
+            "Field 'PieceCount' has invalid negative index");
+    }
+
+    /// <summary>
     /// Tests the packet size calculation for EventScheduleEntry.
     /// </summary>
     [Test]

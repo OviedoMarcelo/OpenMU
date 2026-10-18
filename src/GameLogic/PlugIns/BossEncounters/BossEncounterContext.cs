@@ -10,6 +10,7 @@ using System.Threading;
 using MUnique.OpenMU.AttributeSystem;
 using MUnique.OpenMU.GameLogic.Attributes;
 using MUnique.OpenMU.GameLogic.NPC;
+using MUnique.OpenMU.GameLogic.PlugIns.Cosmetics;
 using MUnique.OpenMU.GameLogic.Views;
 using MUnique.OpenMU.GameLogic.Views.World;
 using MUnique.OpenMU.Interfaces;
@@ -1005,6 +1006,7 @@ public sealed class BossEncounterContext
                     var items = BossEncounterDropGenerator.GenerateItems(this._gameContext, rewards).ToList();
                     var money = (int)Math.Min(int.MaxValue, rewards.Sum(reward => (long)reward.Money));
                     await BossEncounterRewarder.GiveAsync(player, items, money).ConfigureAwait(false);
+                    await this.GiveCosmeticPiecesAsync(player, rewards).ConfigureAwait(false);
                     rewardedPlayers.Add(player);
                     await this.ShowMessageAsync(player, this._definition.RankRewardMessage, this.Name, rank, rankingName).ConfigureAwait(false);
                 }
@@ -1013,6 +1015,26 @@ public sealed class BossEncounterContext
                     this._logger.LogError(ex, "Couldn't give the reward of the place {Rank} of the boss encounter {Name} to {Player}.", rank, this.Name, player);
                 }
             }
+        }
+    }
+
+    private async ValueTask GiveCosmeticPiecesAsync(Player player, IEnumerable<BossEncounterRankReward> rewards)
+    {
+        var pieceNumbers = rewards.Select(reward => reward.CosmeticPieceNumber).Where(number => number > 0).Distinct().ToList();
+        if (pieceNumbers.Count == 0)
+        {
+            return;
+        }
+
+        if (CosmeticsPlugIn.GetActivePlugIn(this._gameContext) is not { } plugIn)
+        {
+            this._logger.LogWarning("The boss encounter {Name} has cosmetic pieces as rewards, but the cosmetics plugin isn't active.", this.Name);
+            return;
+        }
+
+        foreach (var pieceNumber in pieceNumbers)
+        {
+            await plugIn.GrantAsync(player, pieceNumber, $"boss:{this.Name}").ConfigureAwait(false);
         }
     }
 

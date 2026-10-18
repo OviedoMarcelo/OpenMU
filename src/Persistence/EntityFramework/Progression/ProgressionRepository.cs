@@ -308,6 +308,91 @@ public sealed class ProgressionRepository : IProgressionRepository, IDisposable
             cancellationToken).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
+    public async ValueTask<IList<UnlockedCosmeticPiece>> LoadUnlockedCosmeticPiecesAsync(Guid characterId, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        return await context.UnlockedCosmeticPieces
+            .AsNoTracking()
+            .Where(p => p.CharacterId == characterId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<bool> AddUnlockedCosmeticPieceAsync(UnlockedCosmeticPiece piece, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+
+        // A game master and a reward may unlock the same piece at the same time, so the database decides.
+        var added = await context.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO progression."UnlockedCosmeticPiece" ("CharacterId", "PieceNumber", "UnlockedAt", "Source")
+            VALUES ({piece.CharacterId}, {piece.PieceNumber}, {piece.UnlockedAt}, {piece.Source})
+            ON CONFLICT DO NOTHING
+            """,
+            cancellationToken).ConfigureAwait(false);
+        return added > 0;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<bool> RemoveUnlockedCosmeticPieceAsync(Guid characterId, short pieceNumber, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        await context.WornCosmeticPieces
+            .Where(p => p.CharacterId == characterId && p.PieceNumber == pieceNumber)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var removed = await context.UnlockedCosmeticPieces
+            .Where(p => p.CharacterId == characterId && p.PieceNumber == pieceNumber)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return removed > 0;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<IList<WornCosmeticPiece>> LoadWornCosmeticPiecesAsync(Guid characterId, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        return await context.WornCosmeticPieces
+            .AsNoTracking()
+            .Where(p => p.CharacterId == characterId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask SetWornCosmeticPieceAsync(Guid characterId, byte itemSlot, short? pieceNumber, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        if (pieceNumber is not { } number)
+        {
+            await context.WornCosmeticPieces
+                .Where(p => p.CharacterId == characterId && p.ItemSlot == itemSlot)
+                .ExecuteDeleteAsync(cancellationToken)
+                .ConfigureAwait(false);
+            return;
+        }
+
+        await context.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO progression."WornCosmeticPiece" ("CharacterId", "ItemSlot", "PieceNumber")
+            VALUES ({characterId}, {itemSlot}, {number})
+            ON CONFLICT ("CharacterId", "ItemSlot") DO UPDATE SET "PieceNumber" = EXCLUDED."PieceNumber"
+            """,
+            cancellationToken).ConfigureAwait(false);
+    }
+
     private async ValueTask EnsureAvailableStorageAsync(CancellationToken cancellationToken)
     {
         if (this._isStorageReady)

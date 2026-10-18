@@ -12254,6 +12254,93 @@
     <Packet>
       <HeaderType>C2HeaderWithSubCode</HeaderType>
       <Code>F5</Code>
+      <SubCode>0E</SubCode>
+      <Name>CosmeticPieces</Name>
+      <Direction>ServerToClient</Direction>
+      <SentWhen>After the client requested the list of available chat commands, after entering the game, and when the cosmetic pieces of the character changed: a piece was unlocked or removed, or put on or taken off.</SentWhen>
+      <CausedReaction>The client shows the pieces in the cosmetics window, and shows the worn pieces instead of the armor of the own character. The other players see them through the usual appearance data.</CausedReaction>
+      <Fields>
+        <Field>
+          <Index>6</Index>
+          <Type>ShortLittleEndian</Type>
+          <Name>PieceCount</Name>
+        </Field>
+        <Field>
+          <Index>8</Index>
+          <Type>Structure[]</Type>
+          <TypeName>CosmeticPiece</TypeName>
+          <Name>Pieces</Name>
+          <ItemCountField>PieceCount</ItemCountField>
+          <Description>The configured pieces, ordered by slot and number.</Description>
+        </Field>
+      </Fields>
+      <Structures>
+        <Structure>
+          <Name>CosmeticPiece</Name>
+          <Description>A cosmetic piece which a character can wear over the item of an armor slot.</Description>
+          <Length>42</Length>
+          <Fields>
+            <Field>
+              <Index>0</Index>
+              <Type>ShortLittleEndian</Type>
+              <Name>Number</Name>
+              <Description>The number of the piece, which is used to wear it.</Description>
+            </Field>
+            <Field>
+              <Index>2</Index>
+              <Type>ShortLittleEndian</Type>
+              <Name>ItemNumber</Name>
+              <Description>The number of the item in its group.</Description>
+            </Field>
+            <Field>
+              <Index>4</Index>
+              <Type>Byte</Type>
+              <Name>ItemGroup</Name>
+              <Description>The group of the item, which tells the slot: helms (7), armors (8), pants (9), gloves (10) or boots (11).</Description>
+            </Field>
+            <Field>
+              <Index>5</Index>
+              <Type>Byte</Type>
+              <Name>Level</Name>
+              <Description>The level which the piece shows, 0 to 15.</Description>
+            </Field>
+            <Field>
+              <Index>6</Index>
+              <Type>Boolean</Type>
+              <Name>IsExcellent</Name>
+              <Description>The piece glows like an excellent item.</Description>
+            </Field>
+            <Field>
+              <Index>7</Index>
+              <Type>Boolean</Type>
+              <Name>IsUnlocked</Name>
+              <Description>The character unlocked the piece.</Description>
+            </Field>
+            <Field>
+              <Index>8</Index>
+              <Type>Boolean</Type>
+              <Name>CanWear</Name>
+              <Description>The class of the character can wear the piece.</Description>
+            </Field>
+            <Field>
+              <Index>9</Index>
+              <Type>Boolean</Type>
+              <Name>IsWorn</Name>
+              <Description>The character wears the piece.</Description>
+            </Field>
+            <Field>
+              <Index>10</Index>
+              <Type>String</Type>
+              <Name>Name</Name>
+              <Length>32</Length>
+            </Field>
+          </Fields>
+        </Structure>
+      </Structures>
+    </Packet>
+    <Packet>
+      <HeaderType>C2HeaderWithSubCode</HeaderType>
+      <Code>F5</Code>
       <SubCode>0F</SubCode>
       <Name>EventScheduleEntry</Name>
       <Direction>ServerToClient</Direction>

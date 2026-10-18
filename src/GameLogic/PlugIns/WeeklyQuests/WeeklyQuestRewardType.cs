@@ -39,4 +39,10 @@ public enum WeeklyQuestRewardType
     /// </summary>
     [Display(Name = "Puntos del pase")]
     SeasonPoints,
+
+    /// <summary>
+    /// A cosmetic piece of the <see cref="Cosmetics.CosmeticsPlugIn"/>, which the character unlocks.
+    /// </summary>
+    [Display(Name = "Pieza cosmética")]
+    CosmeticPiece,
 }

@@ -7,6 +7,7 @@ namespace MUnique.OpenMU.GameServer.RemoteView.World;
 using System.Runtime.InteropServices;
 using MUnique.OpenMU.DataModel.Entities;
 using MUnique.OpenMU.GameLogic;
+using MUnique.OpenMU.GameLogic.PlugIns.Cosmetics;
 using MUnique.OpenMU.GameLogic.Views;
 using MUnique.OpenMU.GameLogic.Views.World;
 using MUnique.OpenMU.Network;
@@ -36,6 +37,12 @@ public class AppearanceChangedExtendedPlugIn : IAppearanceChangedPlugIn
     {
         var connection = this._player.Connection;
         if (connection is null || changedPlayer.Inventory is null)
+        {
+            return;
+        }
+
+        // The cosmetic piece stays visible, whatever is equipped below it.
+        if (PlayerCosmetics.GetPiece(changedPlayer, item.ItemSlot) is not null)
         {
             return;
         }

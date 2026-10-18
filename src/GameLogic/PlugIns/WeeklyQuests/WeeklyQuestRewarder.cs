@@ -5,6 +5,7 @@
 namespace MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 
 using MUnique.OpenMU.DataModel.Configuration.Items;
+using MUnique.OpenMU.GameLogic.PlugIns.Cosmetics;
 using MUnique.OpenMU.GameLogic.Views.Inventory;
 
 /// <summary>
@@ -92,6 +93,9 @@ public static class WeeklyQuestRewarder
                 case WeeklyQuestRewardType.MasterExperience:
                     await player.AddMasterExperienceAsync(reward.Amount, null).ConfigureAwait(false);
                     break;
+                case WeeklyQuestRewardType.CosmeticPiece:
+                    await GiveCosmeticPieceAsync(player, reward, sourceId).ConfigureAwait(false);
+                    break;
                 default:
                     // Items and money are handled above. The points of the season pass are given by the
                     // season pass when the quest is completed (see WeeklyQuestDefinition.GetSeasonPoints).
@@ -100,6 +104,20 @@ public static class WeeklyQuestRewarder
         }
 
         return true;
+    }
+
+    private static async ValueTask GiveCosmeticPieceAsync(Player player, WeeklyQuestReward reward, string sourceId)
+    {
+        if (CosmeticsPlugIn.GetActivePlugIn(player) is not { } plugIn)
+        {
+            player.Logger.LogWarning("{source} has a cosmetic piece as reward, but the cosmetics plugin isn't active.", sourceId);
+            return;
+        }
+
+        if (await plugIn.GrantAsync(player, reward.CosmeticPieceNumber, sourceId).ConfigureAwait(false) is null)
+        {
+            player.Logger.LogWarning("{source} has the cosmetic piece {piece} as reward, which couldn't be unlocked.", sourceId, reward.CosmeticPieceNumber);
+        }
     }
 
     private static async ValueTask RollbackAsync(Player player, List<Item> addedItems)

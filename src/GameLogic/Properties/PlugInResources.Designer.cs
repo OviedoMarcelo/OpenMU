@@ -4219,5 +4219,35 @@ namespace MUnique.OpenMU.GameLogic.Properties {
         /// <summary>Gets the localized EventScheduleConfiguration_DisplayTimeZoneName_Description text.</summary>
         public static string EventScheduleConfiguration_DisplayTimeZoneName_Description => ResourceManager.GetString("EventScheduleConfiguration_DisplayTimeZoneName_Description", resourceCulture)!;
 
+        /// <summary>Gets the localized CosmeticsPlugIn_Name text.</summary>
+        public static string CosmeticsPlugIn_Name => ResourceManager.GetString("CosmeticsPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized CosmeticsPlugIn_Description text.</summary>
+        public static string CosmeticsPlugIn_Description => ResourceManager.GetString("CosmeticsPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized CosmeticChatCommandPlugIn_Name text.</summary>
+        public static string CosmeticChatCommandPlugIn_Name => ResourceManager.GetString("CosmeticChatCommandPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized CosmeticChatCommandPlugIn_Description text.</summary>
+        public static string CosmeticChatCommandPlugIn_Description => ResourceManager.GetString("CosmeticChatCommandPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized CosmeticsChatCommandPlugIn_Name text.</summary>
+        public static string CosmeticsChatCommandPlugIn_Name => ResourceManager.GetString("CosmeticsChatCommandPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized CosmeticsChatCommandPlugIn_Description text.</summary>
+        public static string CosmeticsChatCommandPlugIn_Description => ResourceManager.GetString("CosmeticsChatCommandPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized GiveCosmeticChatCommandPlugIn_Name text.</summary>
+        public static string GiveCosmeticChatCommandPlugIn_Name => ResourceManager.GetString("GiveCosmeticChatCommandPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized GiveCosmeticChatCommandPlugIn_Description text.</summary>
+        public static string GiveCosmeticChatCommandPlugIn_Description => ResourceManager.GetString("GiveCosmeticChatCommandPlugIn_Description", resourceCulture)!;
+
+        /// <summary>Gets the localized RevokeCosmeticChatCommandPlugIn_Name text.</summary>
+        public static string RevokeCosmeticChatCommandPlugIn_Name => ResourceManager.GetString("RevokeCosmeticChatCommandPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized RevokeCosmeticChatCommandPlugIn_Description text.</summary>
+        public static string RevokeCosmeticChatCommandPlugIn_Description => ResourceManager.GetString("RevokeCosmeticChatCommandPlugIn_Description", resourceCulture)!;
+
     }
 }
