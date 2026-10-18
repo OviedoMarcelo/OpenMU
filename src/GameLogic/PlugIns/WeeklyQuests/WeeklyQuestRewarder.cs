@@ -5,7 +5,7 @@
 namespace MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 
 using MUnique.OpenMU.DataModel.Configuration.Items;
-using MUnique.OpenMU.GameLogic.PlugIns.CosmeticSets;
+using MUnique.OpenMU.GameLogic.PlugIns.Cosmetics;
 using MUnique.OpenMU.GameLogic.Views.Inventory;
 
 /// <summary>
@@ -93,8 +93,8 @@ public static class WeeklyQuestRewarder
                 case WeeklyQuestRewardType.MasterExperience:
                     await player.AddMasterExperienceAsync(reward.Amount, null).ConfigureAwait(false);
                     break;
-                case WeeklyQuestRewardType.CosmeticSet:
-                    await GiveCosmeticSetAsync(player, reward, sourceId).ConfigureAwait(false);
+                case WeeklyQuestRewardType.CosmeticPiece:
+                    await GiveCosmeticPieceAsync(player, reward, sourceId).ConfigureAwait(false);
                     break;
                 default:
                     // Items and money are handled above. The points of the season pass are given by the
@@ -106,17 +106,17 @@ public static class WeeklyQuestRewarder
         return true;
     }
 
-    private static async ValueTask GiveCosmeticSetAsync(Player player, WeeklyQuestReward reward, string sourceId)
+    private static async ValueTask GiveCosmeticPieceAsync(Player player, WeeklyQuestReward reward, string sourceId)
     {
-        if (CosmeticSetsPlugIn.GetActivePlugIn(player) is not { } plugIn)
+        if (CosmeticsPlugIn.GetActivePlugIn(player) is not { } plugIn)
         {
-            player.Logger.LogWarning("{source} has a cosmetic set as reward, but the cosmetic sets plugin isn't active.", sourceId);
+            player.Logger.LogWarning("{source} has a cosmetic piece as reward, but the cosmetics plugin isn't active.", sourceId);
             return;
         }
 
-        if (await plugIn.GrantAsync(player, reward.CosmeticSetNumber, sourceId).ConfigureAwait(false) is null)
+        if (await plugIn.GrantAsync(player, reward.CosmeticPieceNumber, sourceId).ConfigureAwait(false) is null)
         {
-            player.Logger.LogWarning("{source} has the cosmetic set {set} as reward, which couldn't be unlocked.", sourceId, reward.CosmeticSetNumber);
+            player.Logger.LogWarning("{source} has the cosmetic piece {piece} as reward, which couldn't be unlocked.", sourceId, reward.CosmeticPieceNumber);
         }
     }
 

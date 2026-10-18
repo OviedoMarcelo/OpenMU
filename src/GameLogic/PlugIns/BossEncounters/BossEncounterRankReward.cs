@@ -42,11 +42,11 @@ public class BossEncounterRankReward : BossEncounterDrop
     public int Money { get; set; }
 
     /// <summary>
-    /// Gets or sets the number of the cosmetic set which each of the players unlocks; 0 for none.
+    /// Gets or sets the number of the cosmetic piece which each of the players unlocks; 0 for none.
     /// </summary>
-    [Display(Name = "Set cosmético", Description = "Número del set del plugin Cosmetic sets que desbloquea cada jugador. 0 = ninguno.", Order = 10)]
+    [Display(Name = "Pieza cosmética", Description = "Número de la pieza del plugin Cosmetics que desbloquea cada jugador. 0 = ninguna.", Order = 10)]
     [Range(0, short.MaxValue)]
-    public short CosmeticSetNumber { get; set; }
+    public short CosmeticPieceNumber { get; set; }
 
     /// <summary>
     /// Gets a value indicating whether the place gets this reward.

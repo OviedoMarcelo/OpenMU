@@ -54,14 +54,14 @@ public class ProgressionContext : DbContext
     public DbSet<PrestigeProgress> Prestige { get; set; } = null!;
 
     /// <summary>
-    /// Gets or sets the unlocked cosmetic sets.
+    /// Gets or sets the unlocked cosmetic pieces.
     /// </summary>
-    public DbSet<UnlockedCosmeticSet> UnlockedCosmeticSets { get; set; } = null!;
+    public DbSet<UnlockedCosmeticPiece> UnlockedCosmeticPieces { get; set; } = null!;
 
     /// <summary>
-    /// Gets or sets the cosmetic sets which the characters wear.
+    /// Gets or sets the cosmetic pieces which the characters wear.
     /// </summary>
-    public DbSet<ActiveCosmeticSet> ActiveCosmeticSets { get; set; } = null!;
+    public DbSet<WornCosmeticPiece> WornCosmeticPieces { get; set; } = null!;
 
     /// <inheritdoc />
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -124,16 +124,16 @@ public class ProgressionContext : DbContext
             entity.HasKey(p => p.CharacterId);
             entity.HasIndex(p => p.Level);
         });
-        modelBuilder.Entity<UnlockedCosmeticSet>(entity =>
+        modelBuilder.Entity<UnlockedCosmeticPiece>(entity =>
         {
-            entity.ToTable(nameof(UnlockedCosmeticSet), SchemaNames.Progression);
-            entity.HasKey(s => new { s.CharacterId, s.SetNumber });
-            entity.Property(s => s.Source).HasMaxLength(64);
+            entity.ToTable(nameof(UnlockedCosmeticPiece), SchemaNames.Progression);
+            entity.HasKey(p => new { p.CharacterId, p.PieceNumber });
+            entity.Property(p => p.Source).HasMaxLength(64);
         });
-        modelBuilder.Entity<ActiveCosmeticSet>(entity =>
+        modelBuilder.Entity<WornCosmeticPiece>(entity =>
         {
-            entity.ToTable(nameof(ActiveCosmeticSet), SchemaNames.Progression);
-            entity.HasKey(s => s.CharacterId);
+            entity.ToTable(nameof(WornCosmeticPiece), SchemaNames.Progression);
+            entity.HasKey(p => new { p.CharacterId, p.ItemSlot });
         });
     }
 }

@@ -867,58 +867,61 @@
   <data name="ImperialGuardianLevelTooLow" xml:space="preserve">
     <value>You need at least level {0} to enter the Fortress of Imperial Guardian.</value>
   </data>
-  <data name="CosmeticSetsNotAvailable" xml:space="preserve">
-    <value>The cosmetic sets are not available.</value>
+  <data name="CosmeticsNotAvailable" xml:space="preserve">
+    <value>The cosmetic pieces are not available.</value>
   </data>
-  <data name="CosmeticSetUsage" xml:space="preserve">
-    <value>Use /cosmetico &lt;number&gt; or /cosmetico off. /cosmeticos lists your sets.</value>
+  <data name="CosmeticUsage" xml:space="preserve">
+    <value>Use /cosmetico &lt;number&gt; to wear a piece, /cosmetico off to take all off or /cosmetico off &lt;number&gt; for one. /cosmeticos lists your pieces.</value>
   </data>
-  <data name="CosmeticSetChanged" xml:space="preserve">
-    <value>You now wear the cosmetic set {0}.</value>
+  <data name="CosmeticWorn" xml:space="preserve">
+    <value>You now wear {0}.</value>
   </data>
-  <data name="CosmeticSetRemoved" xml:space="preserve">
-    <value>You don't wear a cosmetic set anymore.</value>
+  <data name="CosmeticTakenOff" xml:space="preserve">
+    <value>Your real armor is visible again.</value>
   </data>
-  <data name="CosmeticSetNotUnlocked" xml:space="preserve">
-    <value>You haven't unlocked the cosmetic set {0} yet.</value>
+  <data name="CosmeticNotWorn" xml:space="preserve">
+    <value>You don't wear that cosmetic piece.</value>
   </data>
-  <data name="CosmeticSetUnknown" xml:space="preserve">
-    <value>There is no cosmetic set {0}. /cosmeticos lists your sets.</value>
+  <data name="CosmeticNotUnlocked" xml:space="preserve">
+    <value>You haven't unlocked {0} yet.</value>
   </data>
-  <data name="CosmeticSetNotQualified" xml:space="preserve">
-    <value>Your class can't wear the cosmetic set {0}.</value>
+  <data name="CosmeticUnknown" xml:space="preserve">
+    <value>There is no cosmetic piece {0}. /cosmeticos lists your pieces.</value>
   </data>
-  <data name="CosmeticSetChangeFailed" xml:space="preserve">
-    <value>The cosmetic set couldn't be changed. Try again later.</value>
+  <data name="CosmeticNotQualified" xml:space="preserve">
+    <value>Your class can't wear {0}.</value>
   </data>
-  <data name="CosmeticSetListHeader" xml:space="preserve">
-    <value>Your cosmetic sets:</value>
+  <data name="CosmeticChangeFailed" xml:space="preserve">
+    <value>The cosmetic pieces couldn't be changed. Try again later.</value>
   </data>
-  <data name="CosmeticSetListEntry" xml:space="preserve">
-    <value>{0} - {1}</value>
+  <data name="CosmeticListHeader" xml:space="preserve">
+    <value>Your cosmetic pieces:</value>
   </data>
-  <data name="CosmeticSetListEntryWorn" xml:space="preserve">
-    <value>{0} - {1} (worn)</value>
+  <data name="CosmeticListEntry" xml:space="preserve">
+    <value>{0} - {1} ({2})</value>
   </data>
-  <data name="CosmeticSetListEmpty" xml:space="preserve">
-    <value>You haven't unlocked any cosmetic set yet.</value>
+  <data name="CosmeticListEntryWorn" xml:space="preserve">
+    <value>{0} - {1} ({2}, worn)</value>
   </data>
-  <data name="GiveCosmeticSetUsage" xml:space="preserve">
+  <data name="CosmeticListEmpty" xml:space="preserve">
+    <value>You haven't unlocked any cosmetic piece yet.</value>
+  </data>
+  <data name="GiveCosmeticUsage" xml:space="preserve">
     <value>Use /darcosmetico &lt;character&gt; &lt;number&gt;.</value>
   </data>
-  <data name="CosmeticSetGiven" xml:space="preserve">
-    <value>{0} unlocked the cosmetic set {1}.</value>
+  <data name="CosmeticGiven" xml:space="preserve">
+    <value>{0} unlocked {1}.</value>
   </data>
-  <data name="CosmeticSetGiveFailed" xml:space="preserve">
-    <value>The cosmetic set {0} couldn't be given. Check that it exists in the configuration of the cosmetic sets plugin.</value>
+  <data name="CosmeticGiveFailed" xml:space="preserve">
+    <value>The cosmetic piece {0} couldn't be given. Check that it exists in the configuration of the cosmetics plugin.</value>
   </data>
-  <data name="RevokeCosmeticSetUsage" xml:space="preserve">
+  <data name="RevokeCosmeticUsage" xml:space="preserve">
     <value>Use /quitarcosmetico &lt;character&gt; &lt;number&gt;.</value>
   </data>
-  <data name="CosmeticSetRevoked" xml:space="preserve">
-    <value>{0} lost the cosmetic set {1}.</value>
+  <data name="CosmeticRevoked" xml:space="preserve">
+    <value>{0} lost the cosmetic piece {1}.</value>
   </data>
-  <data name="CosmeticSetRevokeFailed" xml:space="preserve">
-    <value>{0} doesn't have the cosmetic set {1}.</value>
+  <data name="CosmeticRevokeFailed" xml:space="preserve">
+    <value>{0} doesn't have the cosmetic piece {1}.</value>
   </data>
 </root>

@@ -4,7 +4,7 @@
 
 namespace MUnique.OpenMU.GameLogic;
 
-using MUnique.OpenMU.GameLogic.PlugIns.CosmeticSets;
+using MUnique.OpenMU.GameLogic.PlugIns.Cosmetics;
 
 /// <summary>
 /// The appearance data of a <see cref="Player"/>, which is based on the
@@ -37,7 +37,7 @@ internal sealed class PlayerAppearanceData : IAppearanceData
     public CharacterPose Pose => this._player.SelectedCharacter?.Pose ?? default;
 
     /// <inheritdoc />
-    public bool FullAncientSetEquipped => !PlayerCosmetics.IsWearingSet(this._player)
+    public bool FullAncientSetEquipped => !PlayerCosmetics.IsWearingAny(this._player)
                                           && ((this._fullAncientSetEquipped ??= this._player.SelectedCharacter?.HasFullAncientSetEquipped()) ?? false);
 
     /// <inheritdoc />
@@ -51,12 +51,12 @@ internal sealed class PlayerAppearanceData : IAppearanceData
             }
 
             var items = this._player.Inventory.EquippedItems.Select(item => item.GetAppearance());
-            if (!PlayerCosmetics.IsWearingSet(this._player))
+            if (!PlayerCosmetics.IsWearingAny(this._player))
             {
                 return items;
             }
 
-            // The pieces of the cosmetic set are shown instead of the real items, and also in empty slots.
+            // The cosmetic pieces are shown instead of the real items, and also in empty slots.
             var result = items.Where(item => PlayerCosmetics.GetPiece(this._player, item.ItemSlot) is null).ToList();
             for (var slot = InventoryConstants.HelmSlot; slot <= InventoryConstants.BootsSlot; slot++)
             {

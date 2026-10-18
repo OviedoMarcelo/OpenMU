@@ -7355,11 +7355,11 @@ namespace MUnique.OpenMU.GameServer.Properties {
         /// <summary>Gets the localized EventScheduleViewPlugIn_Description text.</summary>
         public static string EventScheduleViewPlugIn_Description => ResourceManager.GetString("EventScheduleViewPlugIn_Description", resourceCulture)!;
 
-        /// <summary>Gets the localized ShowCosmeticSetsPlugIn_Name text.</summary>
-        public static string ShowCosmeticSetsPlugIn_Name => ResourceManager.GetString("ShowCosmeticSetsPlugIn_Name", resourceCulture)!;
+        /// <summary>Gets the localized ShowCosmeticsPlugIn_Name text.</summary>
+        public static string ShowCosmeticsPlugIn_Name => ResourceManager.GetString("ShowCosmeticsPlugIn_Name", resourceCulture)!;
 
-        /// <summary>Gets the localized ShowCosmeticSetsPlugIn_Description text.</summary>
-        public static string ShowCosmeticSetsPlugIn_Description => ResourceManager.GetString("ShowCosmeticSetsPlugIn_Description", resourceCulture)!;
+        /// <summary>Gets the localized ShowCosmeticsPlugIn_Description text.</summary>
+        public static string ShowCosmeticsPlugIn_Description => ResourceManager.GetString("ShowCosmeticsPlugIn_Description", resourceCulture)!;
 
     }
 }

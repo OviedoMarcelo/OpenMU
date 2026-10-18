@@ -1,13 +1,13 @@
-// <copyright file="CosmeticSetAdministrationError.cs" company="MUnique">
+// <copyright file="CosmeticsAdministrationError.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
 namespace MUnique.OpenMU.Web.AdminPanel.Services;
 
 /// <summary>
-/// The errors of the administration of the cosmetic sets.
+/// The errors of the administration of the cosmetic pieces.
 /// </summary>
-public enum CosmeticSetAdministrationError
+public enum CosmeticsAdministrationError
 {
     /// <summary>
     /// No error.
@@ -15,17 +15,17 @@ public enum CosmeticSetAdministrationError
     None,
 
     /// <summary>
-    /// The plugin of the cosmetic sets isn't active, or the storage isn't registered.
+    /// The plugin of the cosmetic pieces isn't active, or the storage isn't registered.
     /// </summary>
     PlugInInactive,
 
     /// <summary>
-    /// There is no set with the specified number.
+    /// There is no piece with the specified number.
     /// </summary>
-    SetNotFound,
+    PieceNotFound,
 
     /// <summary>
-    /// The character hasn't unlocked the set.
+    /// The character hasn't unlocked the piece.
     /// </summary>
     NotUnlocked,
 

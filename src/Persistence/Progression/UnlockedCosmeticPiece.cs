@@ -1,13 +1,13 @@
-// <copyright file="UnlockedCosmeticSet.cs" company="MUnique">
+// <copyright file="UnlockedCosmeticPiece.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
 namespace MUnique.OpenMU.Persistence.Progression;
 
 /// <summary>
-/// A cosmetic set which a character has unlocked.
+/// A cosmetic piece which a character has unlocked.
 /// </summary>
-public class UnlockedCosmeticSet
+public class UnlockedCosmeticPiece
 {
     /// <summary>
     /// Gets or sets the identifier of the character.
@@ -15,17 +15,17 @@ public class UnlockedCosmeticSet
     public Guid CharacterId { get; set; }
 
     /// <summary>
-    /// Gets or sets the number of the set, as configured in the plugin configuration.
+    /// Gets or sets the number of the piece, as configured in the plugin configuration.
     /// </summary>
-    public short SetNumber { get; set; }
+    public short PieceNumber { get; set; }
 
     /// <summary>
-    /// Gets or sets the timestamp (UTC) when the set has been unlocked.
+    /// Gets or sets the timestamp (UTC) when the piece has been unlocked.
     /// </summary>
     public DateTime UnlockedAt { get; set; }
 
     /// <summary>
-    /// Gets or sets where the set came from, e.g. "gm" or the identifier of a quest.
+    /// Gets or sets where the piece came from, e.g. "gm" or the identifier of a quest.
     /// </summary>
     public string? Source { get; set; }
 }

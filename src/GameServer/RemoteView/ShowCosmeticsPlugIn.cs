@@ -1,11 +1,11 @@
-// <copyright file="ShowCosmeticSetsPlugIn.cs" company="MUnique">
+// <copyright file="ShowCosmeticsPlugIn.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
 namespace MUnique.OpenMU.GameServer.RemoteView;
 
 using System.Runtime.InteropServices;
-using MUnique.OpenMU.GameLogic.PlugIns.CosmeticSets;
+using MUnique.OpenMU.GameLogic.PlugIns.Cosmetics;
 using MUnique.OpenMU.GameLogic.Views;
 using MUnique.OpenMU.GameServer.RemoteView.World;
 using MUnique.OpenMU.Network;
@@ -14,46 +14,45 @@ using MUnique.OpenMU.Network.PlugIns;
 using MUnique.OpenMU.PlugIns;
 
 /// <summary>
-/// The default implementation of the <see cref="IShowCosmeticSetsPlugIn"/> which sends a
-/// <see cref="CosmeticSets"/> message to the game client.
+/// The default implementation of the <see cref="IShowCosmeticsPlugIn"/> which sends a
+/// <see cref="CosmeticPieces"/> message to the game client.
 /// </summary>
 [PlugIn]
-[Display(Name = nameof(PlugInResources.ShowCosmeticSetsPlugIn_Name), Description = nameof(PlugInResources.ShowCosmeticSetsPlugIn_Description), ResourceType = typeof(PlugInResources))]
+[Display(Name = nameof(PlugInResources.ShowCosmeticsPlugIn_Name), Description = nameof(PlugInResources.ShowCosmeticsPlugIn_Description), ResourceType = typeof(PlugInResources))]
 [Guid("8F3C2D61-4B7A-4E0D-A1C5-2E9B6D04F713")]
 [MinimumClient(106, 3, ClientLanguage.Invariant)]
-public class ShowCosmeticSetsPlugIn : IShowCosmeticSetsPlugIn
+public class ShowCosmeticsPlugIn : IShowCosmeticsPlugIn
 {
     /// <summary>
-    /// The maximum number of sets which fit into the message.
+    /// The maximum number of pieces which the message holds.
     /// </summary>
-    private const int MaximumSetCount = byte.MaxValue;
+    private const int MaximumPieceCount = 1000;
 
     private readonly RemotePlayer _player;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ShowCosmeticSetsPlugIn"/> class.
+    /// Initializes a new instance of the <see cref="ShowCosmeticsPlugIn"/> class.
     /// </summary>
     /// <param name="player">The player.</param>
-    public ShowCosmeticSetsPlugIn(RemotePlayer player) => this._player = player;
+    public ShowCosmeticsPlugIn(RemotePlayer player) => this._player = player;
 
     /// <inheritdoc/>
-    public ValueTask ShowCosmeticSetsAsync(IReadOnlyList<CosmeticSetEntry> sets, CosmeticSetDefinition? activeSet)
+    public ValueTask ShowCosmeticsAsync(IReadOnlyList<CosmeticPieceEntry> pieces)
     {
         if (this._player.Connection is not { Connected: true } connection)
         {
             return ValueTask.CompletedTask;
         }
 
-        var entries = sets.Take(MaximumSetCount).ToList();
+        var entries = pieces.Take(MaximumPieceCount).ToList();
 
         int Write()
         {
-            var size = CosmeticSetsRef.GetRequiredSize(entries.Count);
+            var size = CosmeticPiecesRef.GetRequiredSize(entries.Count);
             var span = connection.Output.GetSpan(size)[..size];
-            var packet = new CosmeticSetsRef(span)
+            var packet = new CosmeticPiecesRef(span)
             {
-                SetCount = (byte)entries.Count,
-                ActiveSetNumber = (ushort)(activeSet?.Number ?? 0),
+                PieceCount = (ushort)entries.Count,
             };
 
             for (var i = 0; i < entries.Count; i++)
@@ -62,11 +61,13 @@ public class ShowCosmeticSetsPlugIn : IShowCosmeticSetsPlugIn
                 var target = packet[i];
                 target.Number = (ushort)entry.Definition.Number;
                 target.ItemNumber = (ushort)entry.Definition.ItemNumber;
+                target.ItemGroup = entry.Definition.Slot.GetItemGroup();
                 target.Level = entry.Definition.Level;
                 target.IsExcellent = entry.Definition.IsExcellent;
                 target.IsUnlocked = entry.IsUnlocked;
                 target.CanWear = entry.CanWear;
-                target.Name = Utf8Text.Truncate(entry.Definition.Name, CosmeticSetDefinition.MaximumNameLength);
+                target.IsWorn = entry.IsWorn;
+                target.Name = Utf8Text.Truncate(entry.Name, CosmeticPieceDefinition.MaximumNameLength);
             }
 
             return size;

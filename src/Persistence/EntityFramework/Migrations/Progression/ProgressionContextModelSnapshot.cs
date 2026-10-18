@@ -51,20 +51,6 @@ namespace MUnique.OpenMU.Persistence.EntityFramework.Migrations.Progression
                     b.ToTable("AchievementProgress", "progression");
                 });
 
-            modelBuilder.Entity("MUnique.OpenMU.Persistence.Progression.ActiveCosmeticSet", b =>
-                {
-                    b.Property<Guid>("CharacterId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<short>("SetNumber")
-                        .HasColumnType("smallint");
-
-                    b.HasKey("CharacterId");
-
-                    b.ToTable("ActiveCosmeticSet", "progression");
-                });
-
             modelBuilder.Entity("MUnique.OpenMU.Persistence.Progression.ActiveTitle", b =>
                 {
                     b.Property<Guid>("CharacterId")
@@ -173,12 +159,12 @@ namespace MUnique.OpenMU.Persistence.EntityFramework.Migrations.Progression
                     b.ToTable("SeasonProgress", "progression");
                 });
 
-            modelBuilder.Entity("MUnique.OpenMU.Persistence.Progression.UnlockedCosmeticSet", b =>
+            modelBuilder.Entity("MUnique.OpenMU.Persistence.Progression.UnlockedCosmeticPiece", b =>
                 {
                     b.Property<Guid>("CharacterId")
                         .HasColumnType("uuid");
 
-                    b.Property<short>("SetNumber")
+                    b.Property<short>("PieceNumber")
                         .HasColumnType("smallint");
 
                     b.Property<string>("Source")
@@ -188,9 +174,9 @@ namespace MUnique.OpenMU.Persistence.EntityFramework.Migrations.Progression
                     b.Property<DateTime>("UnlockedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("CharacterId", "SetNumber");
+                    b.HasKey("CharacterId", "PieceNumber");
 
-                    b.ToTable("UnlockedCosmeticSet", "progression");
+                    b.ToTable("UnlockedCosmeticPiece", "progression");
                 });
 
             modelBuilder.Entity("MUnique.OpenMU.Persistence.Progression.UnlockedTitle", b =>
@@ -212,6 +198,22 @@ namespace MUnique.OpenMU.Persistence.EntityFramework.Migrations.Progression
                     b.HasKey("OwnerId", "TitleId");
 
                     b.ToTable("UnlockedTitle", "progression");
+                });
+
+            modelBuilder.Entity("MUnique.OpenMU.Persistence.Progression.WornCosmeticPiece", b =>
+                {
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("ItemSlot")
+                        .HasColumnType("smallint");
+
+                    b.Property<short>("PieceNumber")
+                        .HasColumnType("smallint");
+
+                    b.HasKey("CharacterId", "ItemSlot");
+
+                    b.ToTable("WornCosmeticPiece", "progression");
                 });
 #pragma warning restore 612, 618
         }

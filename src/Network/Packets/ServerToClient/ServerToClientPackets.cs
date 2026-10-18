@@ -33663,28 +33663,28 @@ public readonly struct QuestChapter
 
 
 /// <summary>
-/// Is sent by the server when: After the client requested the list of available chat commands, after entering the game, and when the cosmetic sets of the character changed: a set was unlocked or removed, or the worn set changed.
-/// Causes reaction on client side: The client shows the sets in the cosmetic sets window, and shows the pieces of the worn set instead of the armor of the own character. The other players see the set through the usual appearance data.
+/// Is sent by the server when: After the client requested the list of available chat commands, after entering the game, and when the cosmetic pieces of the character changed: a piece was unlocked or removed, or put on or taken off.
+/// Causes reaction on client side: The client shows the pieces in the cosmetics window, and shows the worn pieces instead of the armor of the own character. The other players see them through the usual appearance data.
 /// </summary>
-public readonly struct CosmeticSets
+public readonly struct CosmeticPieces
 {
     private readonly Memory<byte> _data;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CosmeticSets"/> struct.
+    /// Initializes a new instance of the <see cref="CosmeticPieces"/> struct.
     /// </summary>
     /// <param name="data">The underlying data.</param>
-    public CosmeticSets(Memory<byte> data)
+    public CosmeticPieces(Memory<byte> data)
         : this(data, true)
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CosmeticSets"/> struct.
+    /// Initializes a new instance of the <see cref="CosmeticPieces"/> struct.
     /// </summary>
     /// <param name="data">The underlying data.</param>
     /// <param name="initialize">If set to <c>true</c>, the header data is automatically initialized and written to the underlying span.</param>
-    private CosmeticSets(Memory<byte> data, bool initialize)
+    private CosmeticPieces(Memory<byte> data, bool initialize)
     {
         this._data = data;
         if (initialize)
@@ -33719,62 +33719,53 @@ public readonly struct CosmeticSets
     public C2HeaderWithSubCode Header => new (this._data);
 
     /// <summary>
-    /// Gets or sets the set count.
+    /// Gets or sets the piece count.
     /// </summary>
-    public byte SetCount
-    {
-        get => this._data.Span[5];
-        set => this._data.Span[5] = value;
-    }
-
-    /// <summary>
-    /// Gets or sets the number of the set which the character wears; 0, if it wears none.
-    /// </summary>
-    public ushort ActiveSetNumber
+    public ushort PieceCount
     {
         get => ReadUInt16LittleEndian(this._data.Span[6..]);
         set => WriteUInt16LittleEndian(this._data.Span[6..], value);
     }
 
     /// <summary>
-    /// Gets the <see cref="CosmeticSet"/> of the specified index.
+    /// Gets the <see cref="CosmeticPiece"/> of the specified index.
     /// </summary>
-        public CosmeticSet this[int index] => new (this._data.Slice(8 + index * CosmeticSet.Length));
+        public CosmeticPiece this[int index] => new (this._data.Slice(8 + index * CosmeticPiece.Length));
 
     /// <summary>
-    /// Performs an implicit conversion from a Memory of bytes to a <see cref="CosmeticSets"/>.
+    /// Performs an implicit conversion from a Memory of bytes to a <see cref="CosmeticPieces"/>.
     /// </summary>
     /// <param name="packet">The packet as span.</param>
     /// <returns>The packet as struct.</returns>
-    public static implicit operator CosmeticSets(Memory<byte> packet) => new (packet, false);
+    public static implicit operator CosmeticPieces(Memory<byte> packet) => new (packet, false);
 
     /// <summary>
-    /// Performs an implicit conversion from <see cref="CosmeticSets"/> to a Memory of bytes.
+    /// Performs an implicit conversion from <see cref="CosmeticPieces"/> to a Memory of bytes.
     /// </summary>
     /// <param name="packet">The packet as struct.</param>
     /// <returns>The packet as byte span.</returns>
-    public static implicit operator Memory<byte>(CosmeticSets packet) => packet._data; 
+    public static implicit operator Memory<byte>(CosmeticPieces packet) => packet._data; 
 
     /// <summary>
-    /// Calculates the size of the packet for the specified count of <see cref="CosmeticSet"/>.
+    /// Calculates the size of the packet for the specified count of <see cref="CosmeticPiece"/>.
     /// </summary>
-    /// <param name="setsCount">The count of <see cref="CosmeticSet"/> from which the size will be calculated.</param>
+    /// <param name="piecesCount">The count of <see cref="CosmeticPiece"/> from which the size will be calculated.</param>
         
-    public static int GetRequiredSize(int setsCount) => setsCount * CosmeticSet.Length + 8;
+    public static int GetRequiredSize(int piecesCount) => piecesCount * CosmeticPiece.Length + 8;
 
 
 /// <summary>
-/// A cosmetic set which a character can wear over its armor..
+/// A cosmetic piece which a character can wear over the item of an armor slot..
 /// </summary>
-public readonly struct CosmeticSet
+public readonly struct CosmeticPiece
 {
     private readonly Memory<byte> _data;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CosmeticSet"/> struct.
+    /// Initializes a new instance of the <see cref="CosmeticPiece"/> struct.
     /// </summary>
     /// <param name="data">The underlying data.</param>
-    public CosmeticSet(Memory<byte> data)
+    public CosmeticPiece(Memory<byte> data)
     {
         this._data = data;
     }
@@ -33782,10 +33773,10 @@ public readonly struct CosmeticSet
     /// <summary>
     /// Gets the initial length of this data packet. When the size is dynamic, this value may be bigger than actually needed.
     /// </summary>
-    public static int Length => 40;
+    public static int Length => 42;
 
     /// <summary>
-    /// Gets or sets the number of the set, which is used to wear it.
+    /// Gets or sets the number of the piece, which is used to wear it.
     /// </summary>
     public ushort Number
     {
@@ -33794,7 +33785,7 @@ public readonly struct CosmeticSet
     }
 
     /// <summary>
-    /// Gets or sets the number of the pieces in the item groups of helms (7), armors (8), pants (9), gloves (10) and boots (11).
+    /// Gets or sets the number of the item in its group.
     /// </summary>
     public ushort ItemNumber
     {
@@ -33803,39 +33794,57 @@ public readonly struct CosmeticSet
     }
 
     /// <summary>
-    /// Gets or sets the level which the pieces show, 0 to 15.
+    /// Gets or sets the group of the item, which tells the slot: helms (7), armors (8), pants (9), gloves (10) or boots (11).
     /// </summary>
-    public byte Level
+    public byte ItemGroup
     {
         get => this._data.Span[4];
         set => this._data.Span[4] = value;
     }
 
     /// <summary>
-    /// Gets or sets the pieces glow like excellent items.
+    /// Gets or sets the level which the piece shows, 0 to 15.
     /// </summary>
-    public bool IsExcellent
+    public byte Level
     {
-        get => this._data.Span[5..].GetBoolean();
-        set => this._data.Span[5..].SetBoolean(value);
+        get => this._data.Span[5];
+        set => this._data.Span[5] = value;
     }
 
     /// <summary>
-    /// Gets or sets the character unlocked the set.
+    /// Gets or sets the piece glows like an excellent item.
     /// </summary>
-    public bool IsUnlocked
+    public bool IsExcellent
     {
         get => this._data.Span[6..].GetBoolean();
         set => this._data.Span[6..].SetBoolean(value);
     }
 
     /// <summary>
-    /// Gets or sets the class of the character can wear the set.
+    /// Gets or sets the character unlocked the piece.
     /// </summary>
-    public bool CanWear
+    public bool IsUnlocked
     {
         get => this._data.Span[7..].GetBoolean();
         set => this._data.Span[7..].SetBoolean(value);
+    }
+
+    /// <summary>
+    /// Gets or sets the class of the character can wear the piece.
+    /// </summary>
+    public bool CanWear
+    {
+        get => this._data.Span[8..].GetBoolean();
+        set => this._data.Span[8..].SetBoolean(value);
+    }
+
+    /// <summary>
+    /// Gets or sets the character wears the piece.
+    /// </summary>
+    public bool IsWorn
+    {
+        get => this._data.Span[9..].GetBoolean();
+        set => this._data.Span[9..].SetBoolean(value);
     }
 
     /// <summary>
@@ -33843,8 +33852,8 @@ public readonly struct CosmeticSet
     /// </summary>
     public string Name
     {
-        get => this._data.Span.ExtractString(8, 32, System.Text.Encoding.UTF8);
-        set => this._data.Slice(8, 32).Span.WriteString(value, System.Text.Encoding.UTF8);
+        get => this._data.Span.ExtractString(10, 32, System.Text.Encoding.UTF8);
+        set => this._data.Slice(10, 32).Span.WriteString(value, System.Text.Encoding.UTF8);
     }
 }
 }

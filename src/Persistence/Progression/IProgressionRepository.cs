@@ -129,43 +129,45 @@ public interface IProgressionRepository
     ValueTask SavePrestigeAsync(PrestigeProgress prestige, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Loads the unlocked cosmetic sets of a character.
+    /// Loads the unlocked cosmetic pieces of a character.
     /// </summary>
     /// <param name="characterId">The identifier of the character.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The unlocked cosmetic sets of the character.</returns>
-    ValueTask<IList<UnlockedCosmeticSet>> LoadUnlockedCosmeticSetsAsync(Guid characterId, CancellationToken cancellationToken = default);
+    /// <returns>The unlocked cosmetic pieces of the character.</returns>
+    ValueTask<IList<UnlockedCosmeticPiece>> LoadUnlockedCosmeticPiecesAsync(Guid characterId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Adds an unlocked cosmetic set, if the character doesn't have it yet.
+    /// Adds an unlocked cosmetic piece, if the character doesn't have it yet.
     /// </summary>
-    /// <param name="set">The unlocked set.</param>
+    /// <param name="piece">The unlocked piece.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns><c>true</c>, if the set has been added; <c>false</c>, if the character already had it.</returns>
-    ValueTask<bool> AddUnlockedCosmeticSetAsync(UnlockedCosmeticSet set, CancellationToken cancellationToken = default);
+    /// <returns><c>true</c>, if the piece has been added; <c>false</c>, if the character already had it.</returns>
+    ValueTask<bool> AddUnlockedCosmeticPieceAsync(UnlockedCosmeticPiece piece, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Removes an unlocked cosmetic set of a character, e.g. when it was given by mistake.
-    /// </summary>
-    /// <param name="characterId">The identifier of the character.</param>
-    /// <param name="setNumber">The number of the set.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns><c>true</c>, if a set has been removed.</returns>
-    ValueTask<bool> RemoveUnlockedCosmeticSetAsync(Guid characterId, short setNumber, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Loads the cosmetic set which a character wears.
+    /// Removes an unlocked cosmetic piece of a character, e.g. when it was given by mistake.
+    /// If the character wears it, it's taken off, too.
     /// </summary>
     /// <param name="characterId">The identifier of the character.</param>
+    /// <param name="pieceNumber">The number of the piece.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The number of the set; <c>null</c>, if the character wears none.</returns>
-    ValueTask<short?> LoadActiveCosmeticSetAsync(Guid characterId, CancellationToken cancellationToken = default);
+    /// <returns><c>true</c>, if a piece has been removed.</returns>
+    ValueTask<bool> RemoveUnlockedCosmeticPieceAsync(Guid characterId, short pieceNumber, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Sets the cosmetic set which a character wears over its armor.
+    /// Loads the cosmetic pieces which a character wears.
     /// </summary>
     /// <param name="characterId">The identifier of the character.</param>
-    /// <param name="setNumber">The number of the set; <c>null</c> to wear none.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    ValueTask SetActiveCosmeticSetAsync(Guid characterId, short? setNumber, CancellationToken cancellationToken = default);
+    /// <returns>The worn pieces, at most one per item slot.</returns>
+    ValueTask<IList<WornCosmeticPiece>> LoadWornCosmeticPiecesAsync(Guid characterId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sets the cosmetic piece which a character wears over the item of a slot.
+    /// </summary>
+    /// <param name="characterId">The identifier of the character.</param>
+    /// <param name="itemSlot">The item slot.</param>
+    /// <param name="pieceNumber">The number of the piece; <c>null</c> to wear none in the slot.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    ValueTask SetWornCosmeticPieceAsync(Guid characterId, byte itemSlot, short? pieceNumber, CancellationToken cancellationToken = default);
 }

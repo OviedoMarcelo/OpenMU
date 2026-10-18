@@ -309,30 +309,30 @@ public sealed class ProgressionRepository : IProgressionRepository, IDisposable
     }
 
     /// <inheritdoc />
-    public async ValueTask<IList<UnlockedCosmeticSet>> LoadUnlockedCosmeticSetsAsync(Guid characterId, CancellationToken cancellationToken = default)
+    public async ValueTask<IList<UnlockedCosmeticPiece>> LoadUnlockedCosmeticPiecesAsync(Guid characterId, CancellationToken cancellationToken = default)
     {
         await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
 
         await using var context = new ProgressionContext();
-        return await context.UnlockedCosmeticSets
+        return await context.UnlockedCosmeticPieces
             .AsNoTracking()
-            .Where(s => s.CharacterId == characterId)
+            .Where(p => p.CharacterId == characterId)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    public async ValueTask<bool> AddUnlockedCosmeticSetAsync(UnlockedCosmeticSet set, CancellationToken cancellationToken = default)
+    public async ValueTask<bool> AddUnlockedCosmeticPieceAsync(UnlockedCosmeticPiece piece, CancellationToken cancellationToken = default)
     {
         await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
 
         await using var context = new ProgressionContext();
 
-        // A game master and a reward may unlock the same set at the same time, so the database decides.
+        // A game master and a reward may unlock the same piece at the same time, so the database decides.
         var added = await context.Database.ExecuteSqlInterpolatedAsync(
             $"""
-            INSERT INTO progression."UnlockedCosmeticSet" ("CharacterId", "SetNumber", "UnlockedAt", "Source")
-            VALUES ({set.CharacterId}, {set.SetNumber}, {set.UnlockedAt}, {set.Source})
+            INSERT INTO progression."UnlockedCosmeticPiece" ("CharacterId", "PieceNumber", "UnlockedAt", "Source")
+            VALUES ({piece.CharacterId}, {piece.PieceNumber}, {piece.UnlockedAt}, {piece.Source})
             ON CONFLICT DO NOTHING
             """,
             cancellationToken).ConfigureAwait(false);
@@ -340,42 +340,45 @@ public sealed class ProgressionRepository : IProgressionRepository, IDisposable
     }
 
     /// <inheritdoc />
-    public async ValueTask<bool> RemoveUnlockedCosmeticSetAsync(Guid characterId, short setNumber, CancellationToken cancellationToken = default)
+    public async ValueTask<bool> RemoveUnlockedCosmeticPieceAsync(Guid characterId, short pieceNumber, CancellationToken cancellationToken = default)
     {
         await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
 
         await using var context = new ProgressionContext();
-        var removed = await context.UnlockedCosmeticSets
-            .Where(s => s.CharacterId == characterId && s.SetNumber == setNumber)
+        await context.WornCosmeticPieces
+            .Where(p => p.CharacterId == characterId && p.PieceNumber == pieceNumber)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var removed = await context.UnlockedCosmeticPieces
+            .Where(p => p.CharacterId == characterId && p.PieceNumber == pieceNumber)
             .ExecuteDeleteAsync(cancellationToken)
             .ConfigureAwait(false);
         return removed > 0;
     }
 
     /// <inheritdoc />
-    public async ValueTask<short?> LoadActiveCosmeticSetAsync(Guid characterId, CancellationToken cancellationToken = default)
+    public async ValueTask<IList<WornCosmeticPiece>> LoadWornCosmeticPiecesAsync(Guid characterId, CancellationToken cancellationToken = default)
     {
         await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
 
         await using var context = new ProgressionContext();
-        return await context.ActiveCosmeticSets
+        return await context.WornCosmeticPieces
             .AsNoTracking()
-            .Where(s => s.CharacterId == characterId)
-            .Select(s => (short?)s.SetNumber)
-            .FirstOrDefaultAsync(cancellationToken)
+            .Where(p => p.CharacterId == characterId)
+            .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    public async ValueTask SetActiveCosmeticSetAsync(Guid characterId, short? setNumber, CancellationToken cancellationToken = default)
+    public async ValueTask SetWornCosmeticPieceAsync(Guid characterId, byte itemSlot, short? pieceNumber, CancellationToken cancellationToken = default)
     {
         await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
 
         await using var context = new ProgressionContext();
-        if (setNumber is not { } number)
+        if (pieceNumber is not { } number)
         {
-            await context.ActiveCosmeticSets
-                .Where(s => s.CharacterId == characterId)
+            await context.WornCosmeticPieces
+                .Where(p => p.CharacterId == characterId && p.ItemSlot == itemSlot)
                 .ExecuteDeleteAsync(cancellationToken)
                 .ConfigureAwait(false);
             return;
@@ -383,9 +386,9 @@ public sealed class ProgressionRepository : IProgressionRepository, IDisposable
 
         await context.Database.ExecuteSqlInterpolatedAsync(
             $"""
-            INSERT INTO progression."ActiveCosmeticSet" ("CharacterId", "SetNumber")
-            VALUES ({characterId}, {number})
-            ON CONFLICT ("CharacterId") DO UPDATE SET "SetNumber" = EXCLUDED."SetNumber"
+            INSERT INTO progression."WornCosmeticPiece" ("CharacterId", "ItemSlot", "PieceNumber")
+            VALUES ({characterId}, {itemSlot}, {number})
+            ON CONFLICT ("CharacterId", "ItemSlot") DO UPDATE SET "PieceNumber" = EXCLUDED."PieceNumber"
             """,
             cancellationToken).ConfigureAwait(false);
     }

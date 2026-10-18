@@ -41,8 +41,8 @@ public enum WeeklyQuestRewardType
     SeasonPoints,
 
     /// <summary>
-    /// A cosmetic set of the <see cref="CosmeticSets.CosmeticSetsPlugIn"/>, which the character unlocks.
+    /// A cosmetic piece of the <see cref="Cosmetics.CosmeticsPlugIn"/>, which the character unlocks.
     /// </summary>
-    [Display(Name = "Set cosmético")]
-    CosmeticSet,
+    [Display(Name = "Pieza cosmética")]
+    CosmeticPiece,
 }

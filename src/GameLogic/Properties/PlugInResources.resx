@@ -1571,34 +1571,34 @@
   <data name="EventScheduleConfiguration_DisplayTimeZoneName_Description" xml:space="preserve">
     <value>The name of the time zone which the players see, e.g. Argentina.</value>
   </data>
-  <data name="CosmeticSetsPlugIn_Name" xml:space="preserve">
-    <value>Cosmetic sets</value>
+  <data name="CosmeticsPlugIn_Name" xml:space="preserve">
+    <value>Cosmetics</value>
   </data>
-  <data name="CosmeticSetsPlugIn_Description" xml:space="preserve">
-    <value>Sets cosméticos: el personaje usa la apariencia de un set de armadura sin cambiar sus stats. Se desbloquean por GM o como premio.</value>
+  <data name="CosmeticsPlugIn_Description" xml:space="preserve">
+    <value>Piezas cosméticas: el personaje usa la apariencia de un casco, armadura, pantalón, guantes o botas sin cambiar sus stats. Se desbloquean de a una, por GM o como premio.</value>
   </data>
-  <data name="CosmeticSetChatCommandPlugIn_Name" xml:space="preserve">
+  <data name="CosmeticChatCommandPlugIn_Name" xml:space="preserve">
     <value>Chat command: /cosmetico</value>
   </data>
-  <data name="CosmeticSetChatCommandPlugIn_Description" xml:space="preserve">
-    <value>Usa o deja de usar un set cosmético desbloqueado: /cosmetico &lt;número&gt; o /cosmetico off.</value>
+  <data name="CosmeticChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Usa una pieza cosmética desbloqueada (/cosmetico &lt;número&gt;) o la quita (/cosmetico off [número]).</value>
   </data>
-  <data name="CosmeticSetsChatCommandPlugIn_Name" xml:space="preserve">
+  <data name="CosmeticsChatCommandPlugIn_Name" xml:space="preserve">
     <value>Chat command: /cosmeticos</value>
   </data>
-  <data name="CosmeticSetsChatCommandPlugIn_Description" xml:space="preserve">
-    <value>Muestra los sets cosméticos desbloqueados del personaje.</value>
+  <data name="CosmeticsChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Muestra las piezas cosméticas desbloqueadas del personaje.</value>
   </data>
-  <data name="GiveCosmeticSetChatCommandPlugIn_Name" xml:space="preserve">
+  <data name="GiveCosmeticChatCommandPlugIn_Name" xml:space="preserve">
     <value>Chat command: /darcosmetico</value>
   </data>
-  <data name="GiveCosmeticSetChatCommandPlugIn_Description" xml:space="preserve">
-    <value>Desbloquea un set cosmético para un personaje: /darcosmetico &lt;personaje&gt; &lt;número&gt;.</value>
+  <data name="GiveCosmeticChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Desbloquea una pieza cosmética para un personaje: /darcosmetico &lt;personaje&gt; &lt;número&gt;.</value>
   </data>
-  <data name="RevokeCosmeticSetChatCommandPlugIn_Name" xml:space="preserve">
+  <data name="RevokeCosmeticChatCommandPlugIn_Name" xml:space="preserve">
     <value>Chat command: /quitarcosmetico</value>
   </data>
-  <data name="RevokeCosmeticSetChatCommandPlugIn_Description" xml:space="preserve">
-    <value>Quita un set cosmético desbloqueado de un personaje: /quitarcosmetico &lt;personaje&gt; &lt;número&gt;.</value>
+  <data name="RevokeCosmeticChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Quita una pieza cosmética desbloqueada de un personaje: /quitarcosmetico &lt;personaje&gt; &lt;número&gt;.</value>
   </data>
 </root>

@@ -10,7 +10,7 @@ using System.Threading;
 using MUnique.OpenMU.AttributeSystem;
 using MUnique.OpenMU.GameLogic.Attributes;
 using MUnique.OpenMU.GameLogic.NPC;
-using MUnique.OpenMU.GameLogic.PlugIns.CosmeticSets;
+using MUnique.OpenMU.GameLogic.PlugIns.Cosmetics;
 using MUnique.OpenMU.GameLogic.Views;
 using MUnique.OpenMU.GameLogic.Views.World;
 using MUnique.OpenMU.Interfaces;
@@ -1006,7 +1006,7 @@ public sealed class BossEncounterContext
                     var items = BossEncounterDropGenerator.GenerateItems(this._gameContext, rewards).ToList();
                     var money = (int)Math.Min(int.MaxValue, rewards.Sum(reward => (long)reward.Money));
                     await BossEncounterRewarder.GiveAsync(player, items, money).ConfigureAwait(false);
-                    await this.GiveCosmeticSetsAsync(player, rewards).ConfigureAwait(false);
+                    await this.GiveCosmeticPiecesAsync(player, rewards).ConfigureAwait(false);
                     rewardedPlayers.Add(player);
                     await this.ShowMessageAsync(player, this._definition.RankRewardMessage, this.Name, rank, rankingName).ConfigureAwait(false);
                 }
@@ -1018,23 +1018,23 @@ public sealed class BossEncounterContext
         }
     }
 
-    private async ValueTask GiveCosmeticSetsAsync(Player player, IEnumerable<BossEncounterRankReward> rewards)
+    private async ValueTask GiveCosmeticPiecesAsync(Player player, IEnumerable<BossEncounterRankReward> rewards)
     {
-        var setNumbers = rewards.Select(reward => reward.CosmeticSetNumber).Where(number => number > 0).Distinct().ToList();
-        if (setNumbers.Count == 0)
+        var pieceNumbers = rewards.Select(reward => reward.CosmeticPieceNumber).Where(number => number > 0).Distinct().ToList();
+        if (pieceNumbers.Count == 0)
         {
             return;
         }
 
-        if (CosmeticSetsPlugIn.GetActivePlugIn(this._gameContext) is not { } plugIn)
+        if (CosmeticsPlugIn.GetActivePlugIn(this._gameContext) is not { } plugIn)
         {
-            this._logger.LogWarning("The boss encounter {Name} has cosmetic sets as rewards, but the cosmetic sets plugin isn't active.", this.Name);
+            this._logger.LogWarning("The boss encounter {Name} has cosmetic pieces as rewards, but the cosmetics plugin isn't active.", this.Name);
             return;
         }
 
-        foreach (var setNumber in setNumbers)
+        foreach (var pieceNumber in pieceNumbers)
         {
-            await plugIn.GrantAsync(player, setNumber, $"boss:{this.Name}").ConfigureAwait(false);
+            await plugIn.GrantAsync(player, pieceNumber, $"boss:{this.Name}").ConfigureAwait(false);
         }
     }
 

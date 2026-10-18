@@ -12255,75 +12255,81 @@
       <HeaderType>C2HeaderWithSubCode</HeaderType>
       <Code>F5</Code>
       <SubCode>0E</SubCode>
-      <Name>CosmeticSets</Name>
+      <Name>CosmeticPieces</Name>
       <Direction>ServerToClient</Direction>
-      <SentWhen>After the client requested the list of available chat commands, after entering the game, and when the cosmetic sets of the character changed: a set was unlocked or removed, or the worn set changed.</SentWhen>
-      <CausedReaction>The client shows the sets in the cosmetic sets window, and shows the pieces of the worn set instead of the armor of the own character. The other players see the set through the usual appearance data.</CausedReaction>
+      <SentWhen>After the client requested the list of available chat commands, after entering the game, and when the cosmetic pieces of the character changed: a piece was unlocked or removed, or put on or taken off.</SentWhen>
+      <CausedReaction>The client shows the pieces in the cosmetics window, and shows the worn pieces instead of the armor of the own character. The other players see them through the usual appearance data.</CausedReaction>
       <Fields>
-        <Field>
-          <Index>5</Index>
-          <Type>Byte</Type>
-          <Name>SetCount</Name>
-        </Field>
         <Field>
           <Index>6</Index>
           <Type>ShortLittleEndian</Type>
-          <Name>ActiveSetNumber</Name>
-          <Description>The number of the set which the character wears; 0, if it wears none.</Description>
+          <Name>PieceCount</Name>
         </Field>
         <Field>
           <Index>8</Index>
           <Type>Structure[]</Type>
-          <TypeName>CosmeticSet</TypeName>
-          <Name>Sets</Name>
-          <ItemCountField>SetCount</ItemCountField>
-          <Description>The configured sets, ordered by number.</Description>
+          <TypeName>CosmeticPiece</TypeName>
+          <Name>Pieces</Name>
+          <ItemCountField>PieceCount</ItemCountField>
+          <Description>The configured pieces, ordered by slot and number.</Description>
         </Field>
       </Fields>
       <Structures>
         <Structure>
-          <Name>CosmeticSet</Name>
-          <Description>A cosmetic set which a character can wear over its armor.</Description>
-          <Length>40</Length>
+          <Name>CosmeticPiece</Name>
+          <Description>A cosmetic piece which a character can wear over the item of an armor slot.</Description>
+          <Length>42</Length>
           <Fields>
             <Field>
               <Index>0</Index>
               <Type>ShortLittleEndian</Type>
               <Name>Number</Name>
-              <Description>The number of the set, which is used to wear it.</Description>
+              <Description>The number of the piece, which is used to wear it.</Description>
             </Field>
             <Field>
               <Index>2</Index>
               <Type>ShortLittleEndian</Type>
               <Name>ItemNumber</Name>
-              <Description>The number of the pieces in the item groups of helms (7), armors (8), pants (9), gloves (10) and boots (11).</Description>
+              <Description>The number of the item in its group.</Description>
             </Field>
             <Field>
               <Index>4</Index>
               <Type>Byte</Type>
-              <Name>Level</Name>
-              <Description>The level which the pieces show, 0 to 15.</Description>
+              <Name>ItemGroup</Name>
+              <Description>The group of the item, which tells the slot: helms (7), armors (8), pants (9), gloves (10) or boots (11).</Description>
             </Field>
             <Field>
               <Index>5</Index>
-              <Type>Boolean</Type>
-              <Name>IsExcellent</Name>
-              <Description>The pieces glow like excellent items.</Description>
+              <Type>Byte</Type>
+              <Name>Level</Name>
+              <Description>The level which the piece shows, 0 to 15.</Description>
             </Field>
             <Field>
               <Index>6</Index>
               <Type>Boolean</Type>
-              <Name>IsUnlocked</Name>
-              <Description>The character unlocked the set.</Description>
+              <Name>IsExcellent</Name>
+              <Description>The piece glows like an excellent item.</Description>
             </Field>
             <Field>
               <Index>7</Index>
               <Type>Boolean</Type>
-              <Name>CanWear</Name>
-              <Description>The class of the character can wear the set.</Description>
+              <Name>IsUnlocked</Name>
+              <Description>The character unlocked the piece.</Description>
             </Field>
             <Field>
               <Index>8</Index>
+              <Type>Boolean</Type>
+              <Name>CanWear</Name>
+              <Description>The class of the character can wear the piece.</Description>
+            </Field>
+            <Field>
+              <Index>9</Index>
+              <Type>Boolean</Type>
+              <Name>IsWorn</Name>
+              <Description>The character wears the piece.</Description>
+            </Field>
+            <Field>
+              <Index>10</Index>
               <Type>String</Type>
               <Name>Name</Name>
               <Length>32</Length>

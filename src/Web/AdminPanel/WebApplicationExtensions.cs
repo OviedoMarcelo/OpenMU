@@ -99,7 +99,7 @@ public static class WebApplicationExtensions
         services.AddScoped<AdminUserManagementService>();
         services.AddScoped<CastleSiegeManagementService>();
         services.AddScoped<BossEncounterManagementService>();
-        services.AddScoped<CosmeticSetManagementService>();
+        services.AddScoped<CosmeticsManagementService>();
         services.AddScoped<IChangeNotificationService, ChangeNotificationService>();
 
         // The analyzers are only created when the network analyzer page is actually used,

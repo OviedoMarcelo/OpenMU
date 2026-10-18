@@ -6963,21 +6963,17 @@ public class PacketStructureTests
     }
 
     /// <summary>
-    /// Tests the packet size calculation for CosmeticSets.
+    /// Tests the packet size calculation for CosmeticPieces.
     /// </summary>
     [Test]
-    public void CosmeticSets_PacketSizeValidation()
+    public void CosmeticPieces_PacketSizeValidation()
     {
         // Basic packet validation
         // Validate header type and field boundaries
         
-        // Field 'SetCount' starts at index 5 with size 1
-        Assert.That(5, Is.GreaterThanOrEqualTo(0), 
-            "Field 'SetCount' has invalid negative index");
-        
-        // Field 'ActiveSetNumber' starts at index 6 with size 2
+        // Field 'PieceCount' starts at index 6 with size 2
         Assert.That(6, Is.GreaterThanOrEqualTo(0), 
-            "Field 'ActiveSetNumber' has invalid negative index");
+            "Field 'PieceCount' has invalid negative index");
     }
 
     /// <summary>
