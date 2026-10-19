@@ -1,4 +1,4 @@
-// <copyright file="PinkGoldSetDataTest.cs" company="MUnique">
+// <copyright file="SkinArmorSetDataTest.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -13,63 +13,75 @@ using MUnique.OpenMU.Persistence.Initialization.Updates;
 using MUnique.OpenMU.Persistence.InMemory;
 
 /// <summary>
-/// Tests the Pink Gold set, the armor set which every class can wear.
+/// Tests the armor sets of skin packs, which every class can wear.
 /// </summary>
 [TestFixture]
-internal class PinkGoldSetDataTest
+internal class SkinArmorSetDataTest
 {
-    private const short PinkGoldNumber = 54;
-
     private static readonly byte[] ArmorGroups = [7, 8, 9, 10, 11];
 
+    private static readonly object[] Sets =
+    [
+        new object[] { (short)54, "Pink Gold", new AddPinkGoldSetPlugIn() },
+        new object[] { (short)55, "Japanese White", new AddJapaneseWhiteSetPlugIn() },
+    ];
+
     /// <summary>
-    /// Tests that a new season 6 database contains the Pink Gold set.
+    /// Tests that a new season 6 database contains the set.
     /// </summary>
-    [Test]
-    public async Task NewDatabaseContainsPinkGoldSetAsync()
+    /// <param name="number">The item number of the pieces.</param>
+    /// <param name="setName">The name of the set, which starts the names of the pieces.</param>
+    /// <param name="update">The update which adds the set.</param>
+    [TestCaseSource(nameof(Sets))]
+    public async Task NewDatabaseContainsSetAsync(short number, string setName, AddSkinArmorSetPlugInBase update)
     {
         var (_, gameConfiguration) = await CreateSeason6ConfigurationAsync().ConfigureAwait(false);
 
-        AssertPinkGoldSet(gameConfiguration);
+        AssertSet(gameConfiguration, number, setName);
     }
 
     /// <summary>
-    /// Tests that the update adds the same Pink Gold set to a database which was created before it existed.
+    /// Tests that the update adds the same set to a database which was created before it existed.
     /// </summary>
-    [Test]
-    public async Task UpdateAddsPinkGoldSetToExistingDatabaseAsync()
+    /// <param name="number">The item number of the pieces.</param>
+    /// <param name="setName">The name of the set, which starts the names of the pieces.</param>
+    /// <param name="update">The update which adds the set.</param>
+    [TestCaseSource(nameof(Sets))]
+    public async Task UpdateAddsSetToExistingDatabaseAsync(short number, string setName, AddSkinArmorSetPlugInBase update)
     {
         var (context, gameConfiguration) = await CreateSeason6ConfigurationAsync().ConfigureAwait(false);
         using (context)
         {
-            var pinkGoldItems = gameConfiguration.Items.Where(IsPinkGoldPiece).ToList();
-            foreach (var setGroup in gameConfiguration.ItemSetGroups.Where(g => g.Items.Any(i => i.ItemDefinition is { } item && IsPinkGoldPiece(item))).ToList())
+            bool IsPiece(ItemDefinition item) => item.Number == number && ArmorGroups.Contains(item.Group);
+
+            foreach (var setGroup in gameConfiguration.ItemSetGroups.Where(g => g.Items.Any(i => i.ItemDefinition is { } item && IsPiece(item))).ToList())
             {
                 gameConfiguration.ItemSetGroups.Remove(setGroup);
             }
 
-            foreach (var item in pinkGoldItems)
+            foreach (var item in gameConfiguration.Items.Where(IsPiece).ToList())
             {
                 gameConfiguration.Items.Remove(item);
             }
 
-            Assert.That(gameConfiguration.Items.Any(IsPinkGoldPiece), Is.False);
+            Assert.That(gameConfiguration.Items.Any(IsPiece), Is.False);
 
-            await new AddPinkGoldSetPlugIn().ApplyUpdateAsync(context, gameConfiguration).ConfigureAwait(false);
+            await update.ApplyUpdateAsync(context, gameConfiguration).ConfigureAwait(false);
 
-            AssertPinkGoldSet(gameConfiguration);
+            AssertSet(gameConfiguration, number, setName);
         }
     }
 
-    private static void AssertPinkGoldSet(GameConfiguration gameConfiguration)
+    private static void AssertSet(GameConfiguration gameConfiguration, short number, string setName)
     {
-        var pieces = gameConfiguration.Items.Where(IsPinkGoldPiece).OrderBy(i => i.Group).ToList();
+        var pieces = gameConfiguration.Items.Where(i => i.Number == number && ArmorGroups.Contains(i.Group)).OrderBy(i => i.Group).ToList();
         Assert.That(pieces.Select(p => p.Group), Is.EqualTo(ArmorGroups));
-        Assert.That(pieces.Select(p => p.Name.Value), Is.EqualTo(new[] { "Pink Gold Helm", "Pink Gold Armor", "Pink Gold Pants", "Pink Gold Gloves", "Pink Gold Boots" }));
+        Assert.That(pieces.Select(p => p.Name.Value), Is.EqualTo(new[] { "Helm", "Armor", "Pants", "Gloves", "Boots" }.Select(piece => $"{setName} {piece}")));
         Assert.That(pieces.Select(p => Defense(p)), Is.EqualTo(new[] { 53f, 75f, 65f, 48f, 50f }));
 
         var allClasses = gameConfiguration.CharacterClasses.Select(c => c.Number).Order().ToList();
         var rageFighters = new[] { (byte)CharacterClassNumber.RageFighter, (byte)CharacterClassNumber.FistMaster };
+        var firstWord = setName.Split(' ')[0];
         foreach (var piece in pieces)
         {
             var name = piece.Name.Value;
@@ -83,10 +95,9 @@ internal class PinkGoldSetDataTest
             // The defense rate bonus (any level) and the defense bonus of each set level from 10 to 15.
             Assert.That(piece.PossibleItemSetGroups, Has.Count.EqualTo(7), name);
             Assert.That(piece.PossibleItemSetGroups.All(g => g.MinimumItemCount == 5 && g.Items.Count == 5), Is.True, name);
+            Assert.That(piece.PossibleItemSetGroups.All(g => g.Name.Value!.StartsWith(firstWord + " ", StringComparison.Ordinal)), Is.True, name);
         }
     }
-
-    private static bool IsPinkGoldPiece(ItemDefinition item) => item.Number == PinkGoldNumber && ArmorGroups.Contains(item.Group);
 
     private static float Defense(ItemDefinition item) => item.BasePowerUpAttributes.Single(p => p.TargetAttribute?.Id == Stats.DefenseBase.Id).BaseValue;
 

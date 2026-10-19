@@ -110,6 +110,7 @@ public class Armors : ArmorInitializerBase
         this.CreateArmor(52, 2, 2, 2, "Hades Helm", 109, 41, 86, 0, 60, 15, 181, 0, 0, 1, 0, 0, 0, 0, 0, 0);
         this.CreateArmor(53, 2, 2, 2, "Queen Helm", 109, 44, 86, 400, 175, 85, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0);
         this.CreateArmor(54, 2, 2, 2, "Pink Gold Helm", 104, 53, 86, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1);
+        this.CreateArmor(55, 2, 2, 2, "Japanese White Helm", 104, 53, 86, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1);
         this.CreateArmor(59, 2, 2, 2, "Sacred Helm", 54, 24, 52, 1, 85, 0, 0, 75, 0, 0, 0, 0, 0, 0, 0, 1);
         this.CreateArmor(60, 2, 2, 2, "Storm Hard Helm", 70, 32, 68, 1, 100, 0, 0, 90, 0, 0, 0, 0, 0, 0, 0, 1);
         this.CreateArmor(61, 2, 2, 2, "Piercing Helm", 90, 45, 82, 1, 115, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 1);
@@ -171,6 +172,7 @@ public class Armors : ArmorInitializerBase
         this.CreateArmor(52, 3, 2, 3, "Hades Armor", 129, 50, 86, 0, 60, 15, 181, 0, 0, 1, 0, 0, 0, 0, 0, 0);
         this.CreateArmor(53, 3, 2, 3, "Queen Armor", 129, 60, 86, 400, 175, 85, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0);
         this.CreateArmor(54, 3, 2, 3, "Pink Gold Armor", 126, 75, 86, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1);
+        this.CreateArmor(55, 3, 2, 3, "Japanese White Armor", 126, 75, 86, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1);
         this.CreateArmor(59, 3, 2, 3, "Sacred Armor", 66, 43, 52, 1, 85, 0, 0, 75, 0, 0, 0, 0, 0, 0, 0, 1);
         this.CreateArmor(60, 3, 2, 3, "Storm Hard Armor", 82, 51, 68, 1, 100, 0, 0, 90, 0, 0, 0, 0, 0, 0, 0, 1);
         this.CreateArmor(61, 3, 2, 3, "Piercing Armor", 101, 59, 82, 1, 115, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 1);
@@ -232,6 +234,7 @@ public class Armors : ArmorInitializerBase
         this.CreateArmor(52, 4, 2, 2, "Hades Pants", 114, 44, 86, 0, 60, 15, 181, 0, 0, 1, 0, 0, 0, 0, 0, 0);
         this.CreateArmor(53, 4, 2, 2, "Queen Pants", 114, 50, 86, 400, 175, 85, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0);
         this.CreateArmor(54, 4, 2, 2, "Pink Gold Pants", 113, 65, 86, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1);
+        this.CreateArmor(55, 4, 2, 2, "Japanese White Pants", 113, 65, 86, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1);
         this.CreateArmor(59, 4, 2, 2, "Sacred Pants", 62, 33, 52, 1, 85, 0, 0, 75, 0, 0, 0, 0, 0, 0, 0, 1);
         this.CreateArmor(60, 4, 2, 2, "Storm Hard Pants", 78, 41, 68, 1, 100, 0, 0, 90, 0, 0, 0, 0, 0, 0, 0, 1);
         this.CreateArmor(61, 4, 2, 2, "Piercing Pants", 95, 49, 82, 1, 115, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 1);
@@ -293,6 +296,7 @@ public class Armors : ArmorInitializerBase
         this.CreateGloves(52, "Hades Gloves", 100, 31, 7, 86, 0, 60, 15, 1, 0, 0, 0, 0, 0);
         this.CreateGloves(53, "Queen Gloves", 100, 39, 7, 86, 400, 175, 85, 0, 0, 0, 0, 0, 3);
         this.CreateGloves(54, "Pink Gold Gloves", 94, 48, 6, 86, 0, 0, 0, 1, 1, 1, 1, 1, 1);
+        this.CreateGloves(55, "Japanese White Gloves", 94, 48, 6, 86, 0, 0, 0, 1, 1, 1, 1, 1, 1);
 
         // Boots:
         this.CreateBoots(0, "Bronze Boots", 12, 4, 10, 34, 0, 80, 20, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0);
@@ -350,6 +354,7 @@ public class Armors : ArmorInitializerBase
         this.CreateBoots(52, "Hades Boots", 94, 34, 0, 86, 0, 60, 15, 181, 0, 0, 1, 0, 0, 0, 0, 0, 0);
         this.CreateBoots(53, "Queen Boots", 94, 42, 0, 86, 400, 175, 85, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0);
         this.CreateBoots(54, "Pink Gold Boots", 98, 50, 0, 86, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1);
+        this.CreateBoots(55, "Japanese White Boots", 98, 50, 0, 86, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1);
         this.CreateBoots(59, "Sacred Boots", 50, 20, 0, 52, 1, 85, 0, 0, 75, 0, 0, 0, 0, 0, 0, 0, 1);
         this.CreateBoots(60, "Storm Hard Boots", 62, 28, 0, 68, 1, 100, 0, 0, 90, 0, 0, 0, 0, 0, 0, 0, 1);
         this.CreateBoots(61, "Piercing Boots", 82, 36, 0, 82, 1, 115, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 1);
