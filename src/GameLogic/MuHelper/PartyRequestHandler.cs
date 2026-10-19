@@ -38,10 +38,17 @@ public static class PartyRequestHandler
             return true;
         }
 
-        if (settings.AutoAcceptAnyone && await Bots.BotPartyHandler.TryScheduleAcceptAsync(receiver, requester).ConfigureAwait(false))
+        if (settings.AutoAcceptAnyone)
         {
-            // The actual accept happens shortly afterwards in the bot's own tick (a human-like delay);
-            // all bot-specific safeguards live in the handler, so this stays a thin criteria branch.
+            if (receiver is Offline.OfflinePlayer { Account.IsBot: true })
+            {
+                // The actual accept happens shortly afterwards in the bot's own tick (a human-like delay);
+                // all bot-specific safeguards live in the handler, so this stays a thin criteria branch.
+                return await Bots.BotPartyHandler.TryScheduleAcceptAsync(receiver, requester).ConfigureAwait(false);
+            }
+
+            // A player who turned the option on in the MU Helper joins right away, like with friends and guild mates.
+            await AcceptPartyRequestAsync(receiver, requester).ConfigureAwait(false);
             return true;
         }
 

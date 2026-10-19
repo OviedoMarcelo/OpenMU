@@ -35,7 +35,8 @@ using MUnique.OpenMU.GameLogic.MuHelper;
 ///         [RepairItem:1][PickAllNearItems:1][PickSelectedItems:1]
 ///  28     PetAttack (BYTE: 0=cease, 1=auto, 2=together)
 ///  29     [UseSelfDefense:1][AutoAcceptFriend:1][AutoAcceptGuild:1][FallbackBasicAttack:1][Unused:4]
-///  30-64  _UnusedPadding[35]
+///  30     [AutoAcceptAnyone:1][Unused:7]
+///  31-64  _UnusedPadding[34]
 ///  65-244 ExtraItems[12][15]  (null-terminated ASCII item name filters)
 ///  245-256 (trailing padding, ignored)
 /// </code>
@@ -63,6 +64,7 @@ public static class MuHelperSettingsSerializer
     private const int Skill2FlagsOffset = 27;
     private const int PetAttackOffset = 28;
     private const int HelperFlagsOffset = 29;
+    private const int PartyFlagsOffset = 30;
     private const int ExtraItemsOffset = 65;
     private const int ExtraItemsEndOffset = 245;
     private const int ExtraItemSlotCount = 12;
@@ -72,6 +74,8 @@ public static class MuHelperSettingsSerializer
     private const int AutoAcceptFriendFlag = 1 << 1;
     private const int AutoAcceptGuildFlag = 1 << 2;
     private const int FallbackBasicAttackFlag = 1 << 3;
+
+    private const int AutoAcceptAnyoneFlag = 1 << 0;
 
     private const int PickJewelFlag = 1 << 3;
     private const int PickSetItemFlag = 1 << 4;
@@ -193,6 +197,9 @@ public static class MuHelperSettingsSerializer
         bool autoAcceptGuild = (helperFlags & AutoAcceptGuildFlag) != 0;
         bool fallbackBasicAttack = (helperFlags & FallbackBasicAttackFlag) != 0;
 
+        // Older clients send zeros here, so the option stays off for them.
+        bool autoAcceptAnyone = (blob[PartyFlagsOffset] & AutoAcceptAnyoneFlag) != 0;
+
         var extraNames = new List<string>();
         if (blob.Length >= ExtraItemsEndOffset)
         {
@@ -261,6 +268,7 @@ public static class MuHelperSettingsSerializer
             UseSelfDefense = useSelfDefense,
             AutoAcceptFriend = autoAcceptFriend,
             AutoAcceptGuild = autoAcceptGuild,
+            AutoAcceptAnyone = autoAcceptAnyone,
             FallbackBasicAttack = fallbackBasicAttack,
         };
     }
