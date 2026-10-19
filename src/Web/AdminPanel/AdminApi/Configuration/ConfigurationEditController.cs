@@ -32,8 +32,9 @@ public class ConfigurationEditController : ControllerBase
 {
     /// <summary>
     /// Changes on the context of the data source are made one after another; a context isn't thread safe.
+    /// The <see cref="StorePricesController"/> uses it, too.
     /// </summary>
-    private static readonly SemaphoreSlim DataSourceLock = new(1, 1);
+    internal static readonly SemaphoreSlim DataSourceLock = new(1, 1);
 
     private readonly IDataSource<GameConfiguration> _dataSource;
     private readonly IPersistenceContextProvider _contextProvider;
