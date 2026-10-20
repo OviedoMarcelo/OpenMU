@@ -39,6 +39,7 @@ public class AccountsController : ControllerBase
     private readonly IPersistenceContextProvider _contextProvider;
     private readonly ILoginServer _loginServer;
     private readonly LoggedInAccountService _loggedInAccounts;
+    private readonly IServerProvider _serverProvider;
     private readonly ConfigurationTypeRegistry _registry;
     private readonly ConfigurationValueSerializer _serializer;
     private readonly ConfigurationValueWriter _writer;
@@ -53,6 +54,7 @@ public class AccountsController : ControllerBase
     /// <param name="contextProvider">The persistence context provider.</param>
     /// <param name="loginServer">The login server, which knows the logged in accounts.</param>
     /// <param name="loggedInAccounts">The service which disconnects accounts.</param>
+    /// <param name="serverProvider">The server provider, whose game servers may hold a character.</param>
     /// <param name="registry">The type registry.</param>
     /// <param name="serializer">The serializer.</param>
     /// <param name="writer">The writer.</param>
@@ -64,6 +66,7 @@ public class AccountsController : ControllerBase
         IPersistenceContextProvider contextProvider,
         ILoginServer loginServer,
         LoggedInAccountService loggedInAccounts,
+        IServerProvider serverProvider,
         ConfigurationTypeRegistry registry,
         ConfigurationValueSerializer serializer,
         ConfigurationValueWriter writer,
@@ -75,6 +78,7 @@ public class AccountsController : ControllerBase
         this._contextProvider = contextProvider;
         this._loginServer = loginServer;
         this._loggedInAccounts = loggedInAccounts;
+        this._serverProvider = serverProvider;
         this._registry = registry;
         this._serializer = serializer;
         this._writer = writer;
@@ -336,6 +340,73 @@ public class AccountsController : ControllerBase
         return this.NoContent();
     }
 
+    /// <summary>
+    /// Gets the maps to which a character can be moved, because they have a spawn gate.
+    /// </summary>
+    /// <returns>The maps.</returns>
+    [HttpGet("spawn-maps")]
+    public async Task<IReadOnlyList<SpawnMap>> GetSpawnMapsAsync()
+    {
+        var gameConfiguration = await this._configurationSource.GetOwnerAsync(default, this.HttpContext.RequestAborted).ConfigureAwait(false);
+        return CharacterRelocation.GetSpawnMaps(gameConfiguration)
+            .Select(map => new SpawnMap(map.GetId(), map.Number, map.Name.ValueInNeutralLanguage))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Moves a character to a random point of the spawn gate of a map, e.g. when it's stuck.
+    /// The account mustn't be in the game, because the game server would overwrite the position.
+    /// </summary>
+    /// <param name="id">The id of the account.</param>
+    /// <param name="characterId">The id of the character.</param>
+    /// <param name="request">The map; the home map of the character class if not set.</param>
+    /// <returns>The new position.</returns>
+    [HttpPost("{id:guid}/characters/{characterId:guid}/move")]
+    [Authorize(AuthenticationSchemes = AdminApiDefaults.AuthenticationScheme, Policy = AdminPolicies.Operator)]
+    public async Task<ActionResult<MoveCharacterResult>> MoveCharacterAsync(Guid id, Guid characterId, [FromBody] MoveCharacterRequest request)
+    {
+        var gameConfiguration = await this._configurationSource.GetOwnerAsync(default, this.HttpContext.RequestAborted).ConfigureAwait(false);
+        using var context = this._contextProvider.CreateNewPlayerContext(gameConfiguration);
+        if (await context.GetByIdAsync<Account>(id, this.HttpContext.RequestAborted).ConfigureAwait(false) is not { } account
+            || account.Characters.FirstOrDefault(c => c.GetId() == characterId) is not { } character)
+        {
+            return this.NotFound();
+        }
+
+        if (await CharacterRelocation.FindSessionAsync(account.LoginName, this._loginServer, this._serverProvider).ConfigureAwait(false) is { } session)
+        {
+            return this.Conflict(new ConfigurationEditController.ErrorResponse($"{session} Desconectala antes de mover el personaje: el servidor de juego pisaría la posición al salir."));
+        }
+
+        var map = request.MapId is { } mapId
+            ? gameConfiguration.Maps.FirstOrDefault(m => m.GetId() == mapId)
+            : character.CharacterClass?.HomeMap;
+        if (map is null)
+        {
+            return this.BadRequest(new ConfigurationEditController.ErrorResponse("Mapa inválido."));
+        }
+
+        var before = DescribePosition(character);
+        if (!CharacterRelocation.TryMoveToSpawn(character, map, Random.Shared))
+        {
+            return this.BadRequest(new ConfigurationEditController.ErrorResponse($"El mapa {map.Name.ValueInNeutralLanguage} no tiene punto de aparición."));
+        }
+
+        if (await this.SaveAsync(context, account).ConfigureAwait(false) is { } error)
+        {
+            return error;
+        }
+
+        var after = DescribePosition(character);
+        await this.AuditAsync(AuditAction.Updated, account, [new AuditChange($"Characters[{character.Name}].Position", $"Posición de {character.Name}", before, after)]).ConfigureAwait(false);
+        return new MoveCharacterResult(map.Name.ValueInNeutralLanguage, character.PositionX, character.PositionY);
+    }
+
+    private static string DescribePosition(Character character)
+    {
+        return $"{character.CurrentMap?.Name.ValueInNeutralLanguage ?? "?"} ({character.PositionX}, {character.PositionY})";
+    }
+
     private static void CheckLength(List<FieldError> errors, string path, string? value, int minimum, int maximum)
     {
         if (string.IsNullOrWhiteSpace(value) || value.Length < minimum || value.Length > maximum)
@@ -410,6 +481,28 @@ public class AccountsController : ControllerBase
     /// <param name="Account">The account, in the format of the configuration objects.</param>
     /// <param name="OnlineServer">The id of the game server, if the account is logged in.</param>
     public record AccountDetails(JsonObject Account, byte? OnlineServer);
+
+    /// <summary>
+    /// A map to which a character can be moved.
+    /// </summary>
+    /// <param name="Id">The id of the map definition.</param>
+    /// <param name="Number">The number of the map, e.g. <c>0</c> for Lorencia.</param>
+    /// <param name="Name">The name of the map.</param>
+    public record SpawnMap(Guid Id, short Number, string Name);
+
+    /// <summary>
+    /// The map to which a character is moved.
+    /// </summary>
+    /// <param name="MapId">The id of the map definition, or <c>null</c> for the home map of the character class.</param>
+    public record MoveCharacterRequest(Guid? MapId);
+
+    /// <summary>
+    /// The new position of a moved character.
+    /// </summary>
+    /// <param name="Map">The name of the map.</param>
+    /// <param name="X">The x coordinate.</param>
+    /// <param name="Y">The y coordinate.</param>
+    public record MoveCharacterResult(string Map, byte X, byte Y);
 
     /// <summary>
     /// The data of a new account.
