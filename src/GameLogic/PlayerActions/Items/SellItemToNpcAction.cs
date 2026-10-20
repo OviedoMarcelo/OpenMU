@@ -5,6 +5,7 @@
 namespace MUnique.OpenMU.GameLogic.PlayerActions.Items;
 
 using MUnique.OpenMU.GameLogic;
+using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.GameLogic.PlugIns;
 using MUnique.OpenMU.GameLogic.Views.Inventory;
 
@@ -69,7 +70,9 @@ public class SellItemToNpcAction
 
     private async ValueTask<bool> SellItemAsync(Player player, Item item)
     {
-        var sellingPrice = (int)this._itemPriceCalculator.CalculateSellingPrice(item, item.Durability());
+        var sellingPrice = MerchantStorePrices.FindPrice(player.GameContext.Configuration, player.OpenedNpc?.Definition, item) is { } storePrice
+            ? (int)Math.Min(this._itemPriceCalculator.CalculateSellingPriceFromBuyingPrice(storePrice), int.MaxValue)
+            : (int)this._itemPriceCalculator.CalculateSellingPrice(item, item.Durability());
         player.Logger.LogDebug("Calculated selling price {0} for item {1}", sellingPrice, item);
         if (!player.TryAddMoney(sellingPrice))
         {

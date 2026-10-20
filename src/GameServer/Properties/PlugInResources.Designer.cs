@@ -7313,6 +7313,24 @@ namespace MUnique.OpenMU.GameServer.Properties {
                 return ResourceManager.GetString("MonsterLevelsViewPlugIn_Description", resourceCulture);
             }
         }
+        /// <summary>
+        ///   Looks up a localized string similar to Merchant prices view.
+        /// </summary>
+        public static string MerchantPricesViewPlugIn_Name {
+            get {
+                return ResourceManager.GetString("MerchantPricesViewPlugIn_Name", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Sends the prices which the merchant stores set for their items.
+        /// </summary>
+        public static string MerchantPricesViewPlugIn_Description {
+            get {
+                return ResourceManager.GetString("MerchantPricesViewPlugIn_Description", resourceCulture);
+            }
+        }
+
         /// <summary>Gets the localized EnterMarketPlace_Name text.</summary>
         public static string EnterMarketPlace_Name => ResourceManager.GetString("EnterMarketPlace_Name", resourceCulture)!;
 

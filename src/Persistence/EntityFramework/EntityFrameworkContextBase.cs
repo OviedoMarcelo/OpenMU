@@ -254,6 +254,20 @@ internal class EntityFrameworkContextBase : IContext
         => entityType.GetSchema() == SchemaNames.Configuration;
 
     /// <summary>
+    /// Determines whether the entry is a changed item which may belong to the configuration.
+    /// </summary>
+    /// <remarks>
+    /// The items of the merchant stores are part of the configuration, but they're kept in the
+    /// data schema like the items of the players, so changing one of them, e.g. its store price,
+    /// wouldn't reach the running game. An item which isn't part of a configuration isn't found
+    /// there, so its change doesn't affect anything.
+    /// </remarks>
+    /// <param name="entry">The entry.</param>
+    /// <returns><c>true</c>, if the change should be published.</returns>
+    internal static bool IsChangedConfigurationItem(EntityEntry entry)
+        => entry is { State: EntityState.Modified, Entity: DataModel.Entities.Item };
+
+    /// <summary>
     /// Releases unmanaged and - optionally - managed resources.
     /// </summary>
     /// <param name="dispose"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
@@ -506,7 +520,7 @@ internal class EntityFrameworkContextBase : IContext
 
             var changedEntries = this.Context.ChangeTracker.Entries()
                 .Where(entity => entity.State != EntityState.Unchanged
-                                 && PublishesConfigurationChanges(entity.Metadata))
+                                 && (PublishesConfigurationChanges(entity.Metadata) || IsChangedConfigurationItem(entity)))
                 .ToList();
             foreach (var entry in changedEntries)
             {
