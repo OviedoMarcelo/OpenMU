@@ -5,6 +5,7 @@
 namespace MUnique.OpenMU.GameLogic.PlayerActions.Items;
 
 using MUnique.OpenMU.GameLogic.CastleSiege;
+using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.GameLogic.PlugIns;
 using MUnique.OpenMU.GameLogic.Views.Inventory;
 
@@ -94,7 +95,8 @@ public class BuyNpcItemAction
 
     private ValueTask<bool> CheckMoneyAsync(Player player, Item item)
     {
-        var price = this._priceCalculator.CalculateFinalBuyingPrice(item);
+        var price = MerchantStorePrices.FindPrice(player.GameContext.Configuration, player.OpenedNpc?.Definition, item)
+                    ?? this._priceCalculator.CalculateFinalBuyingPrice(item);
         return this._castleSiegeTaxProvider.TryPayStoreCostAsync(player, price);
     }
 }

@@ -32288,6 +32288,167 @@ public readonly ref struct EventStartTimeRef
 
 
 /// <summary>
+/// Is sent by the server when: When a player opens the store of a merchant NPC, right before the store item list, and again when that store changes while it's open.
+/// Causes reaction on client side: The client shows these prices in NPC stores instead of the ones it calculates: the buying price (times the pieces of a stack, when the price is the one of a piece), and a third of it as the selling price. It replaces the prices of a previous message.
+/// </summary>
+public readonly ref struct MerchantPricesRef
+{
+    private readonly Span<byte> _data;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MerchantPricesRef"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    public MerchantPricesRef(Span<byte> data)
+        : this(data, true)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MerchantPricesRef"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    /// <param name="initialize">If set to <c>true</c>, the header data is automatically initialized and written to the underlying span.</param>
+    private MerchantPricesRef(Span<byte> data, bool initialize)
+    {
+        this._data = data;
+        if (initialize)
+        {
+            var header = this.Header;
+            header.Type = HeaderType;
+            header.Code = Code;
+            header.Length = (ushort)data.Length;
+            header.SubCode = SubCode;
+        }
+    }
+
+    /// <summary>
+    /// Gets the header type of this data packet.
+    /// </summary>
+    public static byte HeaderType => 0xC2;
+
+    /// <summary>
+    /// Gets the operation code of this data packet.
+    /// </summary>
+    public static byte Code => 0xF5;
+
+    /// <summary>
+    /// Gets the operation sub-code of this data packet.
+    /// The <see cref="Code" /> is used as a grouping key.
+    /// </summary>
+    public static byte SubCode => 0x10;
+
+    /// <summary>
+    /// Gets the header of this packet.
+    /// </summary>
+    public C2HeaderWithSubCodeRef Header => new (this._data);
+
+    /// <summary>
+    /// Gets or sets the price count.
+    /// </summary>
+    public ushort PriceCount
+    {
+        get => ReadUInt16LittleEndian(this._data[6..]);
+        set => WriteUInt16LittleEndian(this._data[6..], value);
+    }
+
+    /// <summary>
+    /// Gets the <see cref="MerchantPriceRef"/> of the specified index.
+    /// </summary>
+        public MerchantPriceRef this[int index] => new (this._data[(8 + index * MerchantPriceRef.Length)..]);
+
+    /// <summary>
+    /// Performs an implicit conversion from a Span of bytes to a <see cref="MerchantPrices"/>.
+    /// </summary>
+    /// <param name="packet">The packet as span.</param>
+    /// <returns>The packet as struct.</returns>
+    public static implicit operator MerchantPricesRef(Span<byte> packet) => new (packet, false);
+
+    /// <summary>
+    /// Performs an implicit conversion from <see cref="MerchantPrices"/> to a Span of bytes.
+    /// </summary>
+    /// <param name="packet">The packet as struct.</param>
+    /// <returns>The packet as byte span.</returns>
+    public static implicit operator Span<byte>(MerchantPricesRef packet) => packet._data; 
+
+    /// <summary>
+    /// Calculates the size of the packet for the specified count of <see cref="MerchantPriceRef"/>.
+    /// </summary>
+    /// <param name="pricesCount">The count of <see cref="MerchantPriceRef"/> from which the size will be calculated.</param>
+        
+    public static int GetRequiredSize(int pricesCount) => pricesCount * MerchantPriceRef.Length + 8;
+
+
+/// <summary>
+/// The price which merchants ask for an item of a level..
+/// </summary>
+public readonly ref struct MerchantPriceRef
+{
+    private readonly Span<byte> _data;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MerchantPriceRef"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    public MerchantPriceRef(Span<byte> data)
+    {
+        this._data = data;
+    }
+
+    /// <summary>
+    /// Gets the initial length of this data packet. When the size is dynamic, this value may be bigger than actually needed.
+    /// </summary>
+    public static int Length => 9;
+
+    /// <summary>
+    /// Gets or sets the item group.
+    /// </summary>
+    public byte ItemGroup
+    {
+        get => this._data[0];
+        set => this._data[0] = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the item level.
+    /// </summary>
+    public byte ItemLevel
+    {
+        get => this._data[1];
+        set => this._data[1] = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the item number.
+    /// </summary>
+    public ushort ItemNumber
+    {
+        get => ReadUInt16LittleEndian(this._data[2..]);
+        set => WriteUInt16LittleEndian(this._data[2..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the buying price in zen.
+    /// </summary>
+    public uint Price
+    {
+        get => ReadUInt32LittleEndian(this._data[4..]);
+        set => WriteUInt32LittleEndian(this._data[4..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets if set, the item stacks and the price is the one of a piece: a stack costs it times its pieces.
+    /// </summary>
+    public bool IsPricePerPiece
+    {
+        get => this._data[8..].GetBoolean();
+        set => this._data[8..].SetBoolean(value);
+    }
+}
+}
+
+
+/// <summary>
 /// Is sent by the server when: The player receives the result of registering Rena or Event Chips at the Golden Archer NPC.
 /// Causes reaction on client side: The client updates the Golden Archer interface with total registered count and remaining count in inventory.
 /// </summary>

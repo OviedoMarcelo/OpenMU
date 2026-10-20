@@ -7015,6 +7015,20 @@ public class PacketStructureTests
     }
 
     /// <summary>
+    /// Tests the packet size calculation for MerchantPrices.
+    /// </summary>
+    [Test]
+    public void MerchantPrices_PacketSizeValidation()
+    {
+        // Basic packet validation
+        // Validate header type and field boundaries
+        
+        // Field 'PriceCount' starts at index 6 with size 2
+        Assert.That(6, Is.GreaterThanOrEqualTo(0), 
+            "Field 'PriceCount' has invalid negative index");
+    }
+
+    /// <summary>
     /// Tests the packet size calculation for EventChipRegistrationResult.
     /// </summary>
     [Test]

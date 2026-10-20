@@ -343,6 +343,14 @@ public class ItemPriceCalculator
     }
 
     /// <summary>
+    /// Calculates the selling price of an item whose buying price isn't calculated, but set,
+    /// e.g. by a merchant store (see <see cref="NPC.MerchantStorePrices"/>): a third of it.
+    /// </summary>
+    /// <param name="buyingPrice">The buying price.</param>
+    /// <returns>The selling price.</returns>
+    public long CalculateSellingPriceFromBuyingPrice(long buyingPrice) => RoundPrice(buyingPrice / 3);
+
+    /// <summary>
     /// Calculates the repair price of the item, which the player has to pay if he wants to repair the item.
     /// </summary>
     /// <param name="item">The item.</param>

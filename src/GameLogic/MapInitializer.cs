@@ -345,6 +345,8 @@ public class MapInitializer : IMapInitializer
                     {
                         if (player.OpenedNpc == o)
                         {
+                            await player.InvokeViewPlugInAsync<IMerchantPricesViewPlugIn>(plugin => plugin.ShowMerchantPricesAsync())
+                                .ConfigureAwait(false);
                             await player.InvokeViewPlugInAsync<IShowMerchantStoreItemListPlugIn>(
                                     plugin => plugin.ShowMerchantStoreItemListAsync(itemStorage.Items, StoreKind.Normal))
                                 .ConfigureAwait(false);
