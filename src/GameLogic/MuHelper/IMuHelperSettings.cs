@@ -152,8 +152,9 @@ public interface IMuHelperSettings
 
     /// <summary>
     /// Gets a value indicating whether to automatically accept party requests from anyone, not just
-    /// friends or guild mates. Defaults to <c>false</c>; used by server-side bots so they group up
-    /// with players who invite them (see <c>Bots.BotPartyHandler</c> for the applied safeguards).
+    /// friends or guild mates. Defaults to <c>false</c>. Players turn it on in the MU Helper; server-side
+    /// bots use it to group up with players who invite them (see <c>Bots.BotPartyHandler</c> for the
+    /// safeguards and the human-like delay of the bots).
     /// </summary>
     bool AutoAcceptAnyone => false;
 

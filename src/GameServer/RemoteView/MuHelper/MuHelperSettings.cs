@@ -152,6 +152,9 @@ public sealed class MuHelperSettings : IMuHelperSettings
     /// <summary>Gets a value indicating whether to automatically accept requests from guild.</summary>
     public bool AutoAcceptGuild { get; init; }
 
+    /// <summary>Gets a value indicating whether to automatically accept party requests from anyone.</summary>
+    public bool AutoAcceptAnyone { get; init; }
+
     /// <summary>Gets a value indicating whether to use basic attack as fallback when the configured skill cannot be used.</summary>
     public bool FallbackBasicAttack { get; init; }
 
