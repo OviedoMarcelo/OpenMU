@@ -5,6 +5,7 @@
 namespace MUnique.OpenMU.Web.AdminPanel.AdminApi.Configuration;
 
 using System.Globalization;
+using MUnique.OpenMU.DataModel;
 using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.Persistence;
@@ -37,6 +38,7 @@ public static class StorePrices
                 group.Key.Item1.Group,
                 group.Key.Item1.Number,
                 group.Key.Level,
+                group.First().Item.IsStackable(),
                 group
                     .OrderBy(entry => entry.Monster.Number)
                     .ThenBy(entry => entry.Item.ItemSlot)
@@ -46,6 +48,7 @@ public static class StorePrices
                         entry.Monster.Designation.ValueInNeutralLanguage,
                         entry.Monster.Number,
                         entry.Item.ItemSlot,
+                        entry.Item.IsStackable() ? Math.Max(1, (int)entry.Item.Durability()) : 1,
                         calculator.CalculateFinalBuyingPrice(entry.Item),
                         entry.Item.StorePrice))
                     .ToList()))
@@ -121,8 +124,9 @@ public static class StorePrices
     /// <param name="Group">The group of the item.</param>
     /// <param name="Number">The number of the item in its group.</param>
     /// <param name="Level">The level of the item.</param>
+    /// <param name="IsPricePerPiece">If set to <c>true</c>, the item stacks and an own price is the one of a piece.</param>
     /// <param name="Offers">The store items which sell it.</param>
-    public record ItemOnSale(Guid DefinitionId, string Name, int Group, int Number, int Level, IReadOnlyList<StoreOffer> Offers);
+    public record ItemOnSale(Guid DefinitionId, string Name, int Group, int Number, int Level, bool IsPricePerPiece, IReadOnlyList<StoreOffer> Offers);
 
     /// <summary>
     /// An item in the store of a merchant.
@@ -132,9 +136,10 @@ public static class StorePrices
     /// <param name="MerchantName">The name of the merchant.</param>
     /// <param name="MerchantNumber">The number of the merchant.</param>
     /// <param name="Slot">The slot of the item in the store.</param>
-    /// <param name="NormalPrice">The price which is calculated from the item, when the store has no own price.</param>
-    /// <param name="StorePrice">The own price of the store, if any.</param>
-    public record StoreOffer(Guid ItemId, Guid MerchantId, string MerchantName, int MerchantNumber, int Slot, long NormalPrice, int? StorePrice);
+    /// <param name="Pieces">The pieces of the stack of the store, or 1 if the item doesn't stack.</param>
+    /// <param name="NormalPrice">The price which is calculated from the item (of all of its pieces), when the store has no own price.</param>
+    /// <param name="StorePrice">The own price of the store, if any; of a piece, if the item stacks.</param>
+    public record StoreOffer(Guid ItemId, Guid MerchantId, string MerchantName, int MerchantNumber, int Slot, int Pieces, long NormalPrice, int? StorePrice);
 
     /// <summary>
     /// A change of the own price of a store item.
