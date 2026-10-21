@@ -76,13 +76,19 @@ public class Gates : InitializerBase
         this.GameConfiguration.WarpList.Add(this.CreateWarpInfo(32, "Elveland2", 2500, 10, gates[268]));
         this.GameConfiguration.WarpList.Add(this.CreateWarpInfo(33, "PeaceSwamp", 15000, 400, gates[273]));
         this.GameConfiguration.WarpList.Add(this.CreateWarpInfo(34, "Raklion", 15000, 280, gates[287]));
-        this.GameConfiguration.WarpList.Add(this.CreateWarpInfo(37, "Vulcanus", 15000, 30, gates[294]));
+        // The client asks for Vulcanus with the index of its MoveReq (42).
+        this.GameConfiguration.WarpList.Add(this.CreateWarpInfo(42, "Vulcanus", 15000, 30, gates[294]));
         this.GameConfiguration.WarpList.Add(this.CreateWarpInfo(44, "LorenMarket", 18000, 200, gates[333]));
         this.GameConfiguration.WarpList.Add(this.CreateWarpInfo(43, "Elveland3", 3000, 10, gates[269]));
         this.GameConfiguration.WarpList.Add(this.CreateWarpInfo(45, "KanturuRuins3", 15000, 160, gates[334]));
         this.GameConfiguration.WarpList.Add(this.CreateWarpInfo(46, "Karutan1", 13000, 170, gates[335]));
         this.GameConfiguration.WarpList.Add(this.CreateWarpInfo(47, "Karutan2", 14000, 170, gates[344]));
         this.GameConfiguration.WarpList.Add(this.CreateWarpInfo(48, "LaCleon", 15000, 280, gates[287]));
+
+        // MU Cyber: Valley of Loren and Crywolf in the move window (M), where the walking players arrive.
+        // Also in the MoveReq of the client and in AddValleyOfLorenAndCrywolfWarpsPlugIn for existing databases.
+        this.GameConfiguration.WarpList.Add(this.CreateWarpInfo(49, "ValleyOfLoren", 10000, 10, gates[103]));
+        this.GameConfiguration.WarpList.Add(this.CreateWarpInfo(50, "Crywolf", 15000, 150, gates[114]));
     }
 
     private WarpInfo CreateWarpInfo(ushort index, string name, int costs, int levelRequirement, ExitGate gate)
