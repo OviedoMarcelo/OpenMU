@@ -5572,4 +5572,62 @@ public static class ConnectionExtensions
         }
 
         await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Sends a <see cref="ClientFeatures" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="features">The flags of the supported features. 1 = NpcQuestDialog.</param>
+    /// <remarks>
+    /// Is sent by the client when: A client which supports some optional features of this server tells which ones, right before the ChatCommandListRequest after the character entered the game world.
+    /// Causes reaction on server side: The server remembers the features for this player and uses them, e.g. it sends NpcQuestDialog messages instead of showing the text of the NPC above its head.
+    /// </remarks>
+    public static async ValueTask SendClientFeaturesAsync(this IConnection? connection, byte @features)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = ClientFeaturesRef.Length;
+            var packet = new ClientFeaturesRef(connection.Output.GetSpan(length)[..length]);
+            packet.Features = @features;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Sends a <see cref="NpcQuestDialogAnswer" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="dialogId">The id of the dialog, as in the NpcQuestDialog message.</param>
+    /// <param name="accepted">If set, the player accepted. Otherwise the player declined or closed the dialog.</param>
+    /// <remarks>
+    /// Is sent by the client when: The player chose an answer in the dialog of an NpcQuestDialog message, or closed it.
+    /// Causes reaction on server side: When the player accepted, the talk counts for the quest. Otherwise nothing happens and the player can talk to the NPC again later.
+    /// </remarks>
+    public static async ValueTask SendNpcQuestDialogAnswerAsync(this IConnection? connection, uint @dialogId, bool @accepted)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = NpcQuestDialogAnswerRef.Length;
+            var packet = new NpcQuestDialogAnswerRef(connection.Output.GetSpan(length)[..length]);
+            packet.DialogId = @dialogId;
+            packet.Accepted = @accepted;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
     }}

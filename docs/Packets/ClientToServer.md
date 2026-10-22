@@ -180,6 +180,8 @@
   * [C1 F3 30 - SaveKeyConfiguration (by client)](C1-F3-30-SaveKeyConfiguration_by-client.md)
   * [C1 F3 52 - AddMasterSkillPoint (by client)](C1-F3-52-AddMasterSkillPoint_by-client.md)
   * [C1 F5 00 - ChatCommandListRequest (by client)](C1-F5-00-ChatCommandListRequest_by-client.md)
+  * [C1 F5 01 - ClientFeatures (by client)](C1-F5-01-ClientFeatures_by-client.md)
+  * [C1 F5 02 - NpcQuestDialogAnswer (by client)](C1-F5-02-NpcQuestDialogAnswer_by-client.md)
   * [C1 F6 0A - QuestSelectRequest (by client)](C1-F6-0A-QuestSelectRequest_by-client.md)
   * [C1 F6 0B - QuestProceedRequest (by client)](C1-F6-0B-QuestProceedRequest_by-client.md)
   * [C1 F6 0D - QuestCompletionRequest (by client)](C1-F6-0D-QuestCompletionRequest_by-client.md)

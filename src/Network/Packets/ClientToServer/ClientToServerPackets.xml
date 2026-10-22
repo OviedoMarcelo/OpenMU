@@ -4265,6 +4265,50 @@
       <CausedReaction>The server sends an AvailableChatCommand message for each available chat command.</CausedReaction>
       <Fields />
     </Packet>
+    <Packet>
+      <HeaderType>C1HeaderWithSubCode</HeaderType>
+      <Code>F5</Code>
+      <SubCode>01</SubCode>
+      <Name>ClientFeatures</Name>
+      <Caption>Features of the client</Caption>
+      <Length>5</Length>
+      <Direction>ClientToServer</Direction>
+      <SentWhen>A client which supports some optional features of this server tells which ones, right before the ChatCommandListRequest after the character entered the game world.</SentWhen>
+      <CausedReaction>The server remembers the features for this player and uses them, e.g. it sends NpcQuestDialog messages instead of showing the text of the NPC above its head.</CausedReaction>
+      <Fields>
+        <Field>
+          <Index>4</Index>
+          <Type>Byte</Type>
+          <Name>Features</Name>
+          <Description>The flags of the supported features. 1 = NpcQuestDialog.</Description>
+        </Field>
+      </Fields>
+    </Packet>
+    <Packet>
+      <HeaderType>C1HeaderWithSubCode</HeaderType>
+      <Code>F5</Code>
+      <SubCode>02</SubCode>
+      <Name>NpcQuestDialogAnswer</Name>
+      <Caption>Answer of an NPC quest dialog</Caption>
+      <Length>9</Length>
+      <Direction>ClientToServer</Direction>
+      <SentWhen>The player chose an answer in the dialog of an NpcQuestDialog message, or closed it.</SentWhen>
+      <CausedReaction>When the player accepted, the talk counts for the quest. Otherwise nothing happens and the player can talk to the NPC again later.</CausedReaction>
+      <Fields>
+        <Field>
+          <Index>4</Index>
+          <Type>IntegerLittleEndian</Type>
+          <Name>DialogId</Name>
+          <Description>The id of the dialog, as in the NpcQuestDialog message.</Description>
+        </Field>
+        <Field>
+          <Index>8</Index>
+          <Type>Boolean</Type>
+          <Name>Accepted</Name>
+          <Description>If set, the player accepted. Otherwise the player declined or closed the dialog.</Description>
+        </Field>
+      </Fields>
+    </Packet>
   </Packets>
   <Enums>
     <Enum>

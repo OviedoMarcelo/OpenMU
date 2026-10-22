@@ -32449,6 +32449,144 @@ public readonly ref struct MerchantPriceRef
 
 
 /// <summary>
+/// Is sent by the server when: A player talks to an NPC whose talk is the current step of a quest, and the client told with the ClientFeatures message that it shows these dialogs.
+/// Causes reaction on client side: The client shows a dialog with the portrait and name of the NPC, the text and the buttons to accept or decline. The answer is sent back with the NpcQuestDialogAnswer message, with the same dialog id.
+/// </summary>
+public readonly ref struct NpcQuestDialogRef
+{
+    private readonly Span<byte> _data;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NpcQuestDialogRef"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    public NpcQuestDialogRef(Span<byte> data)
+        : this(data, true)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NpcQuestDialogRef"/> struct.
+    /// </summary>
+    /// <param name="data">The underlying data.</param>
+    /// <param name="initialize">If set to <c>true</c>, the header data is automatically initialized and written to the underlying span.</param>
+    private NpcQuestDialogRef(Span<byte> data, bool initialize)
+    {
+        this._data = data;
+        if (initialize)
+        {
+            var header = this.Header;
+            header.Type = HeaderType;
+            header.Code = Code;
+            header.Length = (ushort)data.Length;
+            header.SubCode = SubCode;
+        }
+    }
+
+    /// <summary>
+    /// Gets the header type of this data packet.
+    /// </summary>
+    public static byte HeaderType => 0xC2;
+
+    /// <summary>
+    /// Gets the operation code of this data packet.
+    /// </summary>
+    public static byte Code => 0xF5;
+
+    /// <summary>
+    /// Gets the operation sub-code of this data packet.
+    /// The <see cref="Code" /> is used as a grouping key.
+    /// </summary>
+    public static byte SubCode => 0x11;
+
+    /// <summary>
+    /// Gets the header of this packet.
+    /// </summary>
+    public C2HeaderWithSubCodeRef Header => new (this._data);
+
+    /// <summary>
+    /// Gets or sets the id of the NPC object.
+    /// </summary>
+    public ushort NpcId
+    {
+        get => ReadUInt16BigEndian(this._data[5..]);
+        set => WriteUInt16BigEndian(this._data[5..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the number of the NPC definition. The client chooses the portrait by it.
+    /// </summary>
+    public ushort NpcNumber
+    {
+        get => ReadUInt16LittleEndian(this._data[7..]);
+        set => WriteUInt16LittleEndian(this._data[7..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the id of this dialog, which the answer refers to.
+    /// </summary>
+    public uint DialogId
+    {
+        get => ReadUInt32LittleEndian(this._data[9..]);
+        set => WriteUInt32LittleEndian(this._data[9..], value);
+    }
+
+    /// <summary>
+    /// Gets or sets the name of the NPC.
+    /// </summary>
+    public string NpcName
+    {
+        get => this._data.ExtractString(13, 32, System.Text.Encoding.UTF8);
+        set => this._data.Slice(13, 32).WriteString(value, System.Text.Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Gets or sets the name of the quest.
+    /// </summary>
+    public string QuestName
+    {
+        get => this._data.ExtractString(45, 48, System.Text.Encoding.UTF8);
+        set => this._data.Slice(45, 48).WriteString(value, System.Text.Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Gets or sets what the NPC says. Lines are separated by a line feed.
+    /// </summary>
+    public string Text
+    {
+        get => this._data.ExtractString(93, this._data.Length - 93, System.Text.Encoding.UTF8);
+        set => this._data.Slice(93).WriteString(value, System.Text.Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// Performs an implicit conversion from a Span of bytes to a <see cref="NpcQuestDialog"/>.
+    /// </summary>
+    /// <param name="packet">The packet as span.</param>
+    /// <returns>The packet as struct.</returns>
+    public static implicit operator NpcQuestDialogRef(Span<byte> packet) => new (packet, false);
+
+    /// <summary>
+    /// Performs an implicit conversion from <see cref="NpcQuestDialog"/> to a Span of bytes.
+    /// </summary>
+    /// <param name="packet">The packet as struct.</param>
+    /// <returns>The packet as byte span.</returns>
+    public static implicit operator Span<byte>(NpcQuestDialogRef packet) => packet._data; 
+
+    /// <summary>
+    /// Calculates the size of the packet for the specified field content.
+    /// </summary>
+    /// <param name="content">The content of the variable 'Text' field from which the size will be calculated.</param>
+    public static int GetRequiredSize(string content) => System.Text.Encoding.UTF8.GetByteCount(content) + 1 + 93;
+
+    /// <summary>
+    /// Calculates the size of the packet for the specified field content.
+    /// </summary>
+    /// <param name="contentLength">The content length in bytes of the variable 'Text' field from which the size will be calculated.</param>
+    public static int GetRequiredSize(int contentLength) => contentLength + 1 + 93;
+}
+
+
+/// <summary>
 /// Is sent by the server when: The player receives the result of registering Rena or Event Chips at the Golden Archer NPC.
 /// Causes reaction on client side: The client updates the Golden Archer interface with total registered count and remaining count in inventory.
 /// </summary>

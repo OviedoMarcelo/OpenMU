@@ -305,6 +305,7 @@
   * [C2 F5 0E - CosmeticPieces (by server)](C2-F5-0E-CosmeticPieces_by-server.md)
   * [C2 F5 0F - EventScheduleEntry (by server)](C2-F5-0F-EventScheduleEntry_by-server.md)
   * [C2 F5 10 - MerchantPrices (by server)](C2-F5-10-MerchantPrices_by-server.md)
+  * [C2 F5 11 - NpcQuestDialog (by server)](C2-F5-11-NpcQuestDialog_by-server.md)
   * [C1 F6 03 - QuestEventResponse (by server)](C1-F6-03-QuestEventResponse_by-server.md)
   * [C1 F6 0A - AvailableQuests (by server)](C1-F6-0A-AvailableQuests_by-server.md)
   * [C1 F6 0B - QuestStepInfo (by server)](C1-F6-0B-QuestStepInfo_by-server.md)

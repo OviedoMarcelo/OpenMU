@@ -11,6 +11,7 @@ using MUnique.OpenMU.GameLogic.MiniGames;
 using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.GameLogic.Views;
 using MUnique.OpenMU.GameLogic.Views.NPC;
+using MUnique.OpenMU.GameLogic.Views.Quest;
 using MUnique.OpenMU.Interfaces;
 using MUnique.OpenMU.Persistence;
 using MUnique.OpenMU.Persistence.WeeklyQuests;
@@ -39,6 +40,11 @@ public class WeeklyQuestsPlugIn :
     ISupportCustomConfiguration<WeeklyQuestsConfiguration>,
     ISupportDefaultCustomConfiguration
 {
+    /// <summary>
+    /// The maximum distance between the player and the NPC when the player accepts its dialog.
+    /// </summary>
+    private const int MaximumNpcDialogDistance = 10;
+
     /// <summary>
     /// The interval in which the progress of the players is saved.
     /// Completed quests and players who leave the game are saved immediately.
@@ -293,8 +299,12 @@ public class WeeklyQuestsPlugIn :
     /// <inheritdoc />
     public async ValueTask NpcTalkStartedAsync(Player player, NonPlayerCharacter npc)
     {
-        var npcNumber = npc.Definition.Number;
-        var mapNumber = npc.CurrentMap?.Definition.Number;
+        if (ClientFeatures.Has(player, ClientFeature.NpcQuestDialog))
+        {
+            await this.OpenNpcDialogAsync(player, npc).ConfigureAwait(false);
+            return;
+        }
+
         List<string>? phrases = null;
         await this.AddProgressAsync(
             player,
@@ -302,7 +312,7 @@ public class WeeklyQuestsPlugIn :
             1,
             (_, objective, _) =>
             {
-                if (objective.Monster is null || objective.Monster.Number != npcNumber || !objective.IsOnMap(mapNumber))
+                if (!IsTalkTo(objective, npc))
                 {
                     return false;
                 }
@@ -327,6 +337,29 @@ public class WeeklyQuestsPlugIn :
             // The progress doesn't wait for the conversation.
             _ = this.ShowNpcPhrasesLaterAsync(player, npc, phrases.Skip(1).ToList());
         }
+    }
+
+    /// <summary>
+    /// Handles the answer of the player to the dialog of an NPC (see <see cref="OpenNpcDialogAsync"/>):
+    /// when the player accepted, the talk counts for the quests.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <param name="dialogId">The id of the dialog.</param>
+    /// <param name="accepted">If set, the player accepted.</param>
+    public async ValueTask NpcQuestDialogAnsweredAsync(Player player, uint dialogId, bool accepted)
+    {
+        if (!States.TryGetValue(player, out var state) || state.CloseNpcDialog(dialogId) is not { } npc || !accepted)
+        {
+            return;
+        }
+
+        // The player may have walked away or left the map before answering.
+        if (npc.CurrentMap is null || player.CurrentMap != npc.CurrentMap || !player.IsInRange(npc, MaximumNpcDialogDistance))
+        {
+            return;
+        }
+
+        await this.AddProgressAsync(player, WeeklyQuestObjectiveType.TalkToNpc, 1, (_, objective, _) => IsTalkTo(objective, npc)).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -547,6 +580,13 @@ public class WeeklyQuestsPlugIn :
         }
 
         return null;
+    }
+
+    private static bool IsTalkTo(WeeklyQuestObjective objective, NonPlayerCharacter npc)
+    {
+        return objective.Monster is not null
+               && objective.Monster.Number == npc.Definition.Number
+               && objective.IsOnMap(npc.CurrentMap?.Definition.Number);
     }
 
     private static ValueTask ShowNpcPhraseAsync(Player player, NonPlayerCharacter npc, string phrase)
@@ -874,6 +914,46 @@ public class WeeklyQuestsPlugIn :
             state.IsUpdateScheduled = true;
             _ = this.SendPendingUpdatesLaterAsync(player, state);
         }
+    }
+
+    /// <summary>
+    /// Shows the dialog of the NPC, when its talk is a step of a quest: the talk counts when the player accepts it,
+    /// see <see cref="NpcQuestDialogAnsweredAsync"/>. When the NPC has nothing to say, the talk counts right away.
+    /// </summary>
+    private async ValueTask OpenNpcDialogAsync(Player player, NonPlayerCharacter npc)
+    {
+        // A dry run: the filter is the last check, so it sees the objectives which the talk would count for,
+        // and returns false, so that nothing counts yet.
+        var talks = new List<(WeeklyQuestDefinition Quest, WeeklyQuestObjective Objective)>();
+        await this.AddProgressAsync(
+            player,
+            WeeklyQuestObjectiveType.TalkToNpc,
+            1,
+            (quest, objective, _) =>
+            {
+                if (IsTalkTo(objective, npc))
+                {
+                    talks.Add((quest, objective));
+                }
+
+                return false;
+            }).ConfigureAwait(false);
+
+        if (talks.Count == 0 || this.GetOrCreateState(player) is not { } state)
+        {
+            return;
+        }
+
+        var text = string.Join('\n', talks.Select(t => t.Objective.NpcText?.Replace("\r", string.Empty).Trim()).Where(t => !string.IsNullOrEmpty(t)));
+        if (text.Length == 0)
+        {
+            await this.AddProgressAsync(player, WeeklyQuestObjectiveType.TalkToNpc, 1, (_, objective, _) => IsTalkTo(objective, npc)).ConfigureAwait(false);
+            return;
+        }
+
+        var dialogId = state.OpenNpcDialog(npc);
+        var questName = talks[0].Quest.Name;
+        await player.InvokeViewPlugInAsync<INpcQuestDialogViewPlugIn>(p => p.ShowNpcQuestDialogAsync(npc, dialogId, questName, text)).ConfigureAwait(false);
     }
 
     private async Task ShowNpcPhrasesLaterAsync(Player player, NonPlayerCharacter npc, IReadOnlyList<string> phrases)
