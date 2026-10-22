@@ -8,22 +8,34 @@ using System.Runtime.CompilerServices;
 using MUnique.OpenMU.DataModel.Configuration.Items;
 
 /// <summary>
-/// Holds the cosmetic pieces which the players in the game wear over their armor,
+/// Holds the cosmetic pieces which the players in the game wear over their armor, wings and pet,
 /// so that the appearance which other players see can be built from them.
 /// </summary>
 public static class PlayerCosmetics
 {
-    private static readonly ConditionalWeakTable<Player, IReadOnlyDictionary<byte, ItemAppearance>> Appearances = new();
+    private static readonly ConditionalWeakTable<Player, IReadOnlyDictionary<byte, WornAppearance>> Appearances = new();
 
     /// <summary>
-    /// Gets the appearance of the cosmetic piece which the player wears in a slot.
+    /// Gets the appearance of the cosmetic piece which the player wears in a slot, if it's shown: a piece which is
+    /// only shown over a certain item (e.g. the skin of the Guardian Angel) is only shown while the player has it there.
     /// </summary>
     /// <param name="player">The player.</param>
     /// <param name="itemSlot">The item slot.</param>
     /// <returns>The appearance; <c>null</c>, if the real item of the slot is visible.</returns>
     public static ItemAppearance? GetPiece(Player player, byte itemSlot)
     {
-        return Appearances.TryGetValue(player, out var pieces) && pieces.TryGetValue(itemSlot, out var piece) ? piece : null;
+        if (!Appearances.TryGetValue(player, out var pieces) || !pieces.TryGetValue(itemSlot, out var piece))
+        {
+            return null;
+        }
+
+        if (piece.OnlyOverItemNumber is not { } number)
+        {
+            return piece.Appearance;
+        }
+
+        var item = player.Inventory?.GetItem(itemSlot)?.Definition;
+        return item?.Group == piece.Appearance.Definition?.Group && item?.Number == number ? piece.Appearance : null;
     }
 
     /// <summary>
@@ -52,7 +64,7 @@ public static class PlayerCosmetics
     /// <param name="pieces">The pieces, at most one per slot.</param>
     internal static void Set(Player player, IEnumerable<CosmeticPieceDefinition> pieces)
     {
-        var appearances = new Dictionary<byte, ItemAppearance>();
+        var appearances = new Dictionary<byte, WornAppearance>();
         foreach (var piece in pieces)
         {
             if (GetItemDefinition(player.GameContext.Configuration, piece) is not { } definition)
@@ -67,7 +79,7 @@ public static class PlayerCosmetics
                 appearance.VisibleOptions.Add(ItemOptionTypes.Excellent);
             }
 
-            appearances[slot] = appearance;
+            appearances[slot] = new WornAppearance(appearance, piece.OnlyOverItemNumber);
         }
 
         if (appearances.Count == 0)
@@ -79,6 +91,13 @@ public static class PlayerCosmetics
             Appearances.AddOrUpdate(player, appearances);
         }
     }
+
+    /// <summary>
+    /// The appearance of a worn piece.
+    /// </summary>
+    /// <param name="Appearance">The appearance.</param>
+    /// <param name="OnlyOverItemNumber">The number of the item over which it's only shown; <c>null</c>: always.</param>
+    private sealed record WornAppearance(ItemAppearance Appearance, short? OnlyOverItemNumber);
 
     private sealed class CosmeticItemAppearance : ItemAppearance
     {

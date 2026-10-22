@@ -10,7 +10,8 @@ namespace MUnique.OpenMU.GameLogic.PlugIns.Cosmetics;
 public static class CosmeticSlotExtensions
 {
     /// <summary>
-    /// The item group of the helms. The groups of armors, pants, gloves and boots follow it.
+    /// The item group of the helms. The groups of armors, pants, gloves, boots, wings (12) and pets (13) follow it,
+    /// like their inventory slots follow the one of the helm.
     /// </summary>
     private const byte HelmGroup = 7;
 
@@ -18,6 +19,11 @@ public static class CosmeticSlotExtensions
     /// Gets all slots which can be covered.
     /// </summary>
     public static IReadOnlyList<CosmeticSlot> All { get; } = Enum.GetValues<CosmeticSlot>();
+
+    /// <summary>
+    /// Gets the slots of the armor: the helm, armor, pants, gloves and boots.
+    /// </summary>
+    public static IReadOnlyList<CosmeticSlot> ArmorSlots { get; } = [CosmeticSlot.Helm, CosmeticSlot.Armor, CosmeticSlot.Pants, CosmeticSlot.Gloves, CosmeticSlot.Boots];
 
     /// <summary>
     /// Gets the item group of the items of the slot.
@@ -37,7 +43,7 @@ public static class CosmeticSlotExtensions
     /// Gets the slot which covers an inventory slot.
     /// </summary>
     /// <param name="itemSlot">The inventory slot.</param>
-    /// <returns>The slot; <c>null</c>, if the inventory slot isn't one of the armor.</returns>
+    /// <returns>The slot; <c>null</c>, if the inventory slot isn't one of the armor, the wings or the pet.</returns>
     public static CosmeticSlot? FromItemSlot(byte itemSlot)
     {
         var index = itemSlot - InventoryConstants.HelmSlot;

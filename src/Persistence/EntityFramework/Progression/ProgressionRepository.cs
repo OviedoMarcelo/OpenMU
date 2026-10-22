@@ -357,6 +357,22 @@ public sealed class ProgressionRepository : IProgressionRepository, IDisposable
     }
 
     /// <inheritdoc />
+    public async ValueTask<int> RemoveCosmeticPiecesOfAllCharactersAsync(IReadOnlyCollection<short> pieceNumbers, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        await context.WornCosmeticPieces
+            .Where(p => pieceNumbers.Contains(p.PieceNumber))
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return await context.UnlockedCosmeticPieces
+            .Where(p => pieceNumbers.Contains(p.PieceNumber))
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async ValueTask<IList<WornCosmeticPiece>> LoadWornCosmeticPiecesAsync(Guid characterId, CancellationToken cancellationToken = default)
     {
         await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);

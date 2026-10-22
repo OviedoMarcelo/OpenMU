@@ -51,6 +51,18 @@ public class InMemoryProgressionRepository : IProgressionRepository
     }
 
     /// <inheritdoc />
+    public ValueTask<int> RemoveCosmeticPiecesOfAllCharactersAsync(IReadOnlyCollection<short> pieceNumbers, CancellationToken cancellationToken = default)
+    {
+        foreach (var worn in this._wornCosmeticPieces.Where(w => pieceNumbers.Contains(w.Value)).ToList())
+        {
+            this._wornCosmeticPieces.TryRemove(worn.Key, out _);
+        }
+
+        var removed = this._cosmeticPieces.Keys.Where(k => pieceNumbers.Contains(k.PieceNumber)).Count(k => this._cosmeticPieces.TryRemove(k, out _));
+        return ValueTask.FromResult(removed);
+    }
+
+    /// <inheritdoc />
     public ValueTask<IList<WornCosmeticPiece>> LoadWornCosmeticPiecesAsync(Guid characterId, CancellationToken cancellationToken = default)
     {
         IList<WornCosmeticPiece> result = this._wornCosmeticPieces

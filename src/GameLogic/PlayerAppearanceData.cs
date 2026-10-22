@@ -56,9 +56,9 @@ internal sealed class PlayerAppearanceData : IAppearanceData
                 return items;
             }
 
-            // The cosmetic pieces are shown instead of the real items, and also in empty slots.
+            // The cosmetic pieces are shown instead of the real items, and the ones without a required item also in empty slots.
             var result = items.Where(item => PlayerCosmetics.GetPiece(this._player, item.ItemSlot) is null).ToList();
-            for (var slot = InventoryConstants.HelmSlot; slot <= InventoryConstants.BootsSlot; slot++)
+            foreach (var slot in CosmeticSlotExtensions.All.Select(s => s.GetItemSlot()))
             {
                 if (PlayerCosmetics.GetPiece(this._player, slot) is { } piece)
                 {

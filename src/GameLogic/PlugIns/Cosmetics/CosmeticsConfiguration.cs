@@ -41,7 +41,7 @@ public class CosmeticsConfiguration
             var configuration = new CosmeticsConfiguration();
             for (var i = 0; i < sets.Length; i++)
             {
-                foreach (var slot in CosmeticSlotExtensions.All)
+                foreach (var slot in CosmeticSlotExtensions.ArmorSlots)
                 {
                     configuration.Pieces.Add(new CosmeticPieceDefinition
                     {
