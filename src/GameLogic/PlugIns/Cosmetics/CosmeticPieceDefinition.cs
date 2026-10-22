@@ -35,7 +35,7 @@ public class CosmeticPieceDefinition
     /// <summary>
     /// Gets or sets the number of the item in the group of the slot, e.g. 1 for the Dragon Helm.
     /// </summary>
-    [Display(Name = "Número de item", Description = "El número del item en el grupo del slot (casco 7, armadura 8, pantalón 9, guantes 10, botas 11), p. ej. 1 = Dragon, 16 = Black Dragon.", Order = 3)]
+    [Display(Name = "Número de item", Description = "El número del item en el grupo del slot (casco 7, armadura 8, pantalón 9, guantes 10, botas 11, alas 12, mascota 13), p. ej. 1 = Dragon, 16 = Black Dragon.", Order = 3)]
     [Range(0, 511)]
     public short ItemNumber { get; set; }
 
@@ -58,6 +58,14 @@ public class CosmeticPieceDefinition
     [Display(Name = "Nombre", Description = "Opcional, hasta 32 caracteres. Vacío = el nombre del item.", Order = 6)]
     [StringLength(MaximumNameLength)]
     public string? Name { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of the item which the character must have in the slot, so that the piece is shown,
+    /// e.g. 0 for the skin of the Guardian Angel. <c>null</c>: it's shown with any item, and also without one.
+    /// </summary>
+    [Display(Name = "Solo sobre el item", Description = "Opcional. El número del item que tiene que tener puesto en el slot para que se vea, p. ej. 0 = Guardian Angel, 1 = Imp, 2 = Uniria, 3 = Dinorant, 4 = Dark Horse, 37 = Fenrir. Vacío = se ve siempre.", Order = 7)]
+    [Range(0, 511)]
+    public short? OnlyOverItemNumber { get; set; }
 
     /// <inheritdoc />
     public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"{this.Number}: {this.Name ?? this.Slot.ToString()} ({this.ItemNumber})");

@@ -39,4 +39,16 @@ public enum CosmeticSlot
     /// </summary>
     [Display(Name = "Botas")]
     Boots,
+
+    /// <summary>
+    /// The wings.
+    /// </summary>
+    [Display(Name = "Alas")]
+    Wings,
+
+    /// <summary>
+    /// The pet or mount, e.g. the Guardian Angel or the Horn of Uniria.
+    /// </summary>
+    [Display(Name = "Mascota")]
+    Pet,
 }

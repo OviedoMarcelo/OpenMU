@@ -8,6 +8,7 @@ using Moq;
 using MUnique.OpenMU.DataModel;
 using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.DataModel.Configuration.Items;
+using MUnique.OpenMU.DataModel.Entities;
 using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.PlugIns;
 using MUnique.OpenMU.GameLogic.PlugIns.Cosmetics;
@@ -26,6 +27,11 @@ public class CosmeticsPlugInTest
     private const short DragonItemNumber = 1;
     private const short BlackDragonItemNumber = 16;
     private const byte PieceLevel = 11;
+    private const short ArchangelPiece = 13200;
+    private const short BlueWingsPiece = 12200;
+    private const short SkinItemNumber = 200;
+    private const short GuardianAngelNumber = 0;
+    private const short ImpNumber = 1;
 
     /// <summary>
     /// Tests that a worn piece replaces only the item of its slot.
@@ -193,6 +199,47 @@ public class CosmeticsPlugInTest
         Assert.That(pieces.Single(p => p.Number == DragonArmor).Slot, Is.EqualTo(CosmeticSlot.Armor));
     }
 
+    /// <summary>
+    /// Tests that a pet skin is only shown while the player has the pet it's a skin of, and that wings are shown
+    /// without wings, like the armor.
+    /// </summary>
+    [Test]
+    public async Task PetSkinIsOnlyShownOverItsPetAsync()
+    {
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        var plugIn = CreatePlugIn(new InMemoryProgressionRepository());
+        await plugIn.GrantAsync(player, ArchangelPiece, "test").ConfigureAwait(false);
+        await plugIn.GrantAsync(player, BlueWingsPiece, "test").ConfigureAwait(false);
+
+        Assert.That(await plugIn.WearAsync(player, ArchangelPiece).ConfigureAwait(false), Is.EqualTo(CosmeticChangeResult.Worn));
+        Assert.That(await plugIn.WearAsync(player, BlueWingsPiece).ConfigureAwait(false), Is.EqualTo(CosmeticChangeResult.Worn));
+
+        Assert.That(PlayerCosmetics.GetPiece(player, InventoryConstants.WingsSlot)?.Definition?.Number, Is.EqualTo(SkinItemNumber));
+        Assert.That(PlayerCosmetics.GetPiece(player, InventoryConstants.PetSlot), Is.Null, "without a pet");
+
+        var imp = await EquipPetAsync(player, ImpNumber).ConfigureAwait(false);
+        Assert.That(PlayerCosmetics.GetPiece(player, InventoryConstants.PetSlot), Is.Null, "over another pet");
+
+        await player.Inventory!.RemoveItemAsync(imp).ConfigureAwait(false);
+        await EquipPetAsync(player, GuardianAngelNumber).ConfigureAwait(false);
+        Assert.That(PlayerCosmetics.GetPiece(player, InventoryConstants.PetSlot)?.Definition?.Number, Is.EqualTo(SkinItemNumber));
+
+        var pet = player.AppearanceData.EquippedItems.Single(i => i.ItemSlot == InventoryConstants.PetSlot);
+        Assert.That(pet.Definition!.Group, Is.EqualTo(13));
+        Assert.That(pet.Definition.Number, Is.EqualTo(SkinItemNumber));
+    }
+
+    private static async ValueTask<Item> EquipPetAsync(Player player, short number)
+    {
+        var item = new Mock<Item>();
+        item.SetupAllProperties();
+        item.Setup(i => i.ItemOptions).Returns(new List<ItemOptionLink>());
+        item.Setup(i => i.ItemSetGroups).Returns(new List<ItemOfItemSet>());
+        item.Object.Definition = player.GameContext.Configuration.Items.Single(i => i.Group == 13 && i.Number == number);
+        await player.Inventory!.AddItemAsync(InventoryConstants.PetSlot, item.Object).ConfigureAwait(false);
+        return item.Object;
+    }
+
     private static CosmeticsPlugIn CreatePlugIn(IProgressionRepository repository)
     {
         return new CosmeticsPlugIn(repository)
@@ -204,6 +251,8 @@ public class CosmeticsPlugInTest
                     new() { Number = DragonHelm, Slot = CosmeticSlot.Helm, ItemNumber = DragonItemNumber, Level = PieceLevel },
                     new() { Number = DragonArmor, Slot = CosmeticSlot.Armor, ItemNumber = DragonItemNumber, Level = PieceLevel },
                     new() { Number = BlackDragonHelm, Slot = CosmeticSlot.Helm, ItemNumber = BlackDragonItemNumber, Level = PieceLevel },
+                    new() { Number = ArchangelPiece, Slot = CosmeticSlot.Pet, ItemNumber = SkinItemNumber, OnlyOverItemNumber = GuardianAngelNumber },
+                    new() { Number = BlueWingsPiece, Slot = CosmeticSlot.Wings, ItemNumber = SkinItemNumber },
                 },
             },
         };
@@ -213,7 +262,12 @@ public class CosmeticsPlugInTest
     {
         var player = await PlayerTestHelper.CreatePlayerAsync().ConfigureAwait(false);
         player.GameContext.Configuration.MaximumInventoryMoney = int.MaxValue;
-        foreach (var (group, number) in new (byte, short)[] { (7, DragonItemNumber), (8, DragonItemNumber), (7, BlackDragonItemNumber) })
+        var items = new (byte, short)[]
+        {
+            (7, DragonItemNumber), (8, DragonItemNumber), (7, BlackDragonItemNumber),
+            (12, SkinItemNumber), (13, SkinItemNumber), (13, GuardianAngelNumber), (13, ImpNumber),
+        };
+        foreach (var (group, number) in items)
         {
             var definition = new Mock<ItemDefinition>();
             definition.SetupAllProperties();

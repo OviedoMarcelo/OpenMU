@@ -93,6 +93,37 @@ internal class SkinArmorSetDataTest
         }
     }
 
+    /// <summary>
+    /// Tests that the skins of wings and pets are single items without stats, with the size and slot of their template,
+    /// which every class can wear.
+    /// </summary>
+    [Test]
+    public async Task BuildsWingsAndPetSkinsAsync()
+    {
+        var (context, gameConfiguration) = await CreateSeason6ConfigurationAsync().ConfigureAwait(false);
+        using (context)
+        {
+            var angel = SkinArmorSetBuilder.FindItem(gameConfiguration, SkinItemBuilder.PetGroup, 0)!;
+            var wingsOfElf = SkinArmorSetBuilder.FindItem(gameConfiguration, SkinItemBuilder.WingsGroup, SkinItemBuilder.WingsTemplateNumber)!;
+
+            var pet = SkinItemBuilder.Build(context, gameConfiguration, SkinItemBuilder.PetGroup, 200, "Archangel", angel);
+            var wings = SkinItemBuilder.Build(context, gameConfiguration, SkinItemBuilder.WingsGroup, 200, "Blue Wings", wingsOfElf);
+            var itemCount = gameConfiguration.Items.Count;
+
+            foreach (var (skin, template) in new[] { (pet, angel), (wings, wingsOfElf) })
+            {
+                var name = skin.Name.Value;
+                Assert.That(SkinItemBuilder.Build(context, gameConfiguration, skin.Group, skin.Number, name!, template), Is.SameAs(skin), name);
+                Assert.That(SkinArmorSetBuilder.IsSkinOnly(skin), Is.True, name);
+                Assert.That(skin.ItemSlot, Is.SameAs(template.ItemSlot), name);
+                Assert.That((skin.Width, skin.Height), Is.EqualTo((template.Width, template.Height)), name);
+                Assert.That(skin.QualifiedCharacters, Has.Count.EqualTo(gameConfiguration.CharacterClasses.Count), name);
+            }
+
+            Assert.That(gameConfiguration.Items, Has.Count.EqualTo(itemCount));
+        }
+    }
+
     private static void AssertSet(GameConfiguration gameConfiguration)
     {
         var pieces = gameConfiguration.Items.Where(i => i.Number == Number && ArmorGroups.Contains(i.Group)).OrderBy(i => i.Group).ToList();

@@ -5,6 +5,7 @@
 namespace MUnique.OpenMU.GameServer.RemoteView.World;
 
 using System.Runtime.InteropServices;
+using MUnique.OpenMU.DataModel.Configuration.Items;
 using MUnique.OpenMU.DataModel.Entities;
 using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.PlugIns.Cosmetics;
@@ -41,9 +42,20 @@ public class AppearanceChangedExtendedPlugIn : IAppearanceChangedPlugIn
             return;
         }
 
-        // The cosmetic piece stays visible, whatever is equipped below it.
-        if (PlayerCosmetics.GetPiece(changedPlayer, item.ItemSlot) is not null)
+        // The cosmetic piece is shown instead of what is equipped below it. A piece which is only shown over a
+        // certain item (e.g. the skin of the Guardian Angel) appears when that item is equipped.
+        if (PlayerCosmetics.GetPiece(changedPlayer, item.ItemSlot) is { Definition: { } piece } appearance)
         {
+            await connection.SendAppearanceChangedExtendedAsync(
+                changedPlayer.GetId(this._player),
+                item.ItemSlot,
+                piece.Group,
+                (ushort)piece.Number,
+                appearance.Level,
+                (byte)(appearance.VisibleOptions.Contains(ItemOptionTypes.Excellent) ? 1 : 0),
+                0,
+                false)
+                .ConfigureAwait(false);
             return;
         }
 
