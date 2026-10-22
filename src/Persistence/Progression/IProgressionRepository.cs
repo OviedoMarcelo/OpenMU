@@ -155,6 +155,15 @@ public interface IProgressionRepository
     ValueTask<bool> RemoveUnlockedCosmeticPieceAsync(Guid characterId, short pieceNumber, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Removes cosmetic pieces from all characters, e.g. when the pieces don't exist anymore. The characters which
+    /// wear them take them off, too.
+    /// </summary>
+    /// <param name="pieceNumbers">The numbers of the pieces.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of unlocked pieces which have been removed.</returns>
+    ValueTask<int> RemoveCosmeticPiecesOfAllCharactersAsync(IReadOnlyCollection<short> pieceNumbers, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Loads the cosmetic pieces which a character wears.
     /// </summary>
     /// <param name="characterId">The identifier of the character.</param>
