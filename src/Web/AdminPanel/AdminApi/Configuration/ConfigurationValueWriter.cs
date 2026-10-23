@@ -365,6 +365,14 @@ public class ConfigurationValueWriter
         switch (property.Kind)
         {
             case PropertyKind.Reference:
+                // mu-admin sends the whole list of owned objects (e.g. the 300 spawns of a map), so most references
+                // didn't change: those aren't looked up again, which took a few seconds per hundred objects.
+                var current = property.Property.GetValue(target);
+                if (current is not null && node is not null && ReadId(node) is { } id && current.GetId() == id)
+                {
+                    break;
+                }
+
                 property.Property.SetValue(target, await this.ResolveReferenceAsync(node, property.TargetClrType!, path, state).ConfigureAwait(false));
                 break;
             case PropertyKind.ReferenceList:
@@ -398,17 +406,38 @@ public class ConfigurationValueWriter
         }
 
         var id = ReadId(node) ?? throw new InvalidValueException("Falta el id del objeto referenciado.", path);
-        return await state.Context.GetByIdAsync(id, targetType, state.CancellationToken).ConfigureAwait(false)
+
+        // The same object is often referenced by many owned objects (e.g. the monster of 30 spawns): it's looked up once.
+        if (state.References.TryGetValue((targetType, id), out var known))
+        {
+            return known;
+        }
+
+        var resolved = await state.Context.GetByIdAsync(id, targetType, state.CancellationToken).ConfigureAwait(false)
                ?? throw new InvalidValueException("El objeto referenciado no existe.", path);
+        state.References[(targetType, id)] = resolved;
+        return resolved;
     }
 
     private async Task ApplyReferenceListAsync(object target, PropertySchema property, JsonNode? node, string path, WriteState state)
     {
+        var collection = GetCollection(target, property);
+
+        // The objects which are in the list already aren't looked up again.
+        var existing = new Dictionary<Guid, object>();
+        foreach (var entry in collection.Items)
+        {
+            existing.TryAdd(entry.GetId(), entry);
+        }
+
         var wanted = new List<object>();
         var index = 0;
         foreach (var item in node?.AsArray() ?? [])
         {
-            if (await this.ResolveReferenceAsync(item, property.TargetClrType!, $"{path}[{index}]", state).ConfigureAwait(false) is { } resolved
+            var resolved = ReadId(item) is { } id && existing.TryGetValue(id, out var listed)
+                ? listed
+                : await this.ResolveReferenceAsync(item, property.TargetClrType!, $"{path}[{index}]", state).ConfigureAwait(false);
+            if (resolved is not null
                 && wanted.All(w => w.GetId() != resolved.GetId()))
             {
                 wanted.Add(resolved);
@@ -417,7 +446,6 @@ public class ConfigurationValueWriter
             index++;
         }
 
-        var collection = GetCollection(target, property);
         var wantedIds = wanted.Select(w => w.GetId()).ToHashSet();
         foreach (var removed in collection.Items.Where(item => !wantedIds.Contains(item.GetId())).ToList())
         {
@@ -521,6 +549,11 @@ public class ConfigurationValueWriter
     private sealed record WriteState(IContext Context, CancellationToken CancellationToken, bool PlainObjects)
     {
         public List<FieldError> Errors { get; } = [];
+
+        /// <summary>
+        /// Gets the referenced objects which were looked up during this write, by their type and id.
+        /// </summary>
+        public Dictionary<(Type Type, Guid Id), object> References { get; } = [];
     }
 
     /// <summary>
