@@ -145,6 +145,28 @@ public class BossEncounterTest
     }
 
     /// <summary>
+    /// Tests that an object which blocks the way blocks its tile while it's alive, and that the others don't.
+    /// </summary>
+    [Test]
+    public async Task BlockingObjectBlocksItsTileUntilDestroyedAsync()
+    {
+        var definition = CreateDefinition();
+        definition.Phases.First().Objects.First().IsBlocking = true;
+        var (context, _) = await StartEncounterAsync(definition).ConfigureAwait(false);
+        var blocking = context.Objects[0];
+        var other = context.Objects[1];
+        var terrain = blocking.CurrentMap.Terrain;
+        bool IsBlocked(Point tile) => (terrain.AttributeMap[tile.X, tile.Y] & (byte)TerrainAttributeType.Blocked) != 0;
+
+        Assert.That(IsBlocked(blocking.Position), Is.True);
+        Assert.That(IsBlocked(other.Position), Is.False);
+
+        await DestroyAsync(blocking).ConfigureAwait(false);
+        await context.TickAsync(Start.AddSeconds(1)).ConfigureAwait(false);
+        Assert.That(IsBlocked(blocking.Position), Is.False);
+    }
+
+    /// <summary>
     /// Tests that the boss is invulnerable in the shield phase until the crystals are destroyed.
     /// </summary>
     [Test]
