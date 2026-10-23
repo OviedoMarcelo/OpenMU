@@ -78,6 +78,7 @@ public class GameConfigurationInitializer : GameConfigurationInitializerBase
         this.CreateJewelMixes();
         new NpcInitialization(this.Context, this.GameConfiguration).Initialize();
         new InvasionMobsInitialization(this.Context, this.GameConfiguration).Initialize();
+        new IceColossusInitialization(this.Context, this.GameConfiguration).Initialize();
         new GameMapsInitializer(this.Context, this.GameConfiguration).Initialize();
         this.AssignCharacterClassHomeMaps();
         this.WireRenaDropToEventMaps();
