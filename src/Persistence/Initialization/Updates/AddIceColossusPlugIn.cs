@@ -11,7 +11,7 @@ using MUnique.OpenMU.PlugIns;
 
 /// <summary>
 /// Adds the Ice Colossus ("Coloso de Hielo"), a custom monster for the boss encounters, to existing databases.
-/// New databases get it from the initialization, see <see cref="IceColossusInitialization"/>.
+/// New databases get it from the initialization, see <see cref="CustomMonstersInitialization"/>.
 /// </summary>
 [PlugIn]
 [Display(Name = PlugInName, Description = PlugInDescription)]
@@ -46,7 +46,7 @@ public class AddIceColossusPlugIn : UpdatePlugInBase
     /// <inheritdoc />
     protected override ValueTask ApplyAsync(IContext context, GameConfiguration gameConfiguration)
     {
-        new IceColossusInitialization(context, gameConfiguration).Initialize();
+        new CustomMonstersInitialization(context, gameConfiguration).CreateIceColossus();
         return ValueTask.CompletedTask;
     }
 }
