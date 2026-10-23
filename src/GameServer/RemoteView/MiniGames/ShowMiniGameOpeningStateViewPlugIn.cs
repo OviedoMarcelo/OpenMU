@@ -35,12 +35,7 @@ public class ShowMiniGameOpeningStateViewPlugIn : IShowMiniGameOpeningStatePlugI
         var minutesUntilNextStart = 0xFFFF;
         if (timeUntilOpening.HasValue)
         {
-            minutesUntilNextStart = (int)double.Round(timeUntilOpening.Value.TotalMinutes);
-            if (timeUntilOpening.Value.Seconds > 0)
-            {
-                // Rounding up...
-                minutesUntilNextStart++;
-            }
+            minutesUntilNextStart = (int)Math.Ceiling(timeUntilOpening.Value.TotalMinutes);
         }
 
         if (miniGameType == MiniGameType.ChaosCastle)
