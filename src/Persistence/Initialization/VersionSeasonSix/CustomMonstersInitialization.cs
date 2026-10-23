@@ -29,6 +29,19 @@ internal class CustomMonstersInitialization : InitializerBase
     internal const short WatcherNumber = 701;
 
     /// <summary>
+    /// The numbers and names of the objects of the boss encounters: crystals, pillars and obelisks in ice and fire.
+    /// </summary>
+    internal static readonly (short Number, string Name)[] EncounterObjects =
+    [
+        (702, "Cristal de Hielo"),
+        (703, "Cristal de Fuego"),
+        (704, "Pilar Rúnico de Hielo"),
+        (705, "Pilar Rúnico de Fuego"),
+        (706, "Obelisco de Hielo"),
+        (707, "Obelisco de Fuego"),
+    ];
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="CustomMonstersInitialization" /> class.
     /// </summary>
     /// <param name="context">The persistence context.</param>
@@ -43,6 +56,7 @@ internal class CustomMonstersInitialization : InitializerBase
     {
         this.CreateIceColossus();
         this.CreateWatcher();
+        this.CreateEncounterObjects();
     }
 
     /// <summary>
@@ -92,6 +106,42 @@ internal class CustomMonstersInitialization : InitializerBase
                 { Stats.LightningResistance, 30f / 255 },
                 { Stats.FireResistance, 120f / 255 },
             });
+    }
+
+    /// <summary>
+    /// Creates the objects of the boss encounters, which the players have to break in a phase, like the
+    /// pillars and shields. They don't move, don't attack and drop nothing; the phase sets their health.
+    /// </summary>
+    internal void CreateEncounterObjects()
+    {
+        foreach (var (number, name) in EncounterObjects)
+        {
+            if (this.GameConfiguration.Monsters.Any(m => m.Number == number))
+            {
+                continue;
+            }
+
+            var monster = this.Context.CreateNew<MonsterDefinition>();
+            this.GameConfiguration.Monsters.Add(monster);
+            monster.Number = number;
+            monster.Designation = name;
+            monster.MoveRange = 0;
+            monster.AttackRange = 0;
+            monster.ViewRange = 0;
+            monster.MoveDelay = new TimeSpan(500 * TimeSpan.TicksPerMillisecond);
+            monster.AttackDelay = new TimeSpan(2000 * TimeSpan.TicksPerMillisecond);
+            monster.RespawnDelay = new TimeSpan(600 * TimeSpan.TicksPerSecond);
+            monster.NumberOfMaximumItemDrops = 0;
+            var attributes = new Dictionary<AttributeDefinition, float>
+            {
+                { Stats.Level, 100 },
+                { Stats.MaximumHealth, 30_000 },
+                { Stats.DefenseBase, 600 },
+                { Stats.DefenseRatePvm, 400 },
+            };
+            monster.AddAttributes(attributes, this.Context, this.GameConfiguration);
+            monster.SetGuid(monster.Number);
+        }
     }
 
     private void CreateEncounterMonster(short number, string name, Dictionary<AttributeDefinition, float> attributes)

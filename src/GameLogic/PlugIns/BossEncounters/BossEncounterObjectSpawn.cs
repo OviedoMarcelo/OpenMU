@@ -41,6 +41,12 @@ public class BossEncounterObjectSpawn
     [Range(0, int.MaxValue)]
     public int Health { get; set; }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the object blocks the way: the players can't walk through its tile while it's alive.
+    /// </summary>
+    [Display(Name = "Bloquea el paso", Description = "Los jugadores no pueden atravesar su casilla mientras no se rompa, p. ej. un pilar.", Order = 5)]
+    public bool IsBlocking { get; set; }
+
     /// <inheritdoc />
     public override string ToString() => $"{this.MonsterNumber} ({this.X}, {this.Y})";
 }

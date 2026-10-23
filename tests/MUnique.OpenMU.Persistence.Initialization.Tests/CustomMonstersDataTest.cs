@@ -19,6 +19,8 @@ internal class CustomMonstersDataTest
     private const short IceColossusNumber = 700;
     private const short WatcherNumber = 701;
 
+    private static readonly short[] EncounterObjectNumbers = [702, 703, 704, 705, 706, 707];
+
     /// <summary>
     /// Tests that a new season 6 database contains the custom monsters, without spawns and drops of their own.
     /// </summary>
@@ -30,6 +32,28 @@ internal class CustomMonstersDataTest
         AssertMonster(gameConfiguration, IceColossusNumber, "Coloso de Hielo", 150, 150_000);
         AssertMonster(gameConfiguration, WatcherNumber, "El Vigía", 130, 120_000);
         Assert.That(gameConfiguration.Maps.SelectMany(m => m.MonsterSpawns).Any(s => s.MonsterDefinition?.Number is IceColossusNumber or WatcherNumber), Is.False);
+        AssertEncounterObjects(gameConfiguration);
+    }
+
+    /// <summary>
+    /// Tests that the update adds the objects of the boss encounters to a database which was created before they existed, only once.
+    /// </summary>
+    [Test]
+    public async Task UpdateAddsEncounterObjectsOnceAsync()
+    {
+        var (context, gameConfiguration) = await CreateSeason6ConfigurationAsync().ConfigureAwait(false);
+        using (context)
+        {
+            foreach (var monster in gameConfiguration.Monsters.Where(m => EncounterObjectNumbers.Contains(m.Number)).ToList())
+            {
+                gameConfiguration.Monsters.Remove(monster);
+            }
+
+            await new AddEncounterObjectsPlugIn().ApplyUpdateAsync(context, gameConfiguration).ConfigureAwait(false);
+            await new AddEncounterObjectsPlugIn().ApplyUpdateAsync(context, gameConfiguration).ConfigureAwait(false);
+
+            AssertEncounterObjects(gameConfiguration);
+        }
     }
 
     /// <summary>
@@ -52,6 +76,14 @@ internal class CustomMonstersDataTest
             AssertMonster(gameConfiguration, IceColossusNumber, "Coloso de Hielo", 150, 150_000);
             AssertMonster(gameConfiguration, WatcherNumber, "El Vigía", 130, 120_000);
         }
+    }
+
+    private static void AssertEncounterObjects(GameConfiguration gameConfiguration)
+    {
+        var objects = gameConfiguration.Monsters.Where(m => EncounterObjectNumbers.Contains(m.Number)).OrderBy(m => m.Number).ToList();
+        Assert.That(objects.Select(m => m.Number), Is.EqualTo(EncounterObjectNumbers));
+        Assert.That(objects.Select(m => m.Designation.Value), Is.EqualTo(new[] { "Cristal de Hielo", "Cristal de Fuego", "Pilar Rúnico de Hielo", "Pilar Rúnico de Fuego", "Obelisco de Hielo", "Obelisco de Fuego" }));
+        Assert.That(objects.All(m => m.MoveRange == 0 && m.AttackRange == 0 && m.NumberOfMaximumItemDrops == 0 && m.DropItemGroups.Count == 0), Is.True);
     }
 
     private static void AssertMonster(GameConfiguration gameConfiguration, short number, string name, float level, float health)

@@ -64,6 +64,7 @@ public sealed class BossEncounterContext
     private readonly IGameContext _gameContext;
     private readonly ILogger<BossEncounterContext> _logger;
     private readonly List<Monster> _objects = new();
+    private readonly BossEncounterBlockedTiles _blockedTiles = new();
     private readonly List<Monster> _summons = new();
     private readonly List<(Point Target, DateTime DueUtc, BossEncounterPhase Phase)> _pendingAreaAttacks = new();
     private readonly HashSet<Monster> _hiddenMonsters = new();
@@ -547,6 +548,7 @@ public sealed class BossEncounterContext
         }
 
         await this.ExecuteDueAreaAttacksAsync(boss, utcNow).ConfigureAwait(false);
+        await this._blockedTiles.UpdateAsync(await this._gameContext.GetPlayersAsync().ConfigureAwait(false)).ConfigureAwait(false);
         await this.UpdateHealthBarAsync(boss).ConfigureAwait(false);
         await this.AnnounceHealthAsync(boss).ConfigureAwait(false);
     }
@@ -742,6 +744,10 @@ public sealed class BossEncounterContext
             if (await this.SpawnMonsterAsync(monsterDefinition, point, health, new NullMonsterIntelligence()).ConfigureAwait(false) is { } monster)
             {
                 this._objects.Add(monster);
+                if (spawn.IsBlocking)
+                {
+                    await this._blockedTiles.BlockAsync(monster, await this._gameContext.GetPlayersAsync().ConfigureAwait(false)).ConfigureAwait(false);
+                }
             }
         }
 
@@ -753,6 +759,7 @@ public sealed class BossEncounterContext
 
     private async ValueTask RemoveObjectsAsync()
     {
+        await this._blockedTiles.ClearAsync(await this._gameContext.GetPlayersAsync().ConfigureAwait(false)).ConfigureAwait(false);
         foreach (var monster in this._objects)
         {
             await RemoveMonsterAsync(monster).ConfigureAwait(false);
