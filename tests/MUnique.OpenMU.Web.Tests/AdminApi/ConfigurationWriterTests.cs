@@ -120,6 +120,31 @@ public class ConfigurationWriterTests
     }
 
     /// <summary>
+    /// Tests that references which didn't change aren't looked up again: mu-admin sends the whole list of owned
+    /// objects (e.g. the spawns of a map), and looking up each reference made saving a map take almost a minute.
+    /// The referenced objects here aren't in the context, so a lookup would fail.
+    /// </summary>
+    [Test]
+    public async Task UnchangedReferencesAreNotLookedUpAsync()
+    {
+        using var otherContext = new InMemoryPersistenceContextProvider().CreateNewContext();
+        var skill = otherContext.CreateNew<Skill>();
+        var group = otherContext.CreateNew<DropItemGroup>();
+        var monster = this._context.CreateNew<MonsterDefinition>();
+        monster.AttackSkill = skill;
+        monster.DropItemGroups.Add(group);
+
+        await this.ApplyAsync(monster, new JsonObject
+        {
+            ["AttackSkill"] = new JsonObject { ["id"] = skill.GetId().ToString() },
+            ["DropItemGroups"] = new JsonArray(new JsonObject { ["id"] = group.GetId().ToString() }),
+        }).ConfigureAwait(false);
+
+        Assert.That(monster.AttackSkill, Is.SameAs(skill));
+        Assert.That(monster.DropItemGroups, Is.EquivalentTo(new[] { group }));
+    }
+
+    /// <summary>
     /// Tests that owned objects are matched by their ids: existing ones are changed, new ones
     /// created, and left out ones removed.
     /// </summary>
