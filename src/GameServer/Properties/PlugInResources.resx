@@ -2505,6 +2505,24 @@
   <data name="MerchantPricesViewPlugIn_Description" xml:space="preserve">
     <value>Sends the prices which the merchant stores set for their items when a store is opened, so that the client shows them instead of the ones it calculates.</value>
   </data>
+  <data name="NpcQuestDialogViewPlugIn_Name" xml:space="preserve">
+    <value>NPC quest dialog view</value>
+  </data>
+  <data name="NpcQuestDialogViewPlugIn_Description" xml:space="preserve">
+    <value>Sends the dialog of an NPC whose talk is a step of a quest, so that the client shows it with the portrait of the NPC and the buttons to accept or decline.</value>
+  </data>
+  <data name="ClientFeaturesHandlerPlugIn_Name" xml:space="preserve">
+    <value>Client features handler</value>
+  </data>
+  <data name="ClientFeaturesHandlerPlugIn_Description" xml:space="preserve">
+    <value>Handles the message which tells the optional features of the client, e.g. that it shows the dialogs of NPCs of quests.</value>
+  </data>
+  <data name="NpcQuestDialogAnswerHandlerPlugIn_Name" xml:space="preserve">
+    <value>NPC quest dialog answer handler</value>
+  </data>
+  <data name="NpcQuestDialogAnswerHandlerPlugIn_Description" xml:space="preserve">
+    <value>Handles the answer of the dialog of an NPC whose talk is a step of a quest. The talk counts when the player accepted.</value>
+  </data>
   <data name="EnterMarketPlace_Name" xml:space="preserve"><value>Enter Market Place Handler</value></data>
   <data name="EnterMarketPlace_Description" xml:space="preserve"><value>Handler which warps a player between Lorencia and the Loren Market when using the 'Warp' button of Market Union Member Julia.</value></data>
   <data name="GuildRoleAssignHandlerPlugIn_Name" xml:space="preserve">

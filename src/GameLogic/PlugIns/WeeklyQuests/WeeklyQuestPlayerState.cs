@@ -4,6 +4,7 @@
 
 namespace MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 
+using MUnique.OpenMU.GameLogic.NPC;
 using MUnique.OpenMU.Persistence.WeeklyQuests;
 using Nito.AsyncEx;
 
@@ -13,6 +14,8 @@ using Nito.AsyncEx;
 /// </summary>
 internal sealed class WeeklyQuestPlayerState
 {
+    private uint _lastNpcDialogId;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="WeeklyQuestPlayerState"/> class.
     /// </summary>
@@ -106,6 +109,40 @@ internal sealed class WeeklyQuestPlayerState
     /// Gets or sets the data of the character and configuration for which the <see cref="AvailableQuests"/> were determined.
     /// </summary>
     public (WeeklyQuestIndex Index, int ClassNumber, int Level, int Resets) AvailableQuestsKey { get; set; }
+
+    /// <summary>
+    /// Gets the id and NPC of the dialog which the client shows and hasn't answered yet.
+    /// A player only has one at a time: a new one replaces the previous one.
+    /// </summary>
+    public (uint Id, NonPlayerCharacter Npc)? OpenedNpcDialog { get; private set; }
+
+    /// <summary>
+    /// Opens a new NPC dialog, which replaces the previous one.
+    /// </summary>
+    /// <param name="npc">The NPC.</param>
+    /// <returns>The id of the dialog.</returns>
+    public uint OpenNpcDialog(NonPlayerCharacter npc)
+    {
+        var id = unchecked(++this._lastNpcDialogId);
+        this.OpenedNpcDialog = (id, npc);
+        return id;
+    }
+
+    /// <summary>
+    /// Closes the opened NPC dialog, if it has the id.
+    /// </summary>
+    /// <param name="dialogId">The id of the dialog.</param>
+    /// <returns>The NPC of the dialog, if it was the opened one.</returns>
+    public NonPlayerCharacter? CloseNpcDialog(uint dialogId)
+    {
+        if (this.OpenedNpcDialog is not { } dialog || dialog.Id != dialogId)
+        {
+            return null;
+        }
+
+        this.OpenedNpcDialog = null;
+        return dialog.Npc;
+    }
 
     /// <summary>
     /// Forgets the cached <see cref="AvailableQuests"/>, e.g. after a quest has been completed which is the prerequisite of another.

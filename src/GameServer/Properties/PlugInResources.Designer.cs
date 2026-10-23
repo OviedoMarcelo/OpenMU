@@ -7330,6 +7330,60 @@ namespace MUnique.OpenMU.GameServer.Properties {
                 return ResourceManager.GetString("MerchantPricesViewPlugIn_Description", resourceCulture);
             }
         }
+        /// <summary>
+        ///   Looks up a localized string similar to NPC quest dialog view
+        /// </summary>
+        public static string NpcQuestDialogViewPlugIn_Name {
+            get {
+                return ResourceManager.GetString("NpcQuestDialogViewPlugIn_Name", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Sends the dialog of an NPC whose talk is a step of a quest, so that the client shows it with the portrait of the NPC and the buttons to accept or decline.
+        /// </summary>
+        public static string NpcQuestDialogViewPlugIn_Description {
+            get {
+                return ResourceManager.GetString("NpcQuestDialogViewPlugIn_Description", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Client features handler
+        /// </summary>
+        public static string ClientFeaturesHandlerPlugIn_Name {
+            get {
+                return ResourceManager.GetString("ClientFeaturesHandlerPlugIn_Name", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Handles the message which tells the optional features of the client, e.g. that it shows the dialogs of NPCs of quests.
+        /// </summary>
+        public static string ClientFeaturesHandlerPlugIn_Description {
+            get {
+                return ResourceManager.GetString("ClientFeaturesHandlerPlugIn_Description", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to NPC quest dialog answer handler
+        /// </summary>
+        public static string NpcQuestDialogAnswerHandlerPlugIn_Name {
+            get {
+                return ResourceManager.GetString("NpcQuestDialogAnswerHandlerPlugIn_Name", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Handles the answer of the dialog of an NPC whose talk is a step of a quest. The talk counts when the player accepted.
+        /// </summary>
+        public static string NpcQuestDialogAnswerHandlerPlugIn_Description {
+            get {
+                return ResourceManager.GetString("NpcQuestDialogAnswerHandlerPlugIn_Description", resourceCulture);
+            }
+        }
+
 
         /// <summary>Gets the localized EnterMarketPlace_Name text.</summary>
         public static string EnterMarketPlace_Name => ResourceManager.GetString("EnterMarketPlace_Name", resourceCulture)!;

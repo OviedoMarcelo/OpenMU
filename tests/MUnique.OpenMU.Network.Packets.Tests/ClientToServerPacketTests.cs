@@ -3919,4 +3919,44 @@ public class PacketStructureTests
         Assert.That(actualLength, Is.EqualTo(expectedLength), 
             "Packet length mismatch: declared length does not match calculated size");
     }
+
+    /// <summary>
+    /// Tests the packet size calculation for ClientFeatures.
+    /// </summary>
+    [Test]
+    public void ClientFeatures_PacketSizeValidation()
+    {
+        // Fixed-length packet validation
+        const int expectedLength = 5;
+        var actualLength = ClientFeaturesRef.Length;
+        
+        Assert.That(actualLength, Is.EqualTo(expectedLength), 
+            "Packet length mismatch: declared length does not match calculated size");
+        
+        // Validate field 'Features' boundary
+        Assert.That(4 + 1, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'Features' exceeds packet boundary");
+    }
+
+    /// <summary>
+    /// Tests the packet size calculation for NpcQuestDialogAnswer.
+    /// </summary>
+    [Test]
+    public void NpcQuestDialogAnswer_PacketSizeValidation()
+    {
+        // Fixed-length packet validation
+        const int expectedLength = 9;
+        var actualLength = NpcQuestDialogAnswerRef.Length;
+        
+        Assert.That(actualLength, Is.EqualTo(expectedLength), 
+            "Packet length mismatch: declared length does not match calculated size");
+        
+        // Validate field 'DialogId' boundary
+        Assert.That(4 + 4, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'DialogId' exceeds packet boundary");
+        
+        // Validate field 'Accepted' boundary
+        Assert.That(8 + 1, Is.LessThanOrEqualTo(expectedLength), 
+            "Field 'Accepted' exceeds packet boundary");
+    }
 }

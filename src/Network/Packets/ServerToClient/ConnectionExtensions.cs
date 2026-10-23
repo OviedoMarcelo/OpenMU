@@ -6763,6 +6763,44 @@ public static class ConnectionExtensions
     }
 
     /// <summary>
+    /// Sends a <see cref="NpcQuestDialog" /> to this connection.
+    /// </summary>
+    /// <param name="connection">The connection.</param>
+    /// <param name="npcId">The id of the NPC object.</param>
+    /// <param name="npcNumber">The number of the NPC definition. The client chooses the portrait by it.</param>
+    /// <param name="dialogId">The id of this dialog, which the answer refers to.</param>
+    /// <param name="npcName">The name of the NPC.</param>
+    /// <param name="questName">The name of the quest.</param>
+    /// <param name="text">What the NPC says. Lines are separated by a line feed.</param>
+    /// <remarks>
+    /// Is sent by the server when: A player talks to an NPC whose talk is the current step of a quest, and the client told with the ClientFeatures message that it shows these dialogs.
+    /// Causes reaction on client side: The client shows a dialog with the portrait and name of the NPC, the text and the buttons to accept or decline. The answer is sent back with the NpcQuestDialogAnswer message, with the same dialog id.
+    /// </remarks>
+    public static async ValueTask SendNpcQuestDialogAsync(this IConnection? connection, ushort @npcId, ushort @npcNumber, uint @dialogId, string @npcName, string @questName, string @text)
+    {
+        if (connection is null)
+        {
+            return;
+        }
+
+        int WritePacket()
+        {
+            var length = NpcQuestDialogRef.GetRequiredSize(text);
+            var packet = new NpcQuestDialogRef(connection.Output.GetSpan(length)[..length]);
+            packet.NpcId = @npcId;
+            packet.NpcNumber = @npcNumber;
+            packet.DialogId = @dialogId;
+            packet.NpcName = @npcName;
+            packet.QuestName = @questName;
+            packet.Text = @text;
+
+            return packet.Header.Length;
+        }
+
+        await connection.SendAsync(WritePacket).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Sends a <see cref="EventChipRegistrationResult" /> to this connection.
     /// </summary>
     /// <param name="connection">The connection.</param>

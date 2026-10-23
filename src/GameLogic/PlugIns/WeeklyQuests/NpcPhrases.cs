@@ -14,7 +14,7 @@ public static class NpcPhrases
     /// <summary>
     /// The description of the text field in the admin panel.
     /// </summary>
-    public const string FieldDescription = "Solo para \"Hablar con NPC\". Lo que dice el NPC (globo sobre su cabeza) cuando la charla cuenta para el paso. Una frase por línea: se dicen una tras otra, con la pausa de la configuración. Una línea larga se parte en varios globos. Vacío = no dice nada.";
+    public const string FieldDescription = "Solo para \"Hablar con NPC\". Lo que dice el NPC. El cliente lo muestra en un diálogo con el retrato del NPC (un texto largo se lee en páginas de 8 líneas), y el paso cuenta cuando el jugador acepta. Los clientes viejos lo muestran en globos sobre su cabeza, una frase por línea, con la pausa de la configuración. Vacío = no dice nada y el paso cuenta al hablarle.";
 
     /// <summary>
     /// The maximum size of a phrase in bytes (UTF-8). The client shows up to 90 bytes, including the terminating zero.

@@ -15,6 +15,8 @@ using MUnique.OpenMU.GameLogic.PlugIns;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 using MUnique.OpenMU.GameLogic.Views;
 using MUnique.OpenMU.GameLogic.Views.NPC;
+using MUnique.OpenMU.GameLogic.Views.Quest;
+using MUnique.OpenMU.Pathfinding;
 using MUnique.OpenMU.Persistence;
 using MUnique.OpenMU.Persistence.WeeklyQuests;
 using MUnique.OpenMU.Interfaces;
@@ -603,6 +605,90 @@ public class WeeklyQuestsPlugInTest
         Assert.That(await player.PlayerState.TryAdvanceToAsync(PlayerState.NpcDialogOpened).ConfigureAwait(false), Is.True);
 
         Assert.That(() => { lock (shown) { return shown.ToList(); } }, Is.EqualTo(new[] { "Hola.", "Kundun volvió.", "Andá a Lorencia." }).After(2000, 10));
+    }
+
+    /// <summary>
+    /// Tests that a client which shows NPC dialogs gets one instead of the phrases, and that the talk only counts when the player accepts it.
+    /// </summary>
+    [Test]
+    public async Task NpcDialogCountsTheTalkOnlyWhenAcceptedAsync()
+    {
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        ClientFeatures.Set(player, ClientFeature.NpcQuestDialog);
+        var guardian = new MonsterDefinition { Number = 240, Designation = "Guardian" };
+        var plugIn = CreatePlugIn(new InMemoryWeeklyQuestProgressRepository(), CreateStoryQuest(
+            new WeeklyQuestObjective { ObjectiveType = WeeklyQuestObjectiveType.TalkToNpc, Monster = guardian, NpcText = "Hola.\r\nKundun volvió." }));
+        var guardianNpc = new NonPlayerCharacter(null!, guardian, player.CurrentMap!) { Position = player.Position };
+        var dialogIds = new List<uint>();
+        Mock.Get(player.ViewPlugIns.GetPlugIn<INpcQuestDialogViewPlugIn>()!)
+            .Setup(p => p.ShowNpcQuestDialogAsync(guardianNpc, It.IsAny<uint>(), It.IsAny<string>(), "Hola.\nKundun volvió."))
+            .Callback<NonPlayerCharacter, uint, string, string>((_, id, _, _) => dialogIds.Add(id))
+            .Returns(ValueTask.CompletedTask);
+
+        await plugIn.NpcTalkStartedAsync(player, guardianNpc).ConfigureAwait(false);
+        Assert.That(dialogIds, Has.Count.EqualTo(1));
+        Assert.That(player.Money, Is.EqualTo(0));
+        Mock.Get(player.ViewPlugIns.GetPlugIn<IShowMessageOfObjectPlugIn>()!)
+            .Verify(p => p.ShowMessageOfObjectAsync(It.IsAny<string>(), It.IsAny<MUnique.OpenMU.GameLogic.IIdentifiable>()), Times.Never);
+
+        // Declining doesn't count, and the dialog can't be answered twice.
+        await plugIn.NpcQuestDialogAnsweredAsync(player, dialogIds[0], false).ConfigureAwait(false);
+        await plugIn.NpcQuestDialogAnsweredAsync(player, dialogIds[0], true).ConfigureAwait(false);
+        Assert.That(player.Money, Is.EqualTo(0));
+
+        await plugIn.NpcTalkStartedAsync(player, guardianNpc).ConfigureAwait(false);
+        Assert.That(dialogIds, Has.Count.EqualTo(2));
+        await plugIn.NpcQuestDialogAnsweredAsync(player, dialogIds[1], true).ConfigureAwait(false);
+        Assert.That(player.Money, Is.EqualTo(1000));
+
+        // The objective is done, so the NPC has nothing to offer anymore.
+        await plugIn.NpcTalkStartedAsync(player, guardianNpc).ConfigureAwait(false);
+        Assert.That(dialogIds, Has.Count.EqualTo(2));
+    }
+
+    /// <summary>
+    /// Tests that accepting doesn't count when the player walked away from the NPC.
+    /// </summary>
+    [Test]
+    public async Task NpcDialogIsIgnoredFarFromTheNpcAsync()
+    {
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        ClientFeatures.Set(player, ClientFeature.NpcQuestDialog);
+        var guardian = new MonsterDefinition { Number = 240 };
+        var plugIn = CreatePlugIn(new InMemoryWeeklyQuestProgressRepository(), CreateStoryQuest(
+            new WeeklyQuestObjective { ObjectiveType = WeeklyQuestObjectiveType.TalkToNpc, Monster = guardian, NpcText = "Hola." }));
+        var guardianNpc = new NonPlayerCharacter(null!, guardian, player.CurrentMap!) { Position = new Point((byte)(player.Position.X + 30), player.Position.Y) };
+        uint dialogId = 0;
+        Mock.Get(player.ViewPlugIns.GetPlugIn<INpcQuestDialogViewPlugIn>()!)
+            .Setup(p => p.ShowNpcQuestDialogAsync(guardianNpc, It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<string>()))
+            .Callback<NonPlayerCharacter, uint, string, string>((_, id, _, _) => dialogId = id)
+            .Returns(ValueTask.CompletedTask);
+
+        await plugIn.NpcTalkStartedAsync(player, guardianNpc).ConfigureAwait(false);
+        await plugIn.NpcQuestDialogAnsweredAsync(player, dialogId, true).ConfigureAwait(false);
+
+        Assert.That(dialogId, Is.Not.EqualTo(0));
+        Assert.That(player.Money, Is.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Tests that the talk counts right away for a client which shows NPC dialogs, when the NPC has nothing to say.
+    /// </summary>
+    [Test]
+    public async Task NpcWithoutTextCountsTheTalkRightAwayAsync()
+    {
+        var player = await CreatePlayerAsync().ConfigureAwait(false);
+        ClientFeatures.Set(player, ClientFeature.NpcQuestDialog);
+        var guardian = new MonsterDefinition { Number = 240 };
+        var plugIn = CreatePlugIn(new InMemoryWeeklyQuestProgressRepository(), CreateStoryQuest(
+            new WeeklyQuestObjective { ObjectiveType = WeeklyQuestObjectiveType.TalkToNpc, Monster = guardian }));
+        var guardianNpc = new NonPlayerCharacter(null!, guardian, player.CurrentMap!);
+
+        await plugIn.NpcTalkStartedAsync(player, guardianNpc).ConfigureAwait(false);
+
+        Assert.That(player.Money, Is.EqualTo(1000));
+        Mock.Get(player.ViewPlugIns.GetPlugIn<INpcQuestDialogViewPlugIn>()!)
+            .Verify(p => p.ShowNpcQuestDialogAsync(It.IsAny<NonPlayerCharacter>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
     /// <summary>
