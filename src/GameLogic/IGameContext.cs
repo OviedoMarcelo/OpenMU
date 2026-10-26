@@ -94,6 +94,11 @@ public interface IGameContext
     Offline.OfflinePlayerManager OfflinePlayerManager { get; }
 
     /// <summary>
+    /// Gets the registry of which player owns the persistent data of an account.
+    /// </summary>
+    AccountSessionRegistry AccountSessions { get; }
+
+    /// <summary>
     /// Gets the players count of the game.
     /// </summary>
     int PlayerCount { get; }

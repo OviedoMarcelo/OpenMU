@@ -13,6 +13,12 @@ using MUnique.OpenMU.GameLogic.Views.Login;
 /// </summary>
 public class LoginAction
 {
+    /// <summary>
+    /// The maximum time a login waits for the previous session of the account to finish
+    /// its disconnection (which includes its last save), before it's rejected.
+    /// </summary>
+    internal static readonly TimeSpan PreviousSessionTeardownTimeout = TimeSpan.FromSeconds(20);
+
     private static int _templateCounter;
 
     /// <summary>
@@ -37,22 +43,31 @@ public class LoginAction
         }
 
         var (success, account) = await this.TryEstablishSessionAsync(player, username).ConfigureAwait(false);
-        if (success && account is { })
+        if (!success || account is null)
         {
-            try
+            if (player.Account is null)
             {
-                await this.FinishLoginAsync(player, username, account).ConfigureAwait(false);
+                // A claim of this attempt. A player which is logged in already keeps its own one.
+                player.GameContext.AccountSessions.Release(username, player);
             }
-            catch (Exception ex)
-            {
-                player.Logger.LogError(ex, "Failed to finish login for [{Username}].", username);
-                if (!account.IsTemplate && player.GameContext is IGameServerContext gameServerContext)
-                {
-                    await gameServerContext.LoginServer.LogOffAsync(username, gameServerContext.Id).ConfigureAwait(false);
-                }
 
-                await player.InvokeViewPlugInAsync<IShowLoginResultPlugIn>(p => p.ShowLoginResultAsync(LoginResult.ConnectionError)).ConfigureAwait(false);
-            }
+            return;
+        }
+
+        try
+        {
+            await this.FinishLoginAsync(player, username, account).ConfigureAwait(false);
+            player.Logger.LogInformation("Account [{Username}] logged in ({Session}).", username, player.SessionInfo);
+        }
+        catch (Exception ex)
+        {
+            player.Logger.LogError(ex, "Failed to finish login for [{Username}] ({Session}).", username, player.SessionInfo);
+            await player.InvokeViewPlugInAsync<IShowLoginResultPlugIn>(p => p.ShowLoginResultAsync(LoginResult.ConnectionError)).ConfigureAwait(false);
+
+            // The account is set already, so the player can't stay: releasing just the login server,
+            // like before, left a working session behind whose account could be logged in again.
+            // The disconnection releases the login server and the account claim, after saving.
+            await player.DisconnectAsync().ConfigureAwait(false);
         }
     }
 
@@ -137,6 +152,12 @@ public class LoginAction
                 return (true, offlineAccount);
             }
 
+            if (!await this.TryClaimAccountAsync(player, username).ConfigureAwait(false))
+            {
+                context.Allowed = false;
+                return (false, null);
+            }
+
             var loadedAccount = await player.PersistenceContext.GetAccountByLoginNameAsync(username).ConfigureAwait(false);
             if (loadedAccount is null)
             {
@@ -144,6 +165,12 @@ public class LoginAction
                 await player.InvokeViewPlugInAsync<IShowLoginResultPlugIn>(p => p.ShowLoginResultAsync(LoginResult.ConnectionError)).ConfigureAwait(false);
                 context.Allowed = false;
                 return (false, null);
+            }
+
+            if (loadedAccount.IsTemplate)
+            {
+                // A template account doesn't persist anything, so its players can share it.
+                player.GameContext.AccountSessions.Release(username, player);
             }
 
             if (!loadedAccount.IsTemplate && !await gameServerContext.LoginServer.TryLoginAsync(username, gameServerContext.Id).ConfigureAwait(false))
@@ -171,6 +198,11 @@ public class LoginAction
         try
         {
             await player.GameContext.OfflinePlayerManager.StopAsync(username).ConfigureAwait(false);
+            if (!await this.TryClaimAccountAsync(player, username).ConfigureAwait(false))
+            {
+                return null;
+            }
+
             var account = await player.PersistenceContext.GetAccountByLoginNameAsync(username).ConfigureAwait(false);
             if (account is null)
             {
@@ -186,6 +218,30 @@ public class LoginAction
             await player.InvokeViewPlugInAsync<IShowLoginResultPlugIn>(p => p.ShowLoginResultAsync(LoginResult.ConnectionError)).ConfigureAwait(false);
             return null;
         }
+    }
+
+    /// <summary>
+    /// Claims the account for the player before it's loaded, so that it's never loaded while a previous
+    /// session of it is still in the game or still saving, see <see cref="AccountSessionRegistry"/>.
+    /// </summary>
+    private async ValueTask<bool> TryClaimAccountAsync(Player player, string username)
+    {
+        var result = await player.GameContext.AccountSessions.ClaimAsync(username, player, PreviousSessionTeardownTimeout).ConfigureAwait(false);
+        if (result is AccountClaimResult.Claimed or AccountClaimResult.Shared)
+        {
+            return true;
+        }
+
+        var owner = player.GameContext.AccountSessions.GetOwner(username);
+        player.Logger.LogWarning(
+            "Login of account [{Username}] ({Session}) rejected: {Reason}, held by {OtherSession} in state {State}.",
+            username,
+            player.SessionInfo,
+            result == AccountClaimResult.InUse ? "the account is still in the game" : "the previous session didn't finish disconnecting in time",
+            owner?.SessionInfo,
+            owner?.PlayerState.CurrentState);
+        await player.InvokeViewPlugInAsync<IShowLoginResultPlugIn>(p => p.ShowLoginResultAsync(LoginResult.AccountAlreadyConnected)).ConfigureAwait(false);
+        return false;
     }
 
     private async ValueTask HandleAlreadyConnectedAsync(Player player, string username)

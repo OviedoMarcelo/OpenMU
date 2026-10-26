@@ -179,6 +179,14 @@ public class OfflinePlayer : Player
         {
             this.StartTimestamp = DateTime.UtcNow;
 
+            // The real player of the account may still be saving; loading before that would continue with old data.
+            var claim = await this.GameContext.AccountSessions.ClaimAsync(loginName, this, PlayerActions.LoginAction.PreviousSessionTeardownTimeout).ConfigureAwait(false);
+            if (claim is not (AccountClaimResult.Claimed or AccountClaimResult.Shared))
+            {
+                this.Logger.LogWarning("Offline session of account {LoginName} not started: the account is held by another session ({Claim}).", loginName, claim);
+                return false;
+            }
+
             var account = await this.PersistenceContext.GetAccountByLoginNameAsync(loginName).ConfigureAwait(false);
             if (account is null)
             {
