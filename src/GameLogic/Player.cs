@@ -56,6 +56,8 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
     /// </summary>
     private static readonly TimeSpan HeroStateDuration = TimeSpan.FromHours(1);
 
+    private static int _lastSessionId;
+
     private readonly PlayerExperience _experience;
 
     /// <summary>
@@ -175,6 +177,19 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
 
     /// <inheritdoc />
     public ILogger<Player> Logger { get; protected set; }
+
+    /// <summary>
+    /// Gets the number of this player instance (i.e. of its connection), which is unique since the server started.
+    /// It tells apart, in the log, the sessions of the same account.
+    /// </summary>
+    public int SessionId { get; } = Interlocked.Increment(ref _lastSessionId);
+
+    /// <summary>
+    /// Gets a short description of the session for the log, e.g. "session 42 from 1.2.3.4".
+    /// </summary>
+    public string SessionInfo => this is IHasIpAddress { IpAddress: { } ipAddress }
+        ? $"session {this.SessionId} from {ipAddress}"
+        : $"session {this.SessionId}";
 
     /// <inheritdoc />
     public bool CanWalkOnSafezone => true;
@@ -656,11 +671,14 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
 
             this.DuelRoom = null;
 
+            var leavingCharacterName = this._selectedCharacter?.Name;
             this._selectedCharacter = null;
+            this.Logger.LogInformation("Character [{Character}] of account [{Account}] left the game ({Session}).", leavingCharacterName, this.Account?.LoginName, this.SessionInfo);
         }
         else
         {
             this._selectedCharacter = character;
+            this.Logger.LogInformation("Character [{Character}] of account [{Account}] entered the game ({Session}).", character.Name, this.Account?.LoginName, this.SessionInfo);
             await this.OnPlayerEnteredWorldAsync().ConfigureAwait(false);
             await this.PlayerEnteredWorld.SafeInvokeAsync(this).ConfigureAwait(false);
 
@@ -974,6 +992,11 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
         await this.CloseTradeIfNeededAsync().ConfigureAwait(false);
         if (await this.PlayerState.TryAdvanceToAsync(GameLogic.PlayerState.Disconnected).ConfigureAwait(false))
         {
+            if (this.Account is { } disconnectingAccount)
+            {
+                this.Logger.LogInformation("Account [{Account}] is disconnecting, character [{Character}] ({Session}).", disconnectingAccount.LoginName, this._selectedCharacter?.Name, this.SessionInfo);
+            }
+
             try
             {
                 try
@@ -1031,6 +1054,13 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
             finally
             {
                 await this.PlayerState.TryAdvanceToAsync(GameLogic.PlayerState.Finished).ConfigureAwait(false);
+
+                // Only now, after the last save, the account may be loaded by another session.
+                this.GameContext.AccountSessions?.ReleaseAll(this);
+                if (this.Account is { } account)
+                {
+                    this.Logger.LogInformation("Account [{Account}] disconnected ({Session}).", account.LoginName, this.SessionInfo);
+                }
             }
         }
     }
@@ -1202,11 +1232,14 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
 
         try
         {
-            await this.SaveProgressAsync().ConfigureAwait(false);
+            if (!await this.SaveProgressAsync().ConfigureAwait(false))
+            {
+                this.Logger.LogWarning("Couldn't save when leaving the game. Player: {player} ({Session})", this, this.SessionInfo);
+            }
         }
         catch (Exception ex)
         {
-            this.Logger.LogError(ex, "Couldn't save when leaving the game. Player: {player}", this);
+            this.Logger.LogError(ex, "Couldn't save when leaving the game. Player: {player} ({Session})", this, this.SessionInfo);
         }
     }
 
@@ -1366,6 +1399,9 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
             // Must not abort the rest of the disposal - the remaining resources have to be released.
             this.Logger.LogError(ex, "Error while removing player {Player} from the game context during disposal.", this);
         }
+
+        // A player which is disposed without having been disconnected (e.g. a failed login) still holds its claim.
+        this.GameContext.AccountSessions?.ReleaseAll(this);
 
         await this._muHelperLazy.DisposeIfCreatedAsync().ConfigureAwait(false);
 

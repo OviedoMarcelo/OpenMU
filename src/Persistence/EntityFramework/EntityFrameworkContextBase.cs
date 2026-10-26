@@ -88,12 +88,12 @@ internal class EntityFrameworkContextBase : IContext
             {
                 // Retrying the same statements would fail the same way, and so would every later save
                 // of this context. So the rows which are missing in the database are reconciled first.
-                this._logger.LogWarning(ex, "Concurrency conflict while saving (attempt {Attempt}/{MaxAttempts}); reconciling the affected entries and retrying.", attempt, maxAttempts);
+                this._logger.LogWarning(ex, "Concurrency conflict while saving {Owner} (attempt {Attempt}/{MaxAttempts}); reconciling the affected entries and retrying.", DescribeOwner(), attempt, maxAttempts);
                 await this.ReconcileMissingRowsAsync(ex, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (attempt < maxAttempts && IsTransientConcurrencyConflict(ex))
             {
-                this._logger.LogWarning(ex, "Transient concurrency conflict while saving (attempt {Attempt}/{MaxAttempts}); retrying.", attempt, maxAttempts);
+                this._logger.LogWarning(ex, "Transient concurrency conflict while saving {Owner} (attempt {Attempt}/{MaxAttempts}); retrying.", DescribeOwner(), attempt, maxAttempts);
                 await Task.Delay(attempt * 10, cancellationToken).ConfigureAwait(false);
             }
         }
@@ -325,6 +325,8 @@ internal class EntityFrameworkContextBase : IContext
             or KeyNotFoundException;
     }
 
+    private static string DescribeOwner() => SaveOwner.Current ?? "an unknown owner";
+
     private static string DescribeKey(EntityEntry entry)
     {
         return entry.Metadata.FindPrimaryKey() is { } key
@@ -402,14 +404,14 @@ internal class EntityFrameworkContextBase : IContext
                 if (exception.Entries.Contains(entry))
                 {
                     // Can't happen without concurrency tokens; take the database state as the original values.
-                    this._logger.LogWarning("Save conflict on {EntityType} {Key} ({State}), although its row exists.", entry.Metadata.ClrType.Name, DescribeKey(entry), entry.State);
+                    this._logger.LogWarning("Save conflict of {Owner} on {EntityType} {Key} ({State}), although its row exists.", DescribeOwner(), entry.Metadata.ClrType.Name, DescribeKey(entry), entry.State);
                     entry.OriginalValues.SetValues(databaseValues);
                 }
 
                 continue;
             }
 
-            this._logger.LogWarning("Save conflict: {EntityType} {Key} ({State}) has no row in the database.", entry.Metadata.ClrType.Name, DescribeKey(entry), entry.State);
+            this._logger.LogWarning("Save conflict of {Owner}: {EntityType} {Key} ({State}) has no row in the database.", DescribeOwner(), entry.Metadata.ClrType.Name, DescribeKey(entry), entry.State);
             switch (entry.State)
             {
                 case EntityState.Deleted:
@@ -436,7 +438,7 @@ internal class EntityFrameworkContextBase : IContext
                 continue;
             }
 
-            this._logger.LogWarning("Inserting the missing {EntityType} {Key} again.", entry.Metadata.ClrType.Name, DescribeKey(entry));
+            this._logger.LogWarning("Inserting the missing {EntityType} {Key} of {Owner} again.", entry.Metadata.ClrType.Name, DescribeKey(entry), DescribeOwner());
             entry.State = EntityState.Added;
             await this.AddMissingAggregatesAsync(aggregate, cancellationToken).ConfigureAwait(false);
         }
