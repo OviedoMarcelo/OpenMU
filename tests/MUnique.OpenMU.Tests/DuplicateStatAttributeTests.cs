@@ -56,4 +56,45 @@ public class DuplicateStatAttributeTests
         Assert.That(remaining, Has.Count.EqualTo(1));
         Assert.That(remaining[0].Value, Is.EqualTo(55));
     }
+
+    /// <summary>
+    /// Tests that an attribute system can be created when the account holds a stat attribute without
+    /// its definition, instead of failing with a "value cannot be null (key)" exception.
+    /// </summary>
+    [Test]
+    public async ValueTask AttributeSystemIsCreatedForStatAttributeWithoutDefinitionAsync()
+    {
+        var player = await PlayerTestHelper.CreatePlayerAsync().ConfigureAwait(false);
+        var character = player.SelectedCharacter!;
+        player.Account!.Attributes.Add(new StatAttribute());
+        character.Attributes.Add(new StatAttribute());
+
+        using var attributeSystem = new ItemAwareAttributeSystem(player.Account, character, player.GameContext.Configuration);
+
+        Assert.That(attributeSystem[Stats.BaseStrength], Is.Not.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Tests that stat attributes without their definition are removed from the character and its account
+    /// when it enters the world, e.g. one which was added to the account with the admin API.
+    /// </summary>
+    [Test]
+    public async ValueTask StatAttributesWithoutDefinitionAreRemovedWhenEnteringWorldAsync()
+    {
+        var player = await PlayerTestHelper.CreatePlayerAsync().ConfigureAwait(false);
+        var character = player.SelectedCharacter!;
+        var account = player.Account!;
+        account.Attributes.Add(new StatAttribute());
+        character.Attributes.Add(new StatAttribute());
+
+        var secondPlayer = new OfflinePlayer(player.GameContext) { Account = account };
+        await secondPlayer.PlayerState.TryAdvanceToAsync(PlayerState.LoginScreen).ConfigureAwait(false);
+        await secondPlayer.PlayerState.TryAdvanceToAsync(PlayerState.Authenticated).ConfigureAwait(false);
+        await secondPlayer.PlayerState.TryAdvanceToAsync(PlayerState.CharacterSelection).ConfigureAwait(false);
+        await secondPlayer.SetSelectedCharacterAsync(character).ConfigureAwait(false);
+
+        Assert.That(account.Attributes.Where(a => a.Definition is null), Is.Empty);
+        Assert.That(character.Attributes.Where(a => a.Definition is null), Is.Empty);
+        Assert.That(secondPlayer.Attributes, Is.Not.Null, "The character entered the world.");
+    }
 }

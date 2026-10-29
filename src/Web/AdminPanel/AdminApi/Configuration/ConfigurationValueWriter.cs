@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
+using MUnique.OpenMU.AttributeSystem;
 using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.Interfaces;
 using MUnique.OpenMU.Persistence;
@@ -108,6 +109,12 @@ public class ConfigurationValueWriter
         if (target is MonsterSpawnArea { MonsterDefinition: null })
         {
             state.Errors.Add(new FieldError(Combine(path, nameof(MonsterSpawnArea.MonsterDefinition)), "Elegí el monstruo del spawn."));
+        }
+
+        // A stat attribute without its definition keeps every character of the account from entering the game.
+        if (target is StatAttribute { Definition: null })
+        {
+            state.Errors.Add(new FieldError(Combine(path, nameof(StatAttribute.Definition)), "Elegí el atributo."));
         }
 
         var results = new List<ValidationResult>();
