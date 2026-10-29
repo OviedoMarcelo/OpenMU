@@ -12,7 +12,8 @@ using MUnique.OpenMU.Network.PlugIns;
 using MUnique.OpenMU.PlugIns;
 
 /// <summary>
-/// Handler for the answer of the dialog of an NPC whose talk is a step of a quest.
+/// Handler for the answer of the dialog of an NPC: of the ones whose talk is a step of a quest,
+/// and of the questions of other NPCs (see <see cref="NpcDialogs"/>).
 /// </summary>
 [PlugIn]
 [Display(Name = nameof(PlugInResources.NpcQuestDialogAnswerHandlerPlugIn_Name), Description = nameof(PlugInResources.NpcQuestDialogAnswerHandlerPlugIn_Description), ResourceType = typeof(PlugInResources))]
@@ -30,13 +31,18 @@ internal class NpcQuestDialogAnswerHandlerPlugIn : ISubPacketHandlerPlugIn
     /// <inheritdoc/>
     public async ValueTask HandlePacketAsync(Player player, Memory<byte> packet)
     {
-        if (packet.Length < NpcQuestDialogAnswer.Length
-            || WeeklyQuestsPlugIn.GetTrackingPlugIn(player) is not { } weeklyQuests)
+        if (packet.Length < NpcQuestDialogAnswer.Length)
         {
             return;
         }
 
         NpcQuestDialogAnswer message = packet;
+        if (await NpcDialogs.TryAnswerAsync(player, message.DialogId, message.Accepted).ConfigureAwait(false)
+            || WeeklyQuestsPlugIn.GetTrackingPlugIn(player) is not { } weeklyQuests)
+        {
+            return;
+        }
+
         await weeklyQuests.NpcQuestDialogAnsweredAsync(player, message.DialogId, message.Accepted).ConfigureAwait(false);
     }
 }
