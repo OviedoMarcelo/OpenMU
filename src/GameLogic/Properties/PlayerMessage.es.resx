@@ -136,4 +136,7 @@
   <data name="CosmeticRevokeFailed" xml:space="preserve">
     <value>{0} no tiene la pieza cosmética {1}.</value>
   </data>
+  <data name="InventoryNotEnoughSpace" xml:space="preserve">
+    <value>No tenés lugar en el inventario.</value>
+  </data>
 </root>

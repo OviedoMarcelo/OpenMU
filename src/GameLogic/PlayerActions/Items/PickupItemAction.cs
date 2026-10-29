@@ -85,6 +85,9 @@ public class PickupItemAction
         return true;
     }
 
+    private static bool CanStackOnInventory(Player player, Item item) =>
+        item.IsStackable() && player.Inventory?.Items.Any(i => i.CanCompletelyStackOn(item)) == true;
+
     private static bool IsLimitReached(Player player, ItemDefinition? itemDefinition)
     {
         if (itemDefinition is null)
@@ -140,6 +143,14 @@ public class PickupItemAction
         if (slot < InventoryConstants.EquippableSlotsCount)
         {
             return (false, null);
+        }
+
+        // Without room for the item (e.g. a 2x4 weapon out of a box, with an inventory full of boxes), the pick up
+        // failed without telling why, which looked like the item belonged to someone else. A stackable item which
+        // fits on one of the inventory is picked up anyway.
+        if (slot is null && !CanStackOnInventory(player, droppedItem.Item))
+        {
+            return await RejectAsync(player, nameof(PlayerMessage.InventoryNotEnoughSpace)).ConfigureAwait(false);
         }
 
         if (droppedItem.Item.Definition?.IsQuestItem == true
