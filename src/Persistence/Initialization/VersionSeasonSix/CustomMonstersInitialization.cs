@@ -29,6 +29,17 @@ internal class CustomMonstersInitialization : InitializerBase
     internal const short WatcherNumber = 701;
 
     /// <summary>
+    /// The number of the Guardián del Baúl, an NPC which extends the vault (see VaultExtensionNpcPlugIn).
+    /// The objects of the encounters take the numbers up to 707.
+    /// </summary>
+    internal const short VaultGuardianNumber = 708;
+
+    /// <summary>
+    /// Where the Guardián del Baúl stands in Lorencia: next to Baz The Vault Keeper (147, 145).
+    /// </summary>
+    internal static readonly (byte X, byte Y) VaultGuardianPosition = (149, 144);
+
+    /// <summary>
     /// The numbers and names of the objects of the boss encounters: crystals, pillars and obelisks in ice and fire.
     /// </summary>
     internal static readonly (short Number, string Name)[] EncounterObjects =
@@ -57,6 +68,7 @@ internal class CustomMonstersInitialization : InitializerBase
         this.CreateIceColossus();
         this.CreateWatcher();
         this.CreateEncounterObjects();
+        this.CreateVaultGuardian();
     }
 
     /// <summary>
@@ -142,6 +154,51 @@ internal class CustomMonstersInitialization : InitializerBase
             monster.AddAttributes(attributes, this.Context, this.GameConfiguration);
             monster.SetGuid(monster.Number);
         }
+    }
+
+    /// <summary>
+    /// Creates the Guardián del Baúl, an NPC which extends the vault of the account in exchange for some items.
+    /// </summary>
+    /// <returns>The NPC.</returns>
+    internal MonsterDefinition CreateVaultGuardian()
+    {
+        if (this.GameConfiguration.Monsters.FirstOrDefault(m => m.Number == VaultGuardianNumber) is { } existing)
+        {
+            return existing;
+        }
+
+        var npc = this.Context.CreateNew<MonsterDefinition>();
+        this.GameConfiguration.Monsters.Add(npc);
+        npc.Number = VaultGuardianNumber;
+        npc.Designation = "Guardián del Baúl";
+        npc.ObjectKind = NpcObjectKind.PassiveNpc;
+        npc.NpcWindow = NpcWindow.Undefined;
+        npc.SetGuid(npc.Number);
+        return npc;
+    }
+
+    /// <summary>
+    /// Places the Guardián del Baúl next to the vault keeper of Lorencia, unless it's already there.
+    /// </summary>
+    /// <param name="lorencia">The map of Lorencia.</param>
+    /// <param name="npc">The Guardián del Baúl.</param>
+    internal void CreateVaultGuardianSpawn(GameMapDefinition lorencia, MonsterDefinition npc)
+    {
+        if (lorencia.MonsterSpawns.Any(s => s.MonsterDefinition?.Number == VaultGuardianNumber))
+        {
+            return;
+        }
+
+        var spawn = this.Context.CreateNew<MonsterSpawnArea>();
+        lorencia.MonsterSpawns.Add(spawn);
+        spawn.SetGuid(lorencia.Number, VaultGuardianNumber);
+        spawn.GameMap = lorencia;
+        spawn.MonsterDefinition = npc;
+        spawn.Quantity = 1;
+        spawn.SpawnTrigger = SpawnTrigger.Automatic;
+        spawn.Direction = Direction.SouthWest;
+        spawn.X1 = spawn.X2 = VaultGuardianPosition.X;
+        spawn.Y1 = spawn.Y2 = VaultGuardianPosition.Y;
     }
 
     private void CreateEncounterMonster(short number, string name, Dictionary<AttributeDefinition, float> attributes)

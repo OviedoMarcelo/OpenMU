@@ -2480,5 +2480,14 @@ namespace MUnique.OpenMU.GameLogic.Properties {
                 return ResourceManager.GetString("CosmeticRevokeFailed", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The master skill tree of {0} has been reset: {1} points given back, {2} free master points now..
+        /// </summary>
+        public static string MasterSkillsResetResult {
+            get {
+                return ResourceManager.GetString("MasterSkillsResetResult", resourceCulture);
+            }
+        }
     }
 }

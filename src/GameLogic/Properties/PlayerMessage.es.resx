@@ -139,4 +139,7 @@
   <data name="InventoryNotEnoughSpace" xml:space="preserve">
     <value>No tenés lugar en el inventario.</value>
   </data>
+  <data name="MasterSkillsResetResult" xml:space="preserve">
+    <value>Se reseteó el árbol master de {0}: se devolvieron {1} puntos y ahora tiene {2} puntos master libres.</value>
+  </data>
 </root>

@@ -924,4 +924,7 @@
   <data name="CosmeticRevokeFailed" xml:space="preserve">
     <value>{0} doesn't have the cosmetic piece {1}.</value>
   </data>
+  <data name="MasterSkillsResetResult" xml:space="preserve">
+    <value>The master skill tree of {0} has been reset: {1} points given back, {2} free master points now.</value>
+  </data>
 </root>

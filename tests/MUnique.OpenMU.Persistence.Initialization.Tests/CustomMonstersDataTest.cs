@@ -18,6 +18,7 @@ internal class CustomMonstersDataTest
 {
     private const short IceColossusNumber = 700;
     private const short WatcherNumber = 701;
+    private const short VaultGuardianNumber = 708;
 
     private static readonly short[] EncounterObjectNumbers = [702, 703, 704, 705, 706, 707];
 
@@ -76,6 +77,59 @@ internal class CustomMonstersDataTest
             AssertMonster(gameConfiguration, IceColossusNumber, "Coloso de Hielo", 150, 150_000);
             AssertMonster(gameConfiguration, WatcherNumber, "El Vigía", 130, 120_000);
         }
+    }
+
+    /// <summary>
+    /// Tests that a new season 6 database contains the Guardián del Baúl, standing on a walkable tile of the safezone of Lorencia,
+    /// next to the vault keeper.
+    /// </summary>
+    [Test]
+    public async Task NewDatabaseContainsVaultGuardianAsync()
+    {
+        var (_, gameConfiguration) = await CreateSeason6ConfigurationAsync().ConfigureAwait(false);
+
+        AssertVaultGuardian(gameConfiguration);
+    }
+
+    /// <summary>
+    /// Tests that the update adds the Guardián del Baúl and its spawn to a database which was created before it existed, only once.
+    /// </summary>
+    [Test]
+    public async Task UpdateAddsVaultGuardianOnceAsync()
+    {
+        var (context, gameConfiguration) = await CreateSeason6ConfigurationAsync().ConfigureAwait(false);
+        using (context)
+        {
+            var lorencia = gameConfiguration.Maps.Single(m => m.Number == 0);
+            lorencia.MonsterSpawns.Remove(lorencia.MonsterSpawns.Single(s => s.MonsterDefinition?.Number == VaultGuardianNumber));
+            gameConfiguration.Monsters.Remove(gameConfiguration.Monsters.Single(m => m.Number == VaultGuardianNumber));
+
+            await new AddVaultGuardianPlugIn().ApplyUpdateAsync(context, gameConfiguration).ConfigureAwait(false);
+            await new AddVaultGuardianPlugIn().ApplyUpdateAsync(context, gameConfiguration).ConfigureAwait(false);
+
+            AssertVaultGuardian(gameConfiguration);
+        }
+    }
+
+    private static void AssertVaultGuardian(GameConfiguration gameConfiguration)
+    {
+        var npc = gameConfiguration.Monsters.Single(m => m.Number == VaultGuardianNumber);
+        Assert.That(npc.Designation.Value, Is.EqualTo("Guardián del Baúl"));
+        Assert.That(npc.ObjectKind, Is.EqualTo(NpcObjectKind.PassiveNpc));
+        Assert.That(npc.NpcWindow, Is.EqualTo(NpcWindow.Undefined));
+
+        var lorencia = gameConfiguration.Maps.Single(m => m.Number == 0);
+        var spawn = lorencia.MonsterSpawns.Single(s => s.MonsterDefinition?.Number == VaultGuardianNumber);
+        Assert.That((spawn.X1, spawn.Y1, spawn.X2, spawn.Y2), Is.EqualTo((149, 144, 149, 144)));
+        Assert.That(gameConfiguration.Maps.SelectMany(m => m.MonsterSpawns).Count(s => s.MonsterDefinition?.Number == VaultGuardianNumber), Is.EqualTo(1));
+
+        var terrain = new GameLogic.GameMapTerrain(lorencia);
+        Assert.That(terrain.WalkMap[spawn.X1, spawn.Y1], Is.True, "walkable");
+        Assert.That(terrain.SafezoneMap[spawn.X1, spawn.Y1], Is.True, "in the safezone");
+        Assert.That(
+            lorencia.MonsterSpawns.Any(s => s.MonsterDefinition?.Number == 240 && Math.Abs(s.X1 - spawn.X1) <= 3 && Math.Abs(s.Y1 - spawn.Y1) <= 3),
+            Is.True,
+            "next to the vault keeper");
     }
 
     private static void AssertEncounterObjects(GameConfiguration gameConfiguration)

@@ -107,6 +107,7 @@ public class CreateCharacterAction
         // Distinct, because a character class may define the same stat attribute more than once (data
         // which got duplicated by an update); a character must never hold an attribute twice.
         var attributes = character.CharacterClass.StatAttributes
+            .Where(a => a.Attribute is not null)
             .DistinctBy(a => a.Attribute)
             .Select(a => player.PersistenceContext.CreateNew<StatAttribute>(a.Attribute, a.BaseValue))
             .ToList();

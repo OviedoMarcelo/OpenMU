@@ -8,6 +8,7 @@ using System.Text.Json.Nodes;
 using MUnique.OpenMU.AttributeSystem;
 using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.DataModel.Configuration.Items;
+using MUnique.OpenMU.DataModel.Entities;
 using MUnique.OpenMU.Interfaces;
 using MUnique.OpenMU.Persistence;
 using MUnique.OpenMU.Persistence.InMemory;
@@ -177,6 +178,46 @@ public class ConfigurationWriterTests
     }
 
     /// <summary>
+    /// Tests that the definition of a stat attribute which is added to an account can be chosen. Without
+    /// it, the characters of the account couldn't enter the game.
+    /// </summary>
+    [Test]
+    public async Task DefinitionOfAddedStatAttributeIsAppliedAsync()
+    {
+        var definition = this._context.CreateNew<AttributeDefinition>();
+        var account = this._context.CreateNew<Account>();
+        account.LoginName = "marceboh2";
+
+        await this._writer.ApplyAsync(account, typeof(Account), new JsonObject
+        {
+            ["Attributes"] = new JsonArray(
+                new JsonObject { ["values"] = new JsonObject { ["Definition"] = new JsonObject { ["id"] = definition.GetId().ToString() }, ["Value"] = 5 } }),
+        }, this._context).ConfigureAwait(false);
+
+        var added = account.Attributes.Single();
+        Assert.That(added.Definition, Is.SameAs(definition));
+        Assert.That(added.Value, Is.EqualTo(5));
+    }
+
+    /// <summary>
+    /// Tests that a stat attribute without its definition isn't accepted, because it would keep every
+    /// character of the account from entering the game.
+    /// </summary>
+    [Test]
+    public void StatAttributeWithoutDefinitionIsRejected()
+    {
+        var account = this._context.CreateNew<Account>();
+        account.LoginName = "marceboh2";
+
+        var exception = Assert.ThrowsAsync<ConfigurationValidationException>(() => this._writer.ApplyAsync(account, typeof(Account), new JsonObject
+        {
+            ["Attributes"] = new JsonArray(new JsonObject { ["values"] = new JsonObject { ["Value"] = 0 } }),
+        }, this._context));
+
+        Assert.That(exception!.Errors.Select(e => e.Path), Is.EquivalentTo(new[] { "Attributes[0].Definition" }));
+    }
+
+    /// <summary>
     /// Tests that the schema marks the values which can't be changed.
     /// </summary>
     [Test]
@@ -188,6 +229,7 @@ public class ConfigurationWriterTests
         Assert.That(gameConfiguration.CanCreate, Is.False);
         Assert.That(this._registry.GetSchema(typeof(MonsterDefinition)).CanCreate, Is.True);
         Assert.That(this._registry.GetSchema(typeof(MonsterAttribute)).CanCreate, Is.False);
+        Assert.That(this._registry.GetSchema(typeof(StatAttribute)).Properties.Single(p => p.Name == nameof(StatAttribute.Definition)).IsReadOnly, Is.False, "The definition of a stat attribute has to be chosen when it's added.");
     }
 
     private Task ApplyAsync(MonsterDefinition monster, JsonObject values) =>

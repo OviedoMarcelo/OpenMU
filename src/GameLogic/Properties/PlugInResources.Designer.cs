@@ -4249,5 +4249,11 @@ namespace MUnique.OpenMU.GameLogic.Properties {
         /// <summary>Gets the localized RevokeCosmeticChatCommandPlugIn_Description text.</summary>
         public static string RevokeCosmeticChatCommandPlugIn_Description => ResourceManager.GetString("RevokeCosmeticChatCommandPlugIn_Description", resourceCulture)!;
 
+        /// <summary>Gets the localized ResetMasterSkillsChatCommandPlugIn_Name text.</summary>
+        public static string ResetMasterSkillsChatCommandPlugIn_Name => ResourceManager.GetString("ResetMasterSkillsChatCommandPlugIn_Name", resourceCulture)!;
+
+        /// <summary>Gets the localized ResetMasterSkillsChatCommandPlugIn_Description text.</summary>
+        public static string ResetMasterSkillsChatCommandPlugIn_Description => ResourceManager.GetString("ResetMasterSkillsChatCommandPlugIn_Description", resourceCulture)!;
+
     }
 }

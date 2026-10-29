@@ -121,6 +121,7 @@ public sealed class ItemAwareAttributeSystem : AttributeSystem, IDisposable
     /// of the character. Duplicates can exist in the stored data, e.g. when a data update added a stat
     /// attribute to a character class which already had it, and every character of that class then got
     /// the attribute twice. The character's own attribute wins over the one of its account.
+    /// Attributes without a definition are left out as well, because an attribute system can't hold them.
     /// </summary>
     /// <param name="account">The account.</param>
     /// <param name="character">The character.</param>
@@ -128,6 +129,7 @@ public sealed class ItemAwareAttributeSystem : AttributeSystem, IDisposable
     private static IEnumerable<IAttribute> GetStatAttributes(Account account, Character character)
     {
         return character.Attributes.Concat(account.Attributes)
+            .Where(attribute => attribute.Definition is not null)
             .DistinctBy(attribute => attribute.Definition);
     }
 

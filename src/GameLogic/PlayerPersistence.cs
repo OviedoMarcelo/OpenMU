@@ -64,6 +64,8 @@ internal sealed class PlayerPersistence
             return true;
         }
 
+        // So that a save conflict logged by the persistence layer names the affected player.
+        using var owner = SaveOwner.Begin($"{this._player} ({this._player.SessionInfo})");
         return await this.RunExclusiveAsync(
             () => this._player.PersistenceContext.SaveChangesAsync(cancellationToken),
             cancellationToken).ConfigureAwait(false);
