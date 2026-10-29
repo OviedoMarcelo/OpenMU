@@ -1784,17 +1784,46 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
             throw new InvalidOperationException($"The character {this.SelectedCharacter} has no assigned character class.");
         }
 
+        this.RemoveStatAttributesWithoutDefinition(character);
         this.RemoveDuplicateStatAttributes(character);
 
         // The character class itself may define a stat attribute more than once (a data update which
         // added an attribute the class already had), so the missing ones are taken distinctly - otherwise
         // we would create the duplicates we just removed all over again.
         var missingStats = characterClass.StatAttributes
+            .Where(a => a.Attribute is not null)
             .DistinctBy(a => a.Attribute)
             .Where(a => character.Attributes.All(c => c.Definition != a.Attribute));
 
         var attributes = missingStats.Select(a => this.PersistenceContext.CreateNew<StatAttribute>(a.Attribute, a.BaseValue)).ToList();
         attributes.ForEach(character.Attributes.Add);
+    }
+
+    /// <summary>
+    /// Removes stat attributes without their definition from the character and its account. They have no
+    /// effect at all, but an attribute system can't hold them, so they would make every character of the
+    /// account unable to enter the game. They were added with the admin API, which couldn't set the definition.
+    /// </summary>
+    /// <param name="character">The character.</param>
+    private void RemoveStatAttributesWithoutDefinition(Character character)
+    {
+        RemoveFrom(character.Attributes, $"character '{character.Name}'");
+        if (this.Account is { } account)
+        {
+            RemoveFrom(account.Attributes, $"account '{account.LoginName}'");
+        }
+
+        void RemoveFrom(ICollection<StatAttribute> attributes, string owner)
+        {
+            var invalid = attributes.Where(a => a.Definition is null).ToList();
+            if (invalid.Count == 0)
+            {
+                return;
+            }
+
+            invalid.ForEach(attribute => attributes.Remove(attribute));
+            this.Logger.LogWarning("Removed {Count} stat attribute(s) without definition of {Owner}.", invalid.Count, owner);
+        }
     }
 
     /// <summary>

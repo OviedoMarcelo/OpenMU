@@ -7,6 +7,7 @@ namespace MUnique.OpenMU.Web.AdminPanel.AdminApi.Configuration;
 using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
+using MUnique.OpenMU.AttributeSystem;
 using MUnique.OpenMU.DataModel;
 using MUnique.OpenMU.DataModel.Composition;
 using MUnique.OpenMU.DataModel.Configuration;
@@ -47,6 +48,16 @@ public class ConfigurationTypeRegistry
         (typeof(Account), nameof(Account.PasswordHash)),
         (typeof(Account), nameof(Account.SecurityCode)),
         (typeof(Account), nameof(Account.VaultPassword)),
+    ];
+
+    /// <summary>
+    /// Values without a public setter which can be changed anyway. The attribute of a stat attribute is
+    /// set by its constructor, but a stat attribute which is added with the admin API is created without
+    /// it - and an attribute without its definition keeps every character of the account from entering the game.
+    /// </summary>
+    private static readonly HashSet<(Type Type, string Property)> WritableProperties =
+    [
+        (typeof(StatAttribute), nameof(StatAttribute.Definition)),
     ];
 
     private readonly Dictionary<string, Type> _typesByName = new(StringComparer.OrdinalIgnoreCase);
@@ -267,8 +278,13 @@ public class ConfigurationTypeRegistry
     /// which the API doesn't understand, and the collections whose objects have their own list (e.g. the
     /// items of the game configuration), because these are changed on their own pages.
     /// </summary>
-    private static bool IsReadOnly(PropertyInfo property, PropertyKind kind, bool targetIsBrowsable)
+    private static bool IsReadOnly(Type declaringType, PropertyInfo property, PropertyKind kind, bool targetIsBrowsable)
     {
+        if (WritableProperties.Contains((declaringType, property.Name)))
+        {
+            return false;
+        }
+
         return kind switch
         {
             PropertyKind.Unknown => true,
@@ -429,7 +445,7 @@ public class ConfigurationTypeRegistry
             enumType is null ? null : GetEnumValues(enumType),
             target is null ? null : this.GetName(target),
             target is not null && this.IsBrowsable(target),
-            IsReadOnly(property, kind, target is not null && this.IsBrowsable(target)),
+            IsReadOnly(declaringType, property, kind, target is not null && this.IsBrowsable(target)),
             kind == PropertyKind.Integer ? GetNumberOf(property) : null)
         {
             Property = property,
