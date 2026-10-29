@@ -1601,4 +1601,10 @@
   <data name="RevokeCosmeticChatCommandPlugIn_Description" xml:space="preserve">
     <value>Quita una pieza cosmética desbloqueada de un personaje: /quitarcosmetico &lt;personaje&gt; &lt;número&gt;.</value>
   </data>
+  <data name="ResetMasterSkillsChatCommandPlugIn_Name" xml:space="preserve">
+    <value>Chat command: /resetmaster</value>
+  </data>
+  <data name="ResetMasterSkillsChatCommandPlugIn_Description" xml:space="preserve">
+    <value>Vacía el árbol de skills master de un personaje y le devuelve los puntos master gastados; el personaje vuelve a la selección de personajes. Uso: /resetmaster [personaje].</value>
+  </data>
 </root>
