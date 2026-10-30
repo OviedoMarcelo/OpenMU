@@ -80,7 +80,11 @@ public class DefaultDropGenerator : IDropGenerator
         }
         else
         {
-            this.PartitionDropGroups(monster.DropItemGroups ?? []);
+            if (HasRequiredResetsForDrops(monster, player))
+            {
+                this.PartitionDropGroups(monster.DropItemGroups ?? []);
+            }
+
             this.PartitionDropGroups(character.DropItemGroups ?? [], monster);
             this.PartitionDropGroups(map.DropItemGroups ?? [], monster);
             this.PartitionDropGroups(await GetQuestItemGroupsAsync(player).ConfigureAwait(false) ?? [], monster);
@@ -235,6 +239,16 @@ public class DefaultDropGenerator : IDropGenerator
         }
 
         return character.GetQuestDropItemGroups();
+    }
+
+    /// <summary>
+    /// Determines whether the player has the resets for the drops of the monster. A monster asks
+    /// for resets with its <see cref="Stats.Resets"/> attribute; without it, there is no requirement.
+    /// </summary>
+    private static bool HasRequiredResetsForDrops(MonsterDefinition monster, Player player)
+    {
+        var requiredResets = monster.Attributes?.FirstOrDefault(a => a.AttributeDefinition == Stats.Resets)?.Value ?? 0;
+        return requiredResets <= 0 || (player.Attributes?[Stats.Resets] ?? 0) >= requiredResets;
     }
 
     private static bool IsGroupRelevant(MonsterDefinition monsterDefinition, DropItemGroup group)
