@@ -51,6 +51,31 @@ public class DropGeneratorTest
     }
 
     /// <summary>
+    /// Tests that the drops of a monster which asks for resets only apply to players with enough resets.
+    /// </summary>
+    /// <param name="playerResets">The resets of the player.</param>
+    /// <param name="expectsDrop">If set to <c>true</c>, the monster drops its item.</param>
+    [TestCase(4, false)]
+    [TestCase(5, true)]
+    [TestCase(6, true)]
+    public async ValueTask TestDropsOfMonsterRequireResetsAsync(int playerResets, bool expectsDrop)
+    {
+        var config = this.GetGameConfig();
+        var monster = this.GetMonster(1, 0);
+        monster.Attributes.Add(new MonsterAttribute { AttributeDefinition = Stats.Resets, Value = 5 });
+        monster.DropItemGroups.AddBasicDropItemGroups();
+        monster.DropItemGroups.Add(3000, SpecialItemType.RandomItem, true);
+
+        var player = await PlayerTestHelper.CreatePlayerAsync().ConfigureAwait(false);
+        player.Attributes![Stats.Resets] = playerResets;
+
+        var generator = new DefaultDropGenerator(config, this.GetRandomizer2(0, 0.5));
+        var (items, _) = await generator.GenerateItemDropsAsync(monster, 1, player).ConfigureAwait(false);
+
+        Assert.That(items.Any(), Is.EqualTo(expectsDrop));
+    }
+
+    /// <summary>
     /// Tests that items with a maximum drop level are filtered from generic monster drops.
     /// </summary>
     [Test]

@@ -35,6 +35,21 @@ internal class CustomMonstersInitialization : InitializerBase
     internal const short VaultGuardianNumber = 708;
 
     /// <summary>
+    /// The number of the Guardiana de Icarus, the strongest monster of Icarus.
+    /// </summary>
+    internal const short IcarusGuardianNumber = 709;
+
+    /// <summary>
+    /// The resets which a player needs, so that the Guardiana de Icarus drops its items.
+    /// </summary>
+    internal const short IcarusGuardianRequiredResets = 5;
+
+    /// <summary>
+    /// Where the Guardiana de Icarus spawns: in the zone of the Great Drakans, the strongest original monsters there.
+    /// </summary>
+    internal static readonly (byte X, byte Y)[] IcarusGuardianPositions = [(52, 174), (59, 190), (27, 220), (43, 238)];
+
+    /// <summary>
     /// Where the Guardián del Baúl stands in Lorencia: next to Baz The Vault Keeper (147, 145).
     /// </summary>
     internal static readonly (byte X, byte Y) VaultGuardianPosition = (149, 144);
@@ -199,6 +214,87 @@ internal class CustomMonstersInitialization : InitializerBase
         spawn.Direction = Direction.SouthWest;
         spawn.X1 = spawn.X2 = VaultGuardianPosition.X;
         spawn.Y1 = spawn.Y2 = VaultGuardianPosition.Y;
+    }
+
+    /// <summary>
+    /// Creates the Guardiana de Icarus, a monster of level 120 with stats like the ones of the Werewolf (level 118).
+    /// It drops the Flame of Condor for players with enough resets, see <see cref="IcarusGuardianRequiredResets"/>.
+    /// </summary>
+    /// <returns>The monster.</returns>
+    internal MonsterDefinition CreateIcarusGuardian()
+    {
+        if (this.GameConfiguration.Monsters.FirstOrDefault(m => m.Number == IcarusGuardianNumber) is { } existing)
+        {
+            return existing;
+        }
+
+        var monster = this.Context.CreateNew<MonsterDefinition>();
+        this.GameConfiguration.Monsters.Add(monster);
+        monster.Number = IcarusGuardianNumber;
+        monster.Designation = "Guardiana de Icarus";
+        monster.MoveRange = 3;
+        monster.AttackRange = 2;
+        monster.ViewRange = 7;
+        monster.MoveDelay = new TimeSpan(500 * TimeSpan.TicksPerMillisecond);
+        monster.AttackDelay = new TimeSpan(1500 * TimeSpan.TicksPerMillisecond);
+        monster.RespawnDelay = new TimeSpan(60 * TimeSpan.TicksPerSecond);
+        monster.Attribute = 2;
+        monster.NumberOfMaximumItemDrops = 1;
+        var attributes = new Dictionary<AttributeDefinition, float>
+        {
+            { Stats.Level, 120 },
+            { Stats.MaximumHealth, 115_000 },
+            { Stats.MinimumPhysBaseDmg, 850 },
+            { Stats.MaximumPhysBaseDmg, 880 },
+            { Stats.DefenseBase, 700 },
+            { Stats.AttackRatePvm, 980 },
+            { Stats.DefenseRatePvm, 370 },
+            { Stats.PoisonResistance, 20f / 255 },
+            { Stats.IceResistance, 20f / 255 },
+            { Stats.LightningResistance, 20f / 255 },
+            { Stats.FireResistance, 20f / 255 },
+            { Stats.Resets, IcarusGuardianRequiredResets },
+        };
+        monster.AddAttributes(attributes, this.Context, this.GameConfiguration);
+        monster.SetGuid(monster.Number);
+
+        var flameOfCondor = this.Context.CreateNew<DropItemGroup>();
+        flameOfCondor.SetGuid(IcarusGuardianNumber, 1);
+        flameOfCondor.Chance = 0.005;
+        flameOfCondor.Description = "Flame of Condor (Guardiana de Icarus)";
+        flameOfCondor.Monster = monster;
+        flameOfCondor.PossibleItems.Add(this.GameConfiguration.Items.First(item => item.Group == 13 && item.Number == 52));
+        monster.DropItemGroups.Add(flameOfCondor);
+        this.GameConfiguration.DropItemGroups.Add(flameOfCondor);
+        return monster;
+    }
+
+    /// <summary>
+    /// Places the Guardiana de Icarus on its spawns, unless they're already there.
+    /// </summary>
+    /// <param name="icarus">The map of Icarus.</param>
+    /// <param name="monster">The Guardiana de Icarus.</param>
+    internal void CreateIcarusGuardianSpawns(GameMapDefinition icarus, MonsterDefinition monster)
+    {
+        if (icarus.MonsterSpawns.Any(s => s.MonsterDefinition?.Number == IcarusGuardianNumber))
+        {
+            return;
+        }
+
+        for (short i = 0; i < IcarusGuardianPositions.Length; i++)
+        {
+            var (x, y) = IcarusGuardianPositions[i];
+            var spawn = this.Context.CreateNew<MonsterSpawnArea>();
+            icarus.MonsterSpawns.Add(spawn);
+            spawn.SetGuid(icarus.Number, (short)(IcarusGuardianNumber + i));
+            spawn.GameMap = icarus;
+            spawn.MonsterDefinition = monster;
+            spawn.Quantity = 1;
+            spawn.SpawnTrigger = SpawnTrigger.Automatic;
+            spawn.Direction = Direction.Undefined;
+            spawn.X1 = spawn.X2 = x;
+            spawn.Y1 = spawn.Y2 = y;
+        }
     }
 
     private void CreateEncounterMonster(short number, string name, Dictionary<AttributeDefinition, float> attributes)
