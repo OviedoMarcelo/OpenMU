@@ -12,6 +12,9 @@ services:
   openmu-startup:
     image: munique/openmu
     container_name: openmu-startup
+    # Time to disconnect and save the players when the container stops (e.g. a deploy). The server waits
+    # up to 55 seconds for that (Program.ShutdownTimeout); Docker would kill it after 10 seconds otherwise.
+    stop_grace_period: 60s
     ports:
       - "8080"
       - "55901:55901"
@@ -41,6 +44,9 @@ services:
       - adminpanel-audit:/app/admin-audit
       # The traffic of the accounts observed by the network analyzer, see PacketArchive.
       - openmu-captures:/app/captures
+      # The log files, so that they survive a deploy (the container is recreated). Serilog keeps the last
+      # 48 files of 4 MB (appsettings.json), i.e. about 3 days.
+      - openmu-logs:/app/logs
     working_dir: /app/
     depends_on:
       - database
@@ -61,4 +67,5 @@ volumes:
   adminpanel-keys:
   adminpanel-audit:
   openmu-captures:
+  openmu-logs:
   dbdata:

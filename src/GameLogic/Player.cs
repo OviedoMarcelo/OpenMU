@@ -615,6 +615,12 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
     public DateTime LastShieldRecoveryHiatusAccrual { get; set; } = DateTime.UtcNow;
 
     /// <summary>
+    /// Gets or sets the time when the client of the player sent its last packet.
+    /// It's <c>null</c> for players without a client, like bots and offline players.
+    /// </summary>
+    public DateTime? LastClientPacketUtc { get; protected internal set; }
+
+    /// <summary>
     /// Gets a value indicating whether opening the player store after entering the game is supported by this instance.
     /// </summary>
     protected virtual bool IsPlayerStoreOpeningAfterEnterSupported => true;
@@ -1889,6 +1895,11 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
         this.Attributes[Stats.IsResting] = 0;
         this.LogInvalidInventoryItems();
 
+        // Used up items whose deletion got lost (e.g. by a server restart) would block consumption.
+        var owner = $"{this.Account?.LoginName}/{selectedCharacter.Name}";
+        var removedSpentItems = await SpentItems.RemoveFromStorageAsync(selectedCharacter.Inventory, this.PersistenceContext, this.Logger, owner).ConfigureAwait(false)
+                                + await SpentItems.RemoveFromStorageAsync(this.Account?.Vault, this.PersistenceContext, this.Logger, owner).ConfigureAwait(false);
+
         this._storages.CreateForCharacter(selectedCharacter);
         this.SkillList = new SkillList(this);
         this.SetReclaimableAttributesBeforeEnterGame();
@@ -1941,6 +1952,11 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
         // Restore previously opened Store.
         var openStoreAction = new PlayerActions.PlayerStore.OpenStoreAction();
         await openStoreAction.RestoreAfterEnterWorldAsync(this, this.IsPlayerStoreOpeningAfterEnterSupported).ConfigureAwait(false);
+
+        if (removedSpentItems > 0)
+        {
+            await this.ShowLocalizedBlueMessageAsync(nameof(PlayerMessage.SpentItemsRemovedFormat), removedSpentItems).ConfigureAwait(false);
+        }
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "Catching all Exceptions.")]

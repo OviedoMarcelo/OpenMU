@@ -40,6 +40,7 @@ public class RemotePlayer : Player, IClientVersionProvider, IHasIpAddress
             : null;
         this.MainPacketHandler = new MainPacketHandlerPlugInContainer(this, gameContext.PlugInManager, gameContext.LoggerFactory);
         this.MainPacketHandler.Initialize();
+        this.LastClientPacketUtc = DateTime.UtcNow;
         this.Connection!.PacketReceived += this.PacketReceivedAsync;
         this.Connection!.Disconnected += this.DisconnectAsync;
     }
@@ -157,6 +158,7 @@ public class RemotePlayer : Player, IClientVersionProvider, IHasIpAddress
     /// <param name="sequence">The packet.</param>
     private async ValueTask PacketReceivedAsync(ReadOnlySequence<byte> sequence)
     {
+        this.LastClientPacketUtc = DateTime.UtcNow;
         using var loggingScope = this.Logger.BeginScope(
             ("GameServer", this.GameServerContext.Id),
             ("Connection", this.Connection!),

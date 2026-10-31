@@ -67,6 +67,15 @@
   <data name="ProgressCouldNotBeSaved" xml:space="preserve">
     <value>No se pudo guardar tu progreso. Te vamos a desconectar, volvé a entrar.</value>
   </data>
+  <data name="DisconnectedByNewLogin" xml:space="preserve">
+    <value>Entraron a tu cuenta desde otro lugar, así que te desconectamos.</value>
+  </data>
+  <data name="SpentItemRemoved" xml:space="preserve">
+    <value>Este ítem ya estaba gastado y se quitó del inventario.</value>
+  </data>
+  <data name="SpentItemsRemovedFormat" xml:space="preserve">
+    <value>Se quitaron {0} ítem(s) gastado(s) de tu inventario y baúl.</value>
+  </data>
   <data name="LearnSkillAlreadyKnown" xml:space="preserve">
     <value>Ya conoces esta habilidad.</value>
   </data>

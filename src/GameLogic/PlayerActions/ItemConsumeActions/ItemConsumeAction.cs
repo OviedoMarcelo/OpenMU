@@ -7,6 +7,7 @@ namespace MUnique.OpenMU.GameLogic.PlayerActions.ItemConsumeActions;
 using System.ComponentModel;
 using MUnique.OpenMU.GameLogic.PlugIns;
 using MUnique.OpenMU.GameLogic.Views.Inventory;
+using MUnique.OpenMU.Persistence;
 
 /// <summary>
 /// Action to consume an item.
@@ -28,6 +29,21 @@ public class ItemConsumeAction
         if (item?.Definition is null)
         {
             await player.InvokeViewPlugInAsync<IRequestedItemConsumptionFailedPlugIn>(p => p.RequestedItemConsumptionFailedAsync()).ConfigureAwait(false);
+            return;
+        }
+
+        if (SpentItems.IsSpent(item))
+        {
+            // Its consumption wasn't saved completely (e.g. by a server restart), so it has no pieces left.
+            // Removing it unblocks the client, which would otherwise keep trying to use it.
+            player.Logger.LogWarning(
+                "Player {player} tried to use the used up item {item} (id {id}, slot {slot}); it gets removed.",
+                player,
+                item.Definition.Name,
+                item.GetId(),
+                item.ItemSlot);
+            await player.DestroyInventoryItemAsync(item).ConfigureAwait(false);
+            await player.ShowLocalizedBlueMessageAsync(nameof(PlayerMessage.SpentItemRemoved)).ConfigureAwait(false);
             return;
         }
 

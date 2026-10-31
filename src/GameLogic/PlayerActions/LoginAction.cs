@@ -227,6 +227,17 @@ public class LoginAction
     private async ValueTask<bool> TryClaimAccountAsync(Player player, string username)
     {
         var result = await player.GameContext.AccountSessions.ClaimAsync(username, player, PreviousSessionTeardownTimeout).ConfigureAwait(false);
+        if (result is AccountClaimResult.InUse
+            && player.GameContext.AccountSessions.GetOwner(username) is { } previousOwner
+            && previousOwner != player)
+        {
+            // The password is right, so it's the owner of the account logging in again - most likely after its
+            // connection broke without being closed, so that the server still has the previous session in the game.
+            // Rejecting it would keep it out until that dead session gets noticed, which may take very long.
+            await this.DisconnectPreviousSessionAsync(player, username, previousOwner).ConfigureAwait(false);
+            result = await player.GameContext.AccountSessions.ClaimAsync(username, player, PreviousSessionTeardownTimeout).ConfigureAwait(false);
+        }
+
         if (result is AccountClaimResult.Claimed or AccountClaimResult.Shared)
         {
             return true;
@@ -242,6 +253,28 @@ public class LoginAction
             owner?.PlayerState.CurrentState);
         await player.InvokeViewPlugInAsync<IShowLoginResultPlugIn>(p => p.ShowLoginResultAsync(LoginResult.AccountAlreadyConnected)).ConfigureAwait(false);
         return false;
+    }
+
+    private async ValueTask DisconnectPreviousSessionAsync(Player player, string username, Player previousOwner)
+    {
+        player.Logger.LogInformation(
+            "Account [{Username}] ({Session}) is still in the game with {OtherSession} in state {State}; disconnecting it for the new login.",
+            username,
+            player.SessionInfo,
+            previousOwner.SessionInfo,
+            previousOwner.PlayerState.CurrentState);
+        try
+        {
+            await previousOwner.ShowLocalizedBlueMessageAsync(nameof(PlayerMessage.DisconnectedByNewLogin)).ConfigureAwait(false);
+
+            // The disconnection saves the previous session. The claim waits for the rest of its teardown.
+            var disconnect = previousOwner.DisconnectAsync().AsTask();
+            await Task.WhenAny(disconnect, Task.Delay(PreviousSessionTeardownTimeout)).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            player.Logger.LogError(ex, "Couldn't disconnect the previous session {OtherSession} of account [{Username}].", previousOwner.SessionInfo, username);
+        }
     }
 
     private async ValueTask HandleAlreadyConnectedAsync(Player player, string username)
