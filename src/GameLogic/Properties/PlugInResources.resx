@@ -165,6 +165,15 @@
   <data name="GuildWarKillScorePlugIn_Description" xml:space="preserve">
     <value>This plugin increases the score of the soccer result, if a kill occurred.</value>
   </data>
+  <data name="IdleConnectionDisconnectPlugIn_Name" xml:space="preserve">
+    <value>Disconnect Idle Connections</value>
+  </data>
+  <data name="IdleConnectionDisconnectPlugIn_Description" xml:space="preserve">
+    <value>Disconnects (and saves) players whose client didn't send anything for a while, e.g. because their connection broke without being closed. The client sends a ping every 20 seconds.</value>
+  </data>
+  <data name="IdleConnectionDisconnectPlugInConfiguration_Timeout_Name" xml:space="preserve">
+    <value>Timeout without packets</value>
+  </data>
   <data name="PeriodicSaveProgressPlugIn_Name" xml:space="preserve">
     <value>Periodic Save Progress</value>
   </data>

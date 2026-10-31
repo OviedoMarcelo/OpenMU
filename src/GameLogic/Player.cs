@@ -615,6 +615,12 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
     public DateTime LastShieldRecoveryHiatusAccrual { get; set; } = DateTime.UtcNow;
 
     /// <summary>
+    /// Gets or sets the time when the client of the player sent its last packet.
+    /// It's <c>null</c> for players without a client, like bots and offline players.
+    /// </summary>
+    public DateTime? LastClientPacketUtc { get; protected internal set; }
+
+    /// <summary>
     /// Gets a value indicating whether opening the player store after entering the game is supported by this instance.
     /// </summary>
     protected virtual bool IsPlayerStoreOpeningAfterEnterSupported => true;

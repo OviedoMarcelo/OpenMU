@@ -44,6 +44,9 @@ services:
       - adminpanel-audit:/app/admin-audit
       # The traffic of the accounts observed by the network analyzer, see PacketArchive.
       - openmu-captures:/app/captures
+      # The log files, so that they survive a deploy (the container is recreated). Serilog keeps the last
+      # 48 files of 4 MB (appsettings.json), i.e. about 3 days.
+      - openmu-logs:/app/logs
     working_dir: /app/
     depends_on:
       - database
@@ -64,4 +67,5 @@ volumes:
   adminpanel-keys:
   adminpanel-audit:
   openmu-captures:
+  openmu-logs:
   dbdata:

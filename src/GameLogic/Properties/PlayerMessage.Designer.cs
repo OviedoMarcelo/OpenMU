@@ -2131,6 +2131,15 @@ namespace MUnique.OpenMU.GameLogic.Properties {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Your account was logged in from somewhere else, so you were disconnected..
+        /// </summary>
+        public static string DisconnectedByNewLogin {
+            get {
+                return ResourceManager.GetString("DisconnectedByNewLogin", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to This item was already used up, so it was removed from your inventory..
         /// </summary>
         public static string SpentItemRemoved {

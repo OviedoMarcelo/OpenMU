@@ -59,19 +59,21 @@ public class LoginActionSessionTest
     }
 
     /// <summary>
-    /// A second login of an account which is still in the game is rejected and doesn't load the account.
+    /// A second login (with the right password) of an account which is still in the game disconnects the
+    /// previous session, e.g. one whose connection broke without being closed, and then loads the account.
     /// </summary>
     [Test]
-    public async ValueTask LoginIsRejectedWhilePreviousSessionIsInGameAsync()
+    public async ValueTask LoginDisconnectsPreviousSessionWhichIsInGameAsync()
     {
         var first = await this.LoginAsync().ConfigureAwait(false);
         Assert.That(first.Account, Is.Not.Null);
 
         var second = await this.LoginAsync().ConfigureAwait(false);
 
-        Assert.That(second.Account, Is.Null);
-        Mock.Get(second.LoginResultPlugIn).Verify(p => p.ShowLoginResultAsync(LoginResult.AccountAlreadyConnected), Times.Once);
-        Assert.That(this._gameContext.AccountSessions.GetOwner(LoginName), Is.SameAs(first));
+        Assert.That(first.PlayerState.CurrentState, Is.EqualTo(PlayerState.Finished));
+        Assert.That(second.Account, Is.Not.Null);
+        Mock.Get(second.LoginResultPlugIn).Verify(p => p.ShowLoginResultAsync(LoginResult.AccountAlreadyConnected), Times.Never);
+        Assert.That(this._gameContext.AccountSessions.GetOwner(LoginName), Is.SameAs(second));
     }
 
     /// <summary>
@@ -119,6 +121,10 @@ public class LoginActionSessionTest
         var first = await this.LoginAsync().ConfigureAwait(false);
 
         var second = await this.LoginAsync("wrong").ConfigureAwait(false);
+
+        Assert.That(first.PlayerState.CurrentState, Is.Not.EqualTo(PlayerState.Disconnected).And.Not.EqualTo(PlayerState.Finished), "A wrong password must not disconnect the session.");
+        Assert.That(this._gameContext.AccountSessions.GetOwner(LoginName), Is.SameAs(first));
+
         await first.DisconnectAsync().ConfigureAwait(false);
         var third = await this.LoginAsync().ConfigureAwait(false);
 

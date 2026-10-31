@@ -1845,6 +1845,33 @@ namespace MUnique.OpenMU.GameLogic.Properties {
         /// <summary>
         ///   Looks up a localized string similar to Periodic Save Progress.
         /// </summary>
+        public static string IdleConnectionDisconnectPlugIn_Name {
+            get {
+                return ResourceManager.GetString("IdleConnectionDisconnectPlugIn_Name", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Disconnects (and saves) players whose client didn&apos;t send anything for a while..
+        /// </summary>
+        public static string IdleConnectionDisconnectPlugIn_Description {
+            get {
+                return ResourceManager.GetString("IdleConnectionDisconnectPlugIn_Description", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Timeout without packets.
+        /// </summary>
+        public static string IdleConnectionDisconnectPlugInConfiguration_Timeout_Name {
+            get {
+                return ResourceManager.GetString("IdleConnectionDisconnectPlugInConfiguration_Timeout_Name", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Periodic Save Progress.
+        /// </summary>
         public static string PeriodicSaveProgressPlugIn_Name {
             get {
                 return ResourceManager.GetString("PeriodicSaveProgressPlugIn_Name", resourceCulture);
