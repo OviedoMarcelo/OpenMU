@@ -147,6 +147,72 @@ public class ExperienceRateSplitTest
     }
 
     /// <summary>
+    /// Verifies that the master level doesn't reduce the experience of a solo kill
+    /// while the character is below the maximum level.
+    /// </summary>
+    [Test]
+    public async ValueTask SoloKillIgnoresMasterLevelBelowMaximumLevelAsync()
+    {
+        var context = this.CreateGameServerContext(1.0f, 1.0f, maximumLevel: 400, maximumMasterLevel: 400);
+        var withMasterLevel = await this.CreatePlayerAsync(context, level: 107, totalLevel: 307, isMasterClass: true).ConfigureAwait(false);
+        var withoutMasterLevel = await this.CreatePlayerAsync(context, level: 107, totalLevel: 107, isMasterClass: false).ConfigureAwait(false);
+        var killedObject = CreateKilledObject(level: 80);
+
+        var withMasterLevelGain = await withMasterLevel.CalculateExpAfterKillAsync(killedObject.Object).ConfigureAwait(false);
+        var withoutMasterLevelGain = await withoutMasterLevel.CalculateExpAfterKillAsync(killedObject.Object).ConfigureAwait(false);
+
+        Assert.That(withMasterLevelGain, Is.EqualTo(withoutMasterLevelGain));
+    }
+
+    /// <summary>
+    /// Verifies that the master level counts for a solo kill while the character gains master experience.
+    /// </summary>
+    [Test]
+    public async ValueTask SoloKillCountsMasterLevelWhenGainingMasterExperienceAsync()
+    {
+        var context = this.CreateGameServerContext(1.0f, 1.0f, maximumLevel: 400, maximumMasterLevel: 400);
+        var withMasterLevel = await this.CreatePlayerAsync(context, level: 400, totalLevel: 600, isMasterClass: true).ConfigureAwait(false);
+        var withoutMasterLevel = await this.CreatePlayerAsync(context, level: 400, totalLevel: 400, isMasterClass: true).ConfigureAwait(false);
+        var killedObject = CreateKilledObject(level: 80);
+
+        var withMasterLevelGain = await withMasterLevel.CalculateExpAfterKillAsync(killedObject.Object).ConfigureAwait(false);
+        var withoutMasterLevelGain = await withoutMasterLevel.CalculateExpAfterKillAsync(killedObject.Object).ConfigureAwait(false);
+
+        Assert.That(withMasterLevelGain, Is.LessThan(withoutMasterLevelGain));
+    }
+
+    /// <summary>
+    /// Verifies that the master level of a member below the maximum level doesn't reduce
+    /// the experience of anyone in the party.
+    /// </summary>
+    [Test]
+    public async ValueTask PartyIgnoresMasterLevelBelowMaximumLevelAsync()
+    {
+        var context = this.CreateGameServerContext(1.0f, 1.0f, maximumLevel: 400, maximumMasterLevel: 400);
+        var (withMaster, partnerOfWithMaster) = await this.DistributePartyExperienceAsync(context, 107, 307, true, 107).ConfigureAwait(false);
+        var (withoutMaster, partnerOfWithoutMaster) = await this.DistributePartyExperienceAsync(context, 107, 107, false, 107).ConfigureAwait(false);
+
+        Assert.That(withMaster.SelectedCharacter!.Experience, Is.GreaterThan(0));
+        Assert.That(withMaster.SelectedCharacter.Experience, Is.EqualTo(withoutMaster.SelectedCharacter!.Experience));
+        Assert.That(partnerOfWithMaster.SelectedCharacter!.Experience, Is.EqualTo(partnerOfWithoutMaster.SelectedCharacter!.Experience));
+    }
+
+    /// <summary>
+    /// Verifies that the party still splits the experience by level, and that the master
+    /// level counts for a member which gains master experience.
+    /// </summary>
+    [Test]
+    public async ValueTask PartyCountsMasterLevelWhenGainingMasterExperienceAsync()
+    {
+        var context = this.CreateGameServerContext(1.0f, 1.0f, maximumLevel: 400, maximumMasterLevel: 400);
+        var (_, partnerOfHigherTotal) = await this.DistributePartyExperienceAsync(context, 400, 600, true, 300).ConfigureAwait(false);
+        var (_, partnerOfLowerTotal) = await this.DistributePartyExperienceAsync(context, 400, 400, true, 300).ConfigureAwait(false);
+
+        Assert.That(partnerOfHigherTotal.SelectedCharacter!.Experience, Is.GreaterThan(0));
+        Assert.That(partnerOfHigherTotal.SelectedCharacter.Experience, Is.LessThan(partnerOfLowerTotal.SelectedCharacter!.Experience));
+    }
+
+    /// <summary>
     /// Verifies that concurrent normal experience gains cannot exceed the maximum level.
     /// </summary>
     [Test]
@@ -272,6 +338,21 @@ public class ExperienceRateSplitTest
         result.SetupGet(a => a.Attributes).Returns(attributes.Object);
         result.SetupGet(a => a.CurrentMap).Returns((GameMap?)null);
         return result;
+    }
+
+    private async ValueTask<(Player Member, Player Partner)> DistributePartyExperienceAsync(IGameContext context, short memberLevel, float memberTotalLevel, bool isMasterClass, short partnerLevel)
+    {
+        var member = await this.CreatePlayerAsync(context, memberLevel, memberTotalLevel, isMasterClass).ConfigureAwait(false);
+        var partner = await this.CreatePlayerAsync(context, partnerLevel, partnerLevel, isMasterClass: false).ConfigureAwait(false);
+
+        var party = new Party(new PartyManager(5, new NullLogger<Party>()), 5, new NullLogger<Party>());
+        await party.AddAsync(member).ConfigureAwait(false);
+        await party.AddAsync(partner).ConfigureAwait(false);
+        await member.AddObserverAsync(partner).ConfigureAwait(false);
+
+        var killedObject = CreateKilledObject(level: 80);
+        _ = await party.DistributeExperienceAfterKillAsync(killedObject.Object, member).ConfigureAwait(false);
+        return (member, partner);
     }
 
     private async ValueTask<Player> CreatePlayerAsync(IGameContext context, short level, float totalLevel, bool isMasterClass)

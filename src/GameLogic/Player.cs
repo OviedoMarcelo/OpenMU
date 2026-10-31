@@ -889,6 +889,13 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
     public ValueTask<int> CalculateExpAfterKillAsync(IAttackable killedObject) => this._experience.CalculateAfterKillAsync(killedObject);
 
     /// <summary>
+    /// Gets the level which counts when calculating the experience of a kill: the master level
+    /// only counts while the character is gaining master experience.
+    /// </summary>
+    /// <returns>The level which counts for the experience.</returns>
+    public float GetLevelForExperience() => this._experience.GetLevelForExperience();
+
+    /// <summary>
     /// Adds the master experience to the current character.
     /// </summary>
     /// <param name="experience">The experience that should be added.</param>
