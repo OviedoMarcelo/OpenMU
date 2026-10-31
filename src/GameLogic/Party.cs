@@ -338,7 +338,7 @@ public sealed class Party : AsyncDisposable
     private static float CalculatePartyExperiencePerLevel(List<Player> recipients, IAttackable killed)
     {
         var memberCount = recipients.Count;
-        var totalLevel = recipients.Sum(p => (int)p.Attributes![Stats.TotalLevel]);
+        var totalLevel = recipients.Sum(p => (int)p.GetLevelForExperience());
         var averageLevel = totalLevel / memberCount;
         var baseExperience = killed.CalculateBaseExperience(averageLevel);
 

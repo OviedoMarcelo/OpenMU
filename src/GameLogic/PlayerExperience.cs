@@ -64,6 +64,23 @@ internal sealed class PlayerExperience
     }
 
     /// <summary>
+    /// Gets the level which counts when calculating the experience of a kill: the master level
+    /// only counts while the character is gaining master experience.
+    /// </summary>
+    /// <returns>The level which counts for the experience.</returns>
+    public float GetLevelForExperience()
+    {
+        if (this._player.Attributes is not { } attributes)
+        {
+            return 0;
+        }
+
+        return this.TryGetExperienceKind(out var isMasterExperience) && isMasterExperience
+            ? attributes[Stats.TotalLevel]
+            : attributes[Stats.Level];
+    }
+
+    /// <summary>
     /// Calculates the amount of experience gained after a kill, without applying it to the character.
     /// </summary>
     /// <param name="killedObject">The killed monster.</param>
@@ -79,7 +96,7 @@ internal sealed class PlayerExperience
         var expRateAttribute = isMasterExperience ? Stats.MasterExperienceRate : Stats.ExperienceRate;
         var gameRate = isMasterExperience ? this._player.GameContext.MasterExperienceRate : this._player.GameContext.ExperienceRate;
 
-        var experience = killedObject.CalculateBaseExperience(attributes[Stats.TotalLevel]);
+        var experience = killedObject.CalculateBaseExperience(this.GetLevelForExperience());
         experience *= gameRate;
         experience *= attributes[expRateAttribute] + attributes[Stats.BonusExperienceRate];
         experience *= this._player.CurrentMap?.Definition.ExpMultiplier ?? 1;
