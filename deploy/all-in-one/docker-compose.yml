@@ -12,6 +12,9 @@ services:
   openmu-startup:
     image: munique/openmu
     container_name: openmu-startup
+    # Time to disconnect and save the players when the container stops (e.g. a deploy). The server waits
+    # up to 55 seconds for that (Program.ShutdownTimeout); Docker would kill it after 10 seconds otherwise.
+    stop_grace_period: 60s
     ports:
       - "8080"
       - "55901:55901"

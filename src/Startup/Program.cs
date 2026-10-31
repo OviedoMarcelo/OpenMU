@@ -8,6 +8,7 @@ using System;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using System.Threading;
 using Microsoft.AspNetCore.Builder;
@@ -53,6 +54,12 @@ using Serilog.Debugging;
 /// </summary>
 internal sealed class Program : IDisposable
 {
+    /// <summary>
+    /// The maximum time to wait for the servers to stop (and save the players) when the process gets terminated.
+    /// It has to be shorter than the time the container gets to stop (stop_grace_period of the docker compose file).
+    /// </summary>
+    private static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(55);
+
     private static bool _confirmExit;
     private static SystemConfiguration? _systemConfiguration;
 
@@ -117,27 +124,72 @@ internal sealed class Program : IDisposable
 
         Console.CancelKeyPress += OnCancelKeyPress;
 
+        // Set when the servers are stopped, i.e. the players are disconnected and saved.
+        using var shutdownFinished = new ManualResetEventSlim(false);
+
+        void RequestExit()
+        {
+            try
+            {
+                if (!exitCts.IsCancellationRequested)
+                {
+#pragma warning disable VSTHRD103 // Call async methods when in an async method
+                    exitCts.Cancel();
+#pragma warning restore VSTHRD103 // Call async methods when in an async method
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // Main already finished.
+            }
+        }
+
+        // "docker stop" sends SIGTERM. Without handling it, the runtime terminates the process right away
+        // and the players lose their progress since the last periodic save. So the termination is cancelled
+        // and the main loop exits instead, which stops the servers gracefully.
+        using var terminationRegistration = PosixSignalRegistration.Create(PosixSignal.SIGTERM, context =>
+        {
+            context.Cancel = true;
+            RequestExit();
+        });
+
         AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) =>
         {
-            if (!exitToken.IsCancellationRequested)
+            RequestExit();
+
+            // The process ends when this handler returns, so it waits for the graceful stop.
+            try
             {
-#pragma warning disable VSTHRD103 // Call async methods when in an async method
-                exitCts.Cancel();
-#pragma warning restore VSTHRD103 // Call async methods when in an async method
-                Debug.WriteLine("KILL");
+                if (!shutdownFinished.Wait(ShutdownTimeout))
+                {
+                    Console.Error.WriteLine("The servers didn't stop in time; exiting anyway.");
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // Main already finished.
             }
         };
 
-        using var program = new Program();
-        await program.InitializeAsync(args).ConfigureAwait(false);
-        while (!exitToken.IsCancellationRequested)
+        try
         {
-            await Task.Delay(100).ConfigureAwait(false);
-
-            if (_systemConfiguration?.ReadConsoleInput is true)
+            using var program = new Program();
+            await program.InitializeAsync(args).ConfigureAwait(false);
+            while (!exitToken.IsCancellationRequested)
             {
-                await HandleConsoleInputAsync(exitCts, exitToken).ConfigureAwait(false);
+                await Task.Delay(100).ConfigureAwait(false);
+
+                if (_systemConfiguration?.ReadConsoleInput is true)
+                {
+                    await HandleConsoleInputAsync(exitCts, exitToken).ConfigureAwait(false);
+                }
             }
+
+            program._logger.Information("Stopping the servers...");
+        }
+        finally
+        {
+            shutdownFinished.Set();
         }
     }
 
@@ -187,6 +239,7 @@ internal sealed class Program : IDisposable
     {
         this._serverHost?.StopAsync().WaitAndUnwrapException();
         this._serverHost?.Dispose();
+        this._logger.Information("Servers stopped.");
     }
 
     private static void DisplayCommands()

@@ -1882,6 +1882,11 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
         this.Attributes[Stats.IsResting] = 0;
         this.LogInvalidInventoryItems();
 
+        // Used up items whose deletion got lost (e.g. by a server restart) would block consumption.
+        var owner = $"{this.Account?.LoginName}/{selectedCharacter.Name}";
+        var removedSpentItems = await SpentItems.RemoveFromStorageAsync(selectedCharacter.Inventory, this.PersistenceContext, this.Logger, owner).ConfigureAwait(false)
+                                + await SpentItems.RemoveFromStorageAsync(this.Account?.Vault, this.PersistenceContext, this.Logger, owner).ConfigureAwait(false);
+
         this._storages.CreateForCharacter(selectedCharacter);
         this.SkillList = new SkillList(this);
         this.SetReclaimableAttributesBeforeEnterGame();
@@ -1934,6 +1939,11 @@ public class Player : AsyncDisposable, IBucketMapObserver, IAttackable, IAttacke
         // Restore previously opened Store.
         var openStoreAction = new PlayerActions.PlayerStore.OpenStoreAction();
         await openStoreAction.RestoreAfterEnterWorldAsync(this, this.IsPlayerStoreOpeningAfterEnterSupported).ConfigureAwait(false);
+
+        if (removedSpentItems > 0)
+        {
+            await this.ShowLocalizedBlueMessageAsync(nameof(PlayerMessage.SpentItemsRemovedFormat), removedSpentItems).ConfigureAwait(false);
+        }
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "Catching all Exceptions.")]

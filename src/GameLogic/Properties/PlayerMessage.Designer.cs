@@ -2129,6 +2129,24 @@ namespace MUnique.OpenMU.GameLogic.Properties {
                 return ResourceManager.GetString("ProgressCouldNotBeSaved", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to This item was already used up, so it was removed from your inventory..
+        /// </summary>
+        public static string SpentItemRemoved {
+            get {
+                return ResourceManager.GetString("SpentItemRemoved", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} used up item(s) were removed from your inventory and vault..
+        /// </summary>
+        public static string SpentItemsRemovedFormat {
+            get {
+                return ResourceManager.GetString("SpentItemsRemovedFormat", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to You got killed by {0} (level {1}).
