@@ -10759,6 +10759,11 @@ public readonly struct NpcWindowResponse
         /// The dialog window which allows to exchange or refine Lucky Item. Used by NPC "David".
         /// </summary>
             CombineLuckyItem = 38,
+
+        /// <summary>
+        /// The mix window of MU Cyber to exchange excellent items and jewels for a Box of Kundun.
+        /// </summary>
+            KundunExchange = 39,
     }
 
     private readonly Memory<byte> _data;

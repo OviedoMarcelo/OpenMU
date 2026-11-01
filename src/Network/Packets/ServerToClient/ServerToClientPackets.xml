@@ -3996,6 +3996,11 @@
               <Description>The dialog window which allows to exchange or refine Lucky Item. Used by NPC "David".</Description>
               <Value>38</Value>
             </EnumValue>
+            <EnumValue>
+              <Name>KundunExchange</Name>
+              <Description>The mix window of MU Cyber to exchange excellent items and jewels for a Box of Kundun.</Description>
+              <Value>39</Value>
+            </EnumValue>
           </Values>
         </Enum>
       </Enums>

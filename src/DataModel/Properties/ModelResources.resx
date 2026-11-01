@@ -4459,6 +4459,12 @@
   <data name="NpcWindow_GuildMaster_Description" xml:space="preserve">
     <value></value>
   </data>
+  <data name="NpcWindow_KundunExchange_Caption" xml:space="preserve">
+    <value>Kundun Exchange</value>
+  </data>
+  <data name="NpcWindow_KundunExchange_Description" xml:space="preserve">
+    <value></value>
+  </data>
   <data name="NpcWindow_CombineLuckyItem_Caption" xml:space="preserve">
     <value>Combine Lucky Item</value>
   </data>
