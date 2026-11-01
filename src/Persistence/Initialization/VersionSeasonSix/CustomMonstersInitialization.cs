@@ -6,7 +6,9 @@ namespace MUnique.OpenMU.Persistence.Initialization.VersionSeasonSix;
 
 using MUnique.OpenMU.AttributeSystem;
 using MUnique.OpenMU.DataModel.Configuration;
+using MUnique.OpenMU.DataModel.Configuration.ItemCrafting;
 using MUnique.OpenMU.GameLogic.Attributes;
+using MUnique.OpenMU.GameLogic.PlayerActions.Craftings;
 using MUnique.OpenMU.Persistence.Initialization.Skills;
 
 /// <summary>
@@ -45,6 +47,11 @@ internal class CustomMonstersInitialization : InitializerBase
     internal const short IcarusGuardianRequiredResets = 5;
 
     /// <summary>
+    /// The number of the Coleccionista de Excelentes, an NPC which exchanges excellent items and jewels for a Box of Kundun.
+    /// </summary>
+    internal const short KundunCollectorNumber = 710;
+
+    /// <summary>
     /// Where the Guardiana de Icarus spawns: in the zone of the Great Drakans, the strongest original monsters there.
     /// </summary>
     internal static readonly (byte X, byte Y)[] IcarusGuardianPositions = [(52, 174), (59, 190), (27, 220), (43, 238)];
@@ -53,6 +60,11 @@ internal class CustomMonstersInitialization : InitializerBase
     /// Where the Guardián del Baúl stands in Lorencia: next to Baz The Vault Keeper (147, 145).
     /// </summary>
     internal static readonly (byte X, byte Y) VaultGuardianPosition = (149, 144);
+
+    /// <summary>
+    /// Where the Coleccionista de Excelentes stands: in the middle of the town of Elvenland, next to the vault.
+    /// </summary>
+    internal static readonly (byte X, byte Y) KundunCollectorPosition = (48, 228);
 
     /// <summary>
     /// The numbers and names of the objects of the boss encounters: crystals, pillars and obelisks in ice and fire.
@@ -84,6 +96,7 @@ internal class CustomMonstersInitialization : InitializerBase
         this.CreateWatcher();
         this.CreateEncounterObjects();
         this.CreateVaultGuardian();
+        this.CreateKundunCollector();
     }
 
     /// <summary>
@@ -214,6 +227,58 @@ internal class CustomMonstersInitialization : InitializerBase
         spawn.Direction = Direction.SouthWest;
         spawn.X1 = spawn.X2 = VaultGuardianPosition.X;
         spawn.Y1 = spawn.Y2 = VaultGuardianPosition.Y;
+    }
+
+    /// <summary>
+    /// Creates the Coleccionista de Excelentes, an NPC which exchanges excellent items and jewels for a Box of Kundun.
+    /// </summary>
+    /// <returns>The NPC.</returns>
+    internal MonsterDefinition CreateKundunCollector()
+    {
+        if (this.GameConfiguration.Monsters.FirstOrDefault(m => m.Number == KundunCollectorNumber) is { } existing)
+        {
+            return existing;
+        }
+
+        var npc = this.Context.CreateNew<MonsterDefinition>();
+        this.GameConfiguration.Monsters.Add(npc);
+        npc.Number = KundunCollectorNumber;
+        npc.Designation = "Coleccionista de Excelentes";
+        npc.ObjectKind = NpcObjectKind.PassiveNpc;
+        npc.NpcWindow = NpcWindow.KundunExchange;
+        npc.SetGuid(npc.Number);
+
+        var crafting = this.Context.CreateNew<ItemCrafting>();
+        crafting.Name = "Box of Kundun +5";
+        crafting.Number = 1;
+        crafting.ItemCraftingHandlerClassName = typeof(KundunBoxExchangeCrafting).FullName!;
+        crafting.SetGuid(KundunCollectorNumber, crafting.Number);
+        npc.ItemCraftings.Add(crafting);
+        return npc;
+    }
+
+    /// <summary>
+    /// Places the Coleccionista de Excelentes in the town of Elvenland, unless it's already there.
+    /// </summary>
+    /// <param name="elvenland">The map of Elvenland.</param>
+    /// <param name="npc">The Coleccionista de Excelentes.</param>
+    internal void CreateKundunCollectorSpawn(GameMapDefinition elvenland, MonsterDefinition npc)
+    {
+        if (elvenland.MonsterSpawns.Any(s => s.MonsterDefinition?.Number == KundunCollectorNumber))
+        {
+            return;
+        }
+
+        var spawn = this.Context.CreateNew<MonsterSpawnArea>();
+        elvenland.MonsterSpawns.Add(spawn);
+        spawn.SetGuid(elvenland.Number, KundunCollectorNumber);
+        spawn.GameMap = elvenland;
+        spawn.MonsterDefinition = npc;
+        spawn.Quantity = 1;
+        spawn.SpawnTrigger = SpawnTrigger.Automatic;
+        spawn.Direction = Direction.South;
+        spawn.X1 = spawn.X2 = KundunCollectorPosition.X;
+        spawn.Y1 = spawn.Y2 = KundunCollectorPosition.Y;
     }
 
     /// <summary>

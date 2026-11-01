@@ -435,7 +435,7 @@ public class MoveItemAction
             Storages.PersonalStore => state == PlayerState.EnteredWorld && !(player.ShopStorage?.StoreOpen ?? true),
             Storages.Vault => state == PlayerState.NpcDialogOpened && openedWindow == NpcWindow.VaultStorage,
             Storages.Trade => state == PlayerState.TradeOpened,
-            Storages.ChaosMachine => state == PlayerState.NpcDialogOpened && openedWindow == NpcWindow.ChaosMachine,
+            Storages.ChaosMachine => state == PlayerState.NpcDialogOpened && openedWindow is NpcWindow.ChaosMachine or NpcWindow.KundunExchange,
             Storages.PetTrainer => state == PlayerState.NpcDialogOpened && openedWindow == NpcWindow.PetTrainer,
             Storages.Refinery => state == PlayerState.NpcDialogOpened && openedWindow == NpcWindow.ElphisRefinery,
             Storages.Smelting => state == PlayerState.NpcDialogOpened && openedWindow == NpcWindow.RefineStoneMaking,

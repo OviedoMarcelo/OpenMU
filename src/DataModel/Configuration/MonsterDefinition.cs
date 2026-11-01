@@ -175,6 +175,12 @@ public enum NpcWindow
     /// The castle siege lever NPC interaction window.
     /// </summary>
     CastleSiegeLeverNpc,
+
+    /// <summary>
+    /// The window of MU Cyber to exchange excellent items and jewels for a Box of Kundun.
+    /// Used by NPC "Coleccionista de Excelentes".
+    /// </summary>
+    KundunExchange,
 }
 
 /// <summary>

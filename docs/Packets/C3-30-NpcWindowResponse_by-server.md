@@ -47,3 +47,4 @@ Defines the kind of npc window which should be shown on the client.
 | 36 | JerintGaionEvententry | The jerint gaion event entry window. |
 | 37 | JuliaWarpMarketServer | The julia warp market server window. |
 | 38 | CombineLuckyItem | The dialog window which allows to exchange or refine Lucky Item. Used by NPC "David". |
+| 39 | KundunExchange | The mix window of MU Cyber to exchange excellent items and jewels for a Box of Kundun. |
