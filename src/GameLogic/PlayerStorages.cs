@@ -60,10 +60,20 @@ internal sealed class PlayerStorages
     }
 
     /// <summary>
-    /// Restores the temporary storage items placed in an NPC or trade dialog when player is disconnected.
+    /// Returns the items which are still placed in an NPC or trade dialog (the temporary storage)
+    /// to the inventory, e.g. when the player leaves the game.
     /// </summary>
+    /// <remarks>
+    /// The inventory itself is never reset to the <see cref="BackupInventory"/> here. The backup is
+    /// just a snapshot of the moment the dialog was opened; the inventory may have changed since then
+    /// (picked up, consumed, dropped, sold or equipped items). Resetting it to the snapshot would remove
+    /// items which were added afterwards (so they are deleted in the database) and bring back items which
+    /// were already deleted. The backup is only used to put the returned items back to their original slots.
+    /// </remarks>
     public async ValueTask RestoreTemporaryStorageItemsAsync()
     {
+        var backupInventory = this.BackupInventory;
+        this.BackupInventory = null;
         try
         {
             if (this.Inventory is not { } inventory)
@@ -71,10 +81,11 @@ internal sealed class PlayerStorages
                 return;
             }
 
-            if (this.BackupInventory is { } backupInventory)
+            if (this._player.TradingMoney > 0)
             {
-                await this.RestoreBackupInventoryAsync(inventory, backupInventory).ConfigureAwait(false);
-                return;
+                // The trading money was already taken from the inventory when it was put into the trade.
+                this._player.TryAddMoney(this._player.TradingMoney);
+                this._player.TradingMoney = 0;
             }
 
             if (this.TemporaryStorage is not { ItemStorage.Items.Count: > 0 } temporaryStorage)
@@ -83,31 +94,28 @@ internal sealed class PlayerStorages
                 return;
             }
 
-            var count = temporaryStorage.ItemStorage.Items.Count;
-            this._player.Logger.LogInformation("Returning {count} items from temporary storage to inventory for player {player}", count, this._player.Name);
-
-            if (await inventory.TryTakeAllAsync(temporaryStorage).ConfigureAwait(false))
-            {
-                this._player.Logger.LogInformation("Returned {count} items from temporary storage to inventory for player {player}", count, this._player.Name);
-                this.TemporaryStorage = null;
-                return;
-            }
-
-            // We should never get so far, since the space is checked before doing anything with the temporary storage.
-            // Log this critical situation - items may be lost if fallback also fails
             var items = temporaryStorage.Items.ToList();
-            this._player.Logger.LogError(
-                "CRITICAL: Could not return {count} items from temporary storage to inventory due to full inventory. Attempting fallback. Items: {items}",
-                items.Count,
-                string.Join(", ", items.Select(i => $"{i.Definition?.Name.ValueInNeutralLanguage ?? "Unknown"}(Slot:{i.ItemSlot})")));
-
-            // Try one more time to force-add items individually using the captured list
+            this._player.Logger.LogInformation("Returning {count} items from temporary storage to inventory for player {player}", items.Count, this._player.Name);
             foreach (var item in items)
             {
-                await temporaryStorage.RemoveItemAsync(item).ConfigureAwait(false);
-                if (!await inventory.AddItemAsync(item).ConfigureAwait(false))
+                try
                 {
-                    this._player.Logger.LogError("Failed to return item {item} to inventory. Item is lost. id: {itemid}", item, item.GetId());
+                    var originalSlot = backupInventory?.GetInitialSlot(item);
+                    await temporaryStorage.RemoveItemAsync(item).ConfigureAwait(false);
+                    if (originalSlot is { } slot && inventory.GetItem(slot) is null && await inventory.AddItemAsync(slot, item).ConfigureAwait(false))
+                    {
+                        continue;
+                    }
+
+                    if (!await inventory.AddItemAsync(item).ConfigureAwait(false))
+                    {
+                        // We should never get so far, since the space is checked before doing anything with the temporary storage.
+                        this._player.Logger.LogError("CRITICAL: Failed to return item {item} from temporary storage to inventory of player {player}. Item is lost. id: {itemid}", item, this._player.Name, item.GetId());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    this._player.Logger.LogError(ex, "Error returning item {item} from temporary storage to inventory of player {player}.", item, this._player.Name);
                 }
             }
 
@@ -117,30 +125,5 @@ internal sealed class PlayerStorages
         {
             this._player.Logger.LogError(ex, "Error returning items from temporary storage to inventory");
         }
-    }
-
-    private async ValueTask RestoreBackupInventoryAsync(IInventoryStorage inventory, BackupItemStorage backupInventory)
-    {
-        inventory.Clear();
-        backupInventory.RestoreItemStates();
-        foreach (var item in backupInventory.Items)
-        {
-            try
-            {
-                if (!await inventory.AddItemAsync(item.ItemSlot, item).ConfigureAwait(false)
-                    && !await inventory.AddItemAsync(item).ConfigureAwait(false))
-                {
-                    this._player.Logger.LogError("Failed to restore item {item} from backup inventory of player {player}.", item, this._player.Name);
-                }
-            }
-            catch (Exception ex)
-            {
-                this._player.Logger.LogError(ex, "Error restoring item {item} from backup inventory of player {player}.", item, this._player.Name);
-            }
-        }
-
-        inventory.ItemStorage.Money = backupInventory.Money;
-        this.BackupInventory = null;
-        this.TemporaryStorage = null;
     }
 }

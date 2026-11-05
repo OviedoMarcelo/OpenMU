@@ -144,10 +144,10 @@ public class TalkNpcAction
                 break;
         }
 
-        if (npcStats.ItemCraftings.Any())
-        {
-            player.BackupInventory = new BackupItemStorage(player.Inventory!.ItemStorage);
-        }
+        // The backup is only kept while a crafting NPC is opened, so a stale one never outlives its dialog.
+        player.BackupInventory = npcStats.ItemCraftings.Any()
+            ? new BackupItemStorage(player.Inventory!.ItemStorage)
+            : null;
     }
 
     private async ValueTask ShowLegacyQuestDialogAsync(Player player)
