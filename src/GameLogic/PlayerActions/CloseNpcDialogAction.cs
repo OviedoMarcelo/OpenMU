@@ -26,6 +26,10 @@ public class CloseNpcDialogAction
             player.Logger.LogDebug($"Player {player.SelectedCharacter?.Name} closes NPC {player.OpenedNpc}");
             player.OpenedNpc = null;
             player.Vault = null;
+
+            // The backup of a crafting dialog is just a snapshot of when it was opened. Keeping it after
+            // closing the dialog would let a later restore work with an outdated inventory.
+            player.BackupInventory = null;
             await player.InvokeViewPlugInAsync<INpcDialogClosedPlugIn>(p => p.DialogClosedAsync(npc.Definition)).ConfigureAwait(false);
             if (npc.Id == ChaosGoblinId)
             {

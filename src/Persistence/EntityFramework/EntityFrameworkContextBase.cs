@@ -411,13 +411,16 @@ internal class EntityFrameworkContextBase : IContext
                 continue;
             }
 
-            this._logger.LogWarning("Save conflict of {Owner}: {EntityType} {Key} ({State}) has no row in the database.", DescribeOwner(), entry.Metadata.ClrType.Name, DescribeKey(entry), entry.State);
             switch (entry.State)
             {
                 case EntityState.Deleted:
+                    this._logger.LogWarning("Save conflict of {Owner}: {EntityType} {Key} ({State}) has no row in the database.", DescribeOwner(), entry.Metadata.ClrType.Name, DescribeKey(entry), entry.State);
                     entry.State = EntityState.Detached;
                     break;
                 default:
+                    // The object is still in use, although its row was deleted before. It's inserted again so
+                    // it isn't lost, but this points to a bug which removed it while it was still in use.
+                    this._logger.LogError("Save conflict of {Owner}: {EntityType} {Key} ({State}) has no row in the database; it was deleted while still in use and is inserted again.", DescribeOwner(), entry.Metadata.ClrType.Name, DescribeKey(entry), entry.State);
                     entry.State = EntityState.Added;
                     await this.AddMissingAggregatesAsync(entry.Entity, cancellationToken).ConfigureAwait(false);
                     break;

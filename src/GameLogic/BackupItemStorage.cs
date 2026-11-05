@@ -41,4 +41,22 @@ public class BackupItemStorage
     {
         this._initialItemStates.ForEach(state => state.Item.ItemSlot = state.Slot);
     }
+
+    /// <summary>
+    /// Gets the slot which the item had when the backup was created.
+    /// </summary>
+    /// <param name="item">The item.</param>
+    /// <returns>The initial slot, or <c>null</c> if the item wasn't part of the backup.</returns>
+    public byte? GetInitialSlot(Item item)
+    {
+        foreach (var state in this._initialItemStates)
+        {
+            if (ReferenceEquals(state.Item, item))
+            {
+                return state.Slot;
+            }
+        }
+
+        return null;
+    }
 }
