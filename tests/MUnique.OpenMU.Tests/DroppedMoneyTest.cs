@@ -118,6 +118,35 @@ public class DroppedMoneyTest
         Assert.That(small.Money, Is.EqualTo(200));
     }
 
+    /// <summary>
+    /// Tests that a party member at a safezone can pick up money without shares (e.g. of an item box opened in
+    /// town). The picker used to be excluded by the party eligibility, so nobody got the money and it stayed on
+    /// the ground, unpickable. The other member, who is at the safezone as well, still gets nothing.
+    /// </summary>
+    [Test]
+    public async Task PartyMemberAtSafezonePicksUpMoneyAsync()
+    {
+        var picker = await PlayerTestHelper.CreatePlayerAsync().ConfigureAwait(false);
+        var gameContext = picker.GameContext;
+        gameContext.Configuration.MaximumInventoryMoney = int.MaxValue;
+
+        var party = CreateParty();
+        await party.AddAsync(picker).ConfigureAwait(false);
+        var other = await AddPartyMemberAsync(gameContext, party).ConfigureAwait(false);
+
+        var safezoneMap = picker.CurrentMap!.Terrain.SafezoneMap;
+        safezoneMap[picker.Position.X, picker.Position.Y] = true;
+        safezoneMap[other.Position.X, other.Position.Y] = true;
+        Assert.That(picker.IsAtSafezone(), Is.True);
+        Assert.That(other.IsAtSafezone(), Is.True);
+
+        var money = new DroppedMoney(DroppedAmount, picker.Position, picker.CurrentMap!);
+
+        Assert.That(await money.TryPickUpByAsync(picker).ConfigureAwait(false), Is.True);
+        Assert.That(picker.Money, Is.EqualTo((int)DroppedAmount));
+        Assert.That(other.Money, Is.EqualTo(0));
+    }
+
     private static Party CreateParty()
     {
         // The party manager of the lightweight test context has a maximum size of zero, which would
