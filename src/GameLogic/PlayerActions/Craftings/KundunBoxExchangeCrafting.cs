@@ -9,7 +9,7 @@ using MUnique.OpenMU.GameLogic.PlayerActions.Items;
 using MUnique.OpenMU.GameLogic.Views.NPC;
 
 /// <summary>
-/// The exchange of excellent items and a pack of Jewels of Creation for a Box of Kundun +5.
+/// The exchange of excellent items and a pack of ten jewels for a Box of Kundun +5.
 /// Better excellent items are worth more points, so that fewer of them are needed.
 /// </summary>
 /// <remarks>
@@ -34,9 +34,13 @@ public class KundunBoxExchangeCrafting : BaseItemCraftingHandler
 
     private const byte LastEquipmentGroup = 11;
 
-    private const byte PackedCreationGroup = 12;
+    private const byte PackedJewelGroup = 12;
 
-    private const short PackedCreationNumber = 137;
+    /// <summary>
+    /// The numbers of the packed jewels which are accepted: Bless, Soul, Life, Creation, Guardian, Harmony and Chaos.
+    /// The Packed Gemstone and the packed refine stones aren't jewels.
+    /// </summary>
+    private static readonly short[] PackedJewelNumbers = [30, 31, 136, 137, 138, 140, 141];
 
     private const byte BoxOfLuckGroup = 14;
 
@@ -81,7 +85,7 @@ public class KundunBoxExchangeCrafting : BaseItemCraftingHandler
         var packs = new List<Item>();
         foreach (var item in player.TemporaryStorage!.Items)
         {
-            if (IsPackOfTenCreation(item))
+            if (IsPackOfTenJewels(item))
             {
                 packs.Add(item);
             }
@@ -149,10 +153,12 @@ public class KundunBoxExchangeCrafting : BaseItemCraftingHandler
     }
 
     /// <summary>
-    /// Determines whether the item is a pack of ten Jewels of Creation: the higher levels are packs of 20 and 30.
+    /// Determines whether the item is a pack of ten jewels: the higher levels are packs of 20 and 30.
     /// </summary>
-    private static bool IsPackOfTenCreation(Item item)
+    private static bool IsPackOfTenJewels(Item item)
     {
-        return item.Definition is { Group: PackedCreationGroup, Number: PackedCreationNumber } && item.Level == 0;
+        return item.Definition is { Group: PackedJewelGroup } definition
+            && PackedJewelNumbers.Contains(definition.Number)
+            && item.Level == 0;
     }
 }

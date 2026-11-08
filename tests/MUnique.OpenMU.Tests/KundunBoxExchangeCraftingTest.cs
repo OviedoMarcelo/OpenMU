@@ -102,6 +102,31 @@ public class KundunBoxExchangeCraftingTest
     }
 
     /// <summary>
+    /// Tests that a pack of ten of any jewel is accepted, but not the packed gemstone or refine stones.
+    /// </summary>
+    /// <param name="packNumber">The item number of the pack in group 12.</param>
+    /// <returns>The result of the check; <c>null</c> when it's accepted.</returns>
+    [TestCase(30, ExpectedResult = null)]
+    [TestCase(31, ExpectedResult = null)]
+    [TestCase(136, ExpectedResult = null)]
+    [TestCase(137, ExpectedResult = null)]
+    [TestCase(138, ExpectedResult = null)]
+    [TestCase(140, ExpectedResult = null)]
+    [TestCase(141, ExpectedResult = null)]
+    [TestCase(139, ExpectedResult = CraftingResult.IncorrectMixItems)]
+    [TestCase(142, ExpectedResult = CraftingResult.IncorrectMixItems)]
+    [TestCase(143, ExpectedResult = CraftingResult.IncorrectMixItems)]
+    public async Task<CraftingResult?> AnyPackOfTenJewelsIsAcceptedAsync(int packNumber)
+    {
+        var player = await PlayerTestHelper.CreatePlayerAsync().ConfigureAwait(false);
+        await player.TemporaryStorage!.AddItemAsync(0, Excellent(80)).ConfigureAwait(false);
+        await player.TemporaryStorage!.AddItemAsync(1, Excellent(80)).ConfigureAwait(false);
+        var pack = new ItemDefinition { Group = 12, Number = (short)packNumber, Width = 1, Height = 1 };
+        await player.TemporaryStorage!.AddItemAsync(2, CreateItem(pack)).ConfigureAwait(false);
+        return new KundunBoxExchangeCrafting().TryGetRequiredItems(player, out _, out _);
+    }
+
+    /// <summary>
     /// Tests that the Coleccionista de Excelentes stands on a free place of the safezone of Elvenland.
     /// </summary>
     [Test]
