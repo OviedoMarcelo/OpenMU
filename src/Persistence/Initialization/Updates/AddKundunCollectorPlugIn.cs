@@ -27,7 +27,7 @@ public class AddKundunCollectorPlugIn : UpdatePlugInBase
     /// <summary>
     /// The plug-in description.
     /// </summary>
-    internal const string PlugInDescription = "Adds the Coleccionista de Excelentes (710) to the town of Elvenland. It exchanges excellent items and a pack of Jewels of Creation for a Box of Kundun +5. The client needs to know the NPC.";
+    internal const string PlugInDescription = "Adds the Coleccionista de Excelentes (710) to the town of Elvenland. It exchanges excellent items and a pack of ten jewels for a Box of Kundun +5. The client needs to know the NPC.";
 
     /// <inheritdoc />
     public override string Name => PlugInName;
