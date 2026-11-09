@@ -106,6 +106,15 @@ public class LoginAction
             return false;
         }
 
+        if (state == AccountState.EmailNotVerified)
+        {
+            // There's no login result for it in the protocol. NoChargeInfo isn't used otherwise, and the
+            // client of this server shows "confirm your e-mail" for it.
+            player.Logger.LogInformation("Account with an unconfirmed e-mail tried to log in.");
+            await player.InvokeViewPlugInAsync<IShowLoginResultPlugIn>(p => p.ShowLoginResultAsync(LoginResult.NoChargeInfo)).ConfigureAwait(false);
+            return false;
+        }
+
         return true;
     }
 
