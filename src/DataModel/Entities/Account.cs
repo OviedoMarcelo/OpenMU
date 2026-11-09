@@ -42,6 +42,12 @@ public enum AccountState
     /// Temporarily banned account.
     /// </summary>
     TemporarilyBanned,
+
+    /// <summary>
+    /// Account registered on the website which didn't confirm its e-mail yet. It can't enter the game
+    /// until it does; the website sets it back to <see cref="Normal"/> when the e-mail is confirmed.
+    /// </summary>
+    EmailNotVerified,
 }
 
 /// <summary>

@@ -145,6 +145,26 @@ public class LoginActionSessionTest
         Assert.That(this._gameContext.AccountSessions.GetOwner(LoginName), Is.SameAs(first));
     }
 
+    /// <summary>
+    /// An account whose e-mail isn't confirmed yet can't enter the game, and gets told so.
+    /// </summary>
+    [Test]
+    public async ValueTask LoginOfAccountWithUnconfirmedEmailIsRejectedAsync()
+    {
+        using (var context = this._innerContext.PersistenceContextProvider.CreateNewPlayerContext(this._innerContext.Configuration))
+        {
+            var account = await context.GetAccountByLoginNameAsync(LoginName).ConfigureAwait(false);
+            account!.State = AccountState.EmailNotVerified;
+            await context.SaveChangesAsync().ConfigureAwait(false);
+        }
+
+        var player = await this.LoginAsync().ConfigureAwait(false);
+
+        Assert.That(player.Account, Is.Null);
+        Mock.Get(player.LoginResultPlugIn).Verify(p => p.ShowLoginResultAsync(LoginResult.NoChargeInfo), Times.Once);
+        Assert.That(this._gameContext.AccountSessions.GetOwner(LoginName), Is.Null);
+    }
+
     private async ValueTask<TestPlayer> LoginAsync(string password = Password)
     {
         var player = new TestPlayer(this._gameContext);
