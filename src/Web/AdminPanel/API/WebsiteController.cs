@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MUnique.OpenMU.GameLogic.Attributes;
 using MUnique.OpenMU.GameLogic.PlugIns.Achievements;
+using MUnique.OpenMU.GameLogic.PlugIns.CashShop;
 using MUnique.OpenMU.GameLogic.PlugIns.SeasonPass;
 using MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 using MUnique.OpenMU.GameServer;
@@ -355,6 +356,49 @@ public class WebsiteController : Controller
     }
 
     /// <summary>
+    /// Gets the version of the catalog of the cash shop, which the game client downloads from the website.
+    /// </summary>
+    /// <returns>
+    /// <c>enabled</c>: whether the cash shop plugin is active;
+    /// <c>version</c>: the version like the client names its folder, e.g. "777.0123.456";
+    /// <c>files</c>: the names of the files.
+    /// </returns>
+    [HttpGet]
+    [Route("cash-shop/catalog")]
+    public IActionResult GetCashShopCatalog()
+    {
+        if (this.GetCashShopCatalogFiles() is not { } files)
+        {
+            return this.Ok(new { enabled = false, version = (string?)null, files = Array.Empty<string>() });
+        }
+
+        return this.Ok(new
+        {
+            enabled = true,
+            version = files.Version,
+            files = new[] { CashShopCatalogFiles.CategoryFileName, CashShopCatalogFiles.PackageFileName, CashShopCatalogFiles.ProductFileName },
+        });
+    }
+
+    /// <summary>
+    /// Gets a file of the catalog of the cash shop, encoded like the game client expects it (Windows-1252).
+    /// </summary>
+    /// <param name="fileName">The name of the file, e.g. "IBSPackage.txt".</param>
+    /// <returns>The file; not found, if the plugin is not active or the file doesn't exist. The header "X-Catalog-Version" holds the version.</returns>
+    [HttpGet]
+    [Route("cash-shop/catalog/{fileName}")]
+    public IActionResult GetCashShopCatalogFile(string fileName)
+    {
+        if (this.GetCashShopCatalogFiles() is not { } files || files.GetFile(fileName) is not { } content)
+        {
+            return this.NotFound();
+        }
+
+        this.Response.Headers["X-Catalog-Version"] = files.Version;
+        return this.File(CashShopCatalogFiles.Encode(content), "text/plain; charset=windows-1252");
+    }
+
+    /// <summary>
     /// Gets the season pass of an account in the running season.
     /// </summary>
     /// <param name="login">The login name of the account.</param>
@@ -490,6 +534,18 @@ public class WebsiteController : Controller
             ? DateTime.MinValue
             : TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(season.End, DateTimeKind.Unspecified), context.ServerTimeZone);
         return (configuration, season, endUtc, serverTime);
+    }
+
+    /// <summary>
+    /// Gets the catalog files of the cash shop.
+    /// </summary>
+    /// <returns>The files; <c>null</c>, if the cash shop plugin is not active.</returns>
+    private CashShopCatalogFiles? GetCashShopCatalogFiles()
+    {
+        var context = this._gameServers.Values.OfType<GameServer>().FirstOrDefault()?.Context;
+        return context is not null && CashShopPlugIn.GetActivePlugIn(context) is { } plugIn
+            ? plugIn.GetCatalog(context).Files
+            : null;
     }
 
     private async Task<(bool InGame, string? Character)> FindPlayerAsync(string login)

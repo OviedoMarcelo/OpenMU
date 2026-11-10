@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using MUnique.OpenMU.Persistence.EntityFramework.AdminAuth;
+using MUnique.OpenMU.Persistence.EntityFramework.CashShop;
 using MUnique.OpenMU.Persistence.EntityFramework.Progression;
 using MUnique.OpenMU.Persistence.EntityFramework.WeeklyQuests;
 using Npgsql;
@@ -137,6 +138,9 @@ public class DatabaseSnapshotService : IDatabaseSnapshotService
 
         // The progression (achievements, titles, season pass) is migrated to the current state like the weekly quests.
         await MigrateToAsync<ProgressionContext>(null, cancellationToken).ConfigureAwait(false);
+
+        // ... and the cash shop (points and bought items).
+        await MigrateToAsync<CashShopContext>(null, cancellationToken).ConfigureAwait(false);
 
         await using var connection = await CreateConnectionAsync(cancellationToken).ConfigureAwait(false);
         var existingTables = (await GetTableNamesAsync(connection, cancellationToken).ConfigureAwait(false))

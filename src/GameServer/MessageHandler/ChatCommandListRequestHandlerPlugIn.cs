@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.PlugIns;
 using MUnique.OpenMU.GameLogic.PlugIns.Achievements;
+using MUnique.OpenMU.GameLogic.PlugIns.CashShop;
 using MUnique.OpenMU.GameLogic.PlugIns.ChatCommands;
 using MUnique.OpenMU.GameLogic.PlugIns.Cosmetics;
 using MUnique.OpenMU.GameLogic.PlugIns.PeriodicTasks;
@@ -69,6 +70,12 @@ internal class ChatCommandListRequestHandlerPlugIn : ISubPacketHandlerPlugIn
         if (CosmeticsPlugIn.GetActivePlugIn(player) is { } cosmetics)
         {
             await cosmetics.SendPiecesAsync(player).ConfigureAwait(false);
+        }
+
+        // ... and the version of the catalog of the cash shop, which the client downloads when needed.
+        if (CashShopPlugIn.GetActivePlugIn(player.GameContext) is { } cashShop)
+        {
+            await cashShop.SendCatalogVersionAsync(player).ConfigureAwait(false);
         }
     }
 }
