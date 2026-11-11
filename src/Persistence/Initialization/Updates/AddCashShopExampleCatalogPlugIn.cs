@@ -65,6 +65,18 @@ public class AddCashShopExampleCatalogPlugIn : UpdatePlugInBase
         return list is { Count: > 0 };
     }
 
+    /// <summary>
+    /// Reads the configuration of the cosmetics plugin, which is stored with preserved references
+    /// (e.g. its pieces as <c>{"$values": [...]}</c>).
+    /// </summary>
+    /// <param name="configuration">The configuration of the cosmetics plugin.</param>
+    /// <returns>The configuration; <c>null</c> if there is none.</returns>
+    public static CosmeticsConfiguration? ReadCosmetics(PlugInConfiguration? configuration)
+    {
+        // The cosmetic pieces only have numbers and no references to other objects.
+        return configuration?.GetConfiguration<CosmeticsConfiguration>(new ExistingObjectsReferenceHandler());
+    }
+
     /// <inheritdoc />
     protected override ValueTask ApplyAsync(IContext context, GameConfiguration gameConfiguration)
     {
@@ -85,10 +97,7 @@ public class AddCashShopExampleCatalogPlugIn : UpdatePlugInBase
             return ValueTask.CompletedTask;
         }
 
-        // The cosmetic pieces only have numbers, so they're read without resolving references.
-        var cosmetics = gameConfiguration.PlugInConfigurations
-            .FirstOrDefault(c => c.TypeId == typeof(CosmeticsPlugIn).GUID)
-            ?.GetConfiguration<CosmeticsConfiguration>(null);
+        var cosmetics = ReadCosmetics(gameConfiguration.PlugInConfigurations.FirstOrDefault(c => c.TypeId == typeof(CosmeticsPlugIn).GUID));
         plugInConfiguration.SetConfiguration(CashShopExampleCatalog.Create(gameConfiguration, cosmetics), new ExistingObjectsReferenceHandler());
         return ValueTask.CompletedTask;
     }

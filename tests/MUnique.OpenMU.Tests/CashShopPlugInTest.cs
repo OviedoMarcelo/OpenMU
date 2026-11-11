@@ -380,6 +380,36 @@ public class CashShopPlugInTest
         Assert.That(AddCashShopExampleCatalogPlugIn.HasProducts("""{"Products":[{"Number":1}]}"""), Is.True);
     }
 
+    /// <summary>
+    /// Tests that the update reads the configuration of the cosmetics like it's stored in the database:
+    /// with preserved references, where all ids are empty.
+    /// </summary>
+    [Test]
+    public void UpdateReadsStoredCosmetics()
+    {
+        var stored = new MUnique.OpenMU.PlugIns.PlugInConfiguration
+        {
+            CustomConfiguration = """
+                {
+                  "$id": "",
+                  "RestrictToQualifiedClasses": true,
+                  "Pieces": {
+                    "$id": "",
+                    "$values": [
+                      { "$id": "", "Number": 11, "Slot": 0, "ItemNumber": 1, "Level": 9 },
+                      { "$id": "", "Number": 12, "Slot": 1, "ItemNumber": 1, "Level": 9 }
+                    ]
+                  }
+                }
+                """,
+        };
+
+        var cosmetics = AddCashShopExampleCatalogPlugIn.ReadCosmetics(stored);
+
+        Assert.That(cosmetics?.Pieces.Select(p => p.Number), Is.EqualTo(new short[] { 11, 12 }));
+        Assert.That(AddCashShopExampleCatalogPlugIn.ReadCosmetics(null), Is.Null);
+    }
+
     private static int BitCount(byte value) => System.Numerics.BitOperations.PopCount(value);
 
     private static CashShopConfiguration CreateConfiguration()

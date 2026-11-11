@@ -45,8 +45,12 @@ public class CashShopPlugIn : IPlayerStateChangedPlugIn, ISupportCustomConfigura
     /// <summary>
     /// Initializes a new instance of the <see cref="CashShopPlugIn"/> class.
     /// </summary>
+    /// <remarks>
+    /// It's internal on purpose: the plugin manager must only see the parameterless constructor. Otherwise it resolves
+    /// the repository at the start, which needs the plugin configurations which are just being created, and hangs.
+    /// </remarks>
     /// <param name="repository">The repository.</param>
-    public CashShopPlugIn(ICashShopRepository repository)
+    internal CashShopPlugIn(ICashShopRepository repository)
     {
         this._repository = repository;
     }
