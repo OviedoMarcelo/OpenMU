@@ -64,6 +64,31 @@ public class InMemoryCashShopRepository : ICashShopRepository
     }
 
     /// <inheritdoc />
+    /// <remarks>Without a database it doesn't know all accounts, so it reaches the accounts which had points already.</remarks>
+    public ValueTask<int> AddPointsToAllAccountsAsync(long amount, string reason, string reference, string? comment = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
+        lock (this._lock)
+        {
+            var count = 0;
+            foreach (var accountId in this._points.Keys.ToList())
+            {
+                if (this._transactions.Any(t => t.AccountId == accountId && t.Reference == reference))
+                {
+                    continue;
+                }
+
+                var points = this._points[accountId] + amount;
+                this._points[accountId] = points;
+                this.Record(accountId, amount, points, reason, reference, comment);
+                count++;
+            }
+
+            return ValueTask.FromResult(count);
+        }
+    }
+
+    /// <inheritdoc />
     public ValueTask<CashShopPurchaseResult> PurchaseAsync(CashShopStorageItem item, int maximumStorageItems, CancellationToken cancellationToken = default)
     {
         lock (this._lock)

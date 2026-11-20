@@ -97,6 +97,36 @@ public sealed class CashShopRepository : ICashShopRepository, IDisposable
     }
 
     /// <inheritdoc />
+    public async ValueTask<int> AddPointsToAllAccountsAsync(long amount, string reason, string reference, string? comment = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        reason = reason.Length > 32 ? reason[..32] : reason;
+        comment = comment is { Length: > 256 } ? comment[..256] : comment;
+
+        // One statement: the accounts without a transaction of the reference get the points (the balance row is
+        // created when missing) and a transaction each. The upsert locks the balance rows like the other changes.
+        await using var context = new CashShopContext();
+        return await context.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            WITH targets AS (
+                SELECT a."Id" FROM data."Account" a
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM cashshop."Transaction" t WHERE t."AccountId" = a."Id" AND t."Reference" = {reference})
+            ), balances AS (
+                INSERT INTO cashshop."Balance" ("AccountId", "Points", "UpdatedAt")
+                SELECT "Id", {amount}, now() FROM targets
+                ON CONFLICT ("AccountId") DO UPDATE SET "Points" = cashshop."Balance"."Points" + EXCLUDED."Points", "UpdatedAt" = now()
+                RETURNING "AccountId", "Points"
+            )
+            INSERT INTO cashshop."Transaction" ("AccountId", "Amount", "PointsAfter", "Reason", "Reference", "Comment", "CreatedAt")
+            SELECT "AccountId", {amount}, "Points", {reason}, {reference}, {comment}, now() FROM balances
+            """,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async ValueTask<CashShopPurchaseResult> PurchaseAsync(CashShopStorageItem item, int maximumStorageItems, CancellationToken cancellationToken = default)
     {
         await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);

@@ -54,6 +54,18 @@ public interface ICashShopRepository
     ValueTask<long?> AddPointsAsync(Guid accountId, long amount, string reason, string? reference = null, string? comment = null, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Adds points to every account which didn't get the points of this reference yet, e.g. a gift for all
+    /// players. Doing it again with the same reference only reaches the accounts which were created since then.
+    /// </summary>
+    /// <param name="amount">The amount; it has to be positive.</param>
+    /// <param name="reason">The reason, e.g. "gift".</param>
+    /// <param name="reference">The reference which every account can get only once, e.g. "gift:beta-2026-12".</param>
+    /// <param name="comment">An optional free text.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The count of accounts which got the points now.</returns>
+    ValueTask<int> AddPointsToAllAccountsAsync(long amount, string reason, string reference, string? comment = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Takes the price from the points of the account and puts the item into its storage.
     /// </summary>
     /// <param name="item">The item, with the account id and the price. Its <see cref="CashShopStorageItem.Id"/> is set on success.</param>
