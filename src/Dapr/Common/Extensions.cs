@@ -17,6 +17,8 @@ using MUnique.OpenMU.Persistence;
 using MUnique.OpenMU.Persistence.AdminAuth;
 using MUnique.OpenMU.Persistence.EntityFramework;
 using MUnique.OpenMU.Persistence.EntityFramework.AdminAuth;
+using MUnique.OpenMU.Persistence.CashShop;
+using MUnique.OpenMU.Persistence.EntityFramework.CashShop;
 using MUnique.OpenMU.Persistence.EntityFramework.Progression;
 using MUnique.OpenMU.Persistence.EntityFramework.WeeklyQuests;
 using MUnique.OpenMU.Persistence.Progression;
@@ -63,6 +65,7 @@ public static class Extensions
             .AddAdminUserRepository()
             .AddWeeklyQuestProgressRepository()
             .AddProgressionRepository()
+            .AddCashShopRepository()
             .AddSingleton<IBackupService>(s => new BackupService(
                 s.GetRequiredService<IPersistenceContextProvider>(),
                 s.GetRequiredService<IAdminUserRepository>()))
@@ -253,6 +256,7 @@ public static class Extensions
         var app = builder.Build();
         WeeklyQuestProgressRepositoryRegistry.Current = app.Services.GetService<IWeeklyQuestProgressRepository>();
         ProgressionRepositoryRegistry.Current = app.Services.GetService<IProgressionRepository>();
+        CashShopRepositoryRegistry.Current = app.Services.GetService<ICashShopRepository>();
 
         if (useReverseProxy)
         {

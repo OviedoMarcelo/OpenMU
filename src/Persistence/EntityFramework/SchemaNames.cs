@@ -46,4 +46,9 @@ internal static class SchemaNames
     /// The schema name for the long term progression: achievements and titles.
     /// </summary>
     internal const string Progression = "progression";
+
+    /// <summary>
+    /// The schema name for the cash shop: the points of the accounts, their changes and the bought items.
+    /// </summary>
+    internal const string CashShop = "cashshop";
 }

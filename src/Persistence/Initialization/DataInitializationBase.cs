@@ -12,6 +12,8 @@ using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.MiniGames.Doppelganger;
 using MUnique.OpenMU.GameLogic.MiniGames.Kanturu;
 using MUnique.OpenMU.GameLogic.PlayerActions.ItemConsumeActions;
+using MUnique.OpenMU.GameLogic.PlugIns.CashShop;
+using MUnique.OpenMU.GameLogic.PlugIns.Cosmetics;
 using MUnique.OpenMU.GameLogic.PlugIns.PeriodicTasks;
 using MUnique.OpenMU.GameLogic.Resets;
 using MUnique.OpenMU.GameServer.MessageHandler;
@@ -168,6 +170,12 @@ public abstract class DataInitializationBase : IDataInitializationPlugIn
                 // The default configuration of the plug-in can't reference the monsters of the
                 // event, because it's created without a game configuration.
                 plugInConfiguration.SetConfiguration(DoppelgangerEventDefinition.CreateDefault(this.GameConfiguration), referenceHandler);
+            }
+
+            if (plugInType == typeof(CashShopPlugIn))
+            {
+                // The example products reference the items of the game, which the default configuration of the plug-in doesn't know.
+                plugInConfiguration.SetConfiguration(CashShopExampleCatalog.Create(this.GameConfiguration, CosmeticsConfiguration.Default), referenceHandler);
             }
 
             if (plugInType == typeof(KanturuStartPlugIn))
