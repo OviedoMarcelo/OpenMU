@@ -25,6 +25,11 @@ public class ItemPriceCalculator
     private const float DestroyedPetPenalty = 2.0f;
     private const float DestroyedItemPenalty = 1.4f;
 
+    /// <summary>
+    /// The price of the Invitation to Santa Village of the Christmas event, which is sold by the Duende de Santa in Lorencia.
+    /// </summary>
+    private const long SantaVillageInvitationPrice = 3_000_000;
+
     private static readonly List<short> WorthlessSkills = [ForceWaveSkillId, ExplosionSkillId, RequiemSkillId, PollutionSkillId];
 
     private static readonly Dictionary<byte, int> DropLevelIncreaseByLevel = new()
@@ -209,6 +214,7 @@ public class ItemPriceCalculator
         { (int)SpecialItems.SixthSecromiconFragment, item => 30000 * item.Durability() },
         { (int)SpecialItems.CompleteSecromicon, item => 30000 * item.Durability() },
         { (int)SpecialItems.ChristmasStar, _ => 200000 },
+        { (int)SpecialItems.SantaVillageInvitation, _ => SantaVillageInvitationPrice }, // the client of MU Cyber shows the same price, see ZzzInfomation.cpp
         { (int)SpecialItems.Firecracker, _ => 200000 },
         { (int)SpecialItems.CherryBlossomWine, item => 300 * item.Durability() },
         { (int)SpecialItems.CherryBlossomRiceCake, item => 300 * item.Durability() },
@@ -296,6 +302,7 @@ public class ItemPriceCalculator
         SixthSecromiconFragment = 0x6C0E,
         CompleteSecromicon = 0x6D0E,
         ChristmasStar = 0x330E,
+        SantaVillageInvitation = 0x420D, // getId(13,66)
         Firecracker = 0x3F0E,
         CherryBlossomWine = 0x550E,
         CherryBlossomRiceCake = 0x560E,

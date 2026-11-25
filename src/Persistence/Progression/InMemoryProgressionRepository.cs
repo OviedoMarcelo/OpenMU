@@ -22,6 +22,26 @@ public class InMemoryProgressionRepository : IProgressionRepository
     private readonly ConcurrentDictionary<Guid, PrestigeProgress> _prestige = new();
     private readonly ConcurrentDictionary<(Guid CharacterId, short PieceNumber), UnlockedCosmeticPiece> _cosmeticPieces = new();
     private readonly ConcurrentDictionary<(Guid CharacterId, byte ItemSlot), short> _wornCosmeticPieces = new();
+    private readonly Dictionary<string, EventClaim> _eventClaims = new();
+
+    /// <inheritdoc />
+    public ValueTask<bool> TryAddEventClaimsAsync(IReadOnlyCollection<EventClaim> claims, CancellationToken cancellationToken = default)
+    {
+        lock (this._eventClaims)
+        {
+            if (claims.Any(c => this._eventClaims.ContainsKey(c.Key)))
+            {
+                return ValueTask.FromResult(false);
+            }
+
+            foreach (var claim in claims)
+            {
+                this._eventClaims[claim.Key] = claim;
+            }
+        }
+
+        return ValueTask.FromResult(true);
+    }
 
     /// <inheritdoc />
     public ValueTask<IList<UnlockedCosmeticPiece>> LoadUnlockedCosmeticPiecesAsync(Guid characterId, CancellationToken cancellationToken = default)

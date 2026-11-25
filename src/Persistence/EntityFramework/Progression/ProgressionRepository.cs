@@ -409,6 +409,35 @@ public sealed class ProgressionRepository : IProgressionRepository, IDisposable
             cancellationToken).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
+    public async ValueTask<bool> TryAddEventClaimsAsync(IReadOnlyCollection<EventClaim> claims, CancellationToken cancellationToken = default)
+    {
+        await this.EnsureAvailableStorageAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var context = new ProgressionContext();
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        // The database decides, so that two players of the same household who click at the same time can't both get it.
+        foreach (var claim in claims)
+        {
+            var added = await context.Database.ExecuteSqlInterpolatedAsync(
+                $"""
+                INSERT INTO progression."EventClaim" ("Key", "ClaimedAt", "AccountId", "CharacterId")
+                VALUES ({claim.Key}, {claim.ClaimedAt}, {claim.AccountId}, {claim.CharacterId})
+                ON CONFLICT DO NOTHING
+                """,
+                cancellationToken).ConfigureAwait(false);
+            if (added == 0)
+            {
+                await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+                return false;
+            }
+        }
+
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
     private async ValueTask EnsureAvailableStorageAsync(CancellationToken cancellationToken)
     {
         if (this._isStorageReady)

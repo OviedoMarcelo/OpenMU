@@ -63,6 +63,11 @@ public class ProgressionContext : DbContext
     /// </summary>
     public DbSet<WornCosmeticPiece> WornCosmeticPieces { get; set; } = null!;
 
+    /// <summary>
+    /// Gets or sets what has been handed out once per key in events, e.g. the daily gift of Santa Claus.
+    /// </summary>
+    public DbSet<EventClaim> EventClaims { get; set; } = null!;
+
     /// <inheritdoc />
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -134,6 +139,12 @@ public class ProgressionContext : DbContext
         {
             entity.ToTable(nameof(WornCosmeticPiece), SchemaNames.Progression);
             entity.HasKey(p => new { p.CharacterId, p.ItemSlot });
+        });
+        modelBuilder.Entity<EventClaim>(entity =>
+        {
+            entity.ToTable(nameof(EventClaim), SchemaNames.Progression);
+            entity.HasKey(c => c.Key);
+            entity.Property(c => c.Key).HasMaxLength(128);
         });
     }
 }

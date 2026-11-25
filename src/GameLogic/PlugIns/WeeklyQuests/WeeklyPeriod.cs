@@ -1,4 +1,4 @@
-// <copyright file="WeeklyPeriod.cs" company="MUnique">
+﻿// <copyright file="WeeklyPeriod.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -26,7 +26,10 @@ public static class WeeklyPeriod
     {
         return new QuestPeriodStarts(
             GetPeriodStartUtc(utcNow, configuration.ResetDay, configuration.ResetTime, timeZone),
-            GetDailyPeriodStartUtc(utcNow, configuration.DailyResetTime, timeZone));
+            GetDailyPeriodStartUtc(utcNow, configuration.DailyResetTime, timeZone))
+        {
+            ServerDay = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utcNow, DateTimeKind.Utc), timeZone)),
+        };
     }
 
     /// <summary>
