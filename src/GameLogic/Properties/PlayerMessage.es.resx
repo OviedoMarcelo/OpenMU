@@ -151,4 +151,22 @@
   <data name="MasterSkillsResetResult" xml:space="preserve">
     <value>Se reseteó el árbol master de {0}: se devolvieron {1} puntos y ahora tiene {2} puntos master libres.</value>
   </data>
+  <data name="ChristmasEventNotRunning" xml:space="preserve">
+    <value>El evento de Navidad no está activo en este momento.</value>
+  </data>
+  <data name="AlreadyInSantaVillage" xml:space="preserve">
+    <value>Ya estás en Santa Village.</value>
+  </data>
+  <data name="SantaGiftAlreadyClaimed" xml:space="preserve">
+    <value>Santa solamente entrega 1 regalo por hogar.</value>
+  </data>
+  <data name="SantaGiftReceived" xml:space="preserve">
+    <value>¡Feliz Navidad! Santa Claus te dejó un regalo.</value>
+  </data>
+  <data name="SantaGiftInventoryFull" xml:space="preserve">
+    <value>Hacé lugar en el inventario para recibir el regalo de Santa Claus.</value>
+  </data>
+  <data name="SantaGiftFailed" xml:space="preserve">
+    <value>Santa Claus no pudo darte el regalo. Probá de nuevo más tarde.</value>
+  </data>
 </root>

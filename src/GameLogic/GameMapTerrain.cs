@@ -40,9 +40,9 @@ public class GameMapTerrain
     /// Pre-computed array of walkable, non-safezone points.
     /// Built once during construction for O(1) random spawn lookups.
     /// </summary>
-    private readonly Point[] _spawnPoints;
+    private Point[] _spawnPoints;
 
-    private readonly Point? _anyWalkableCoordinate;
+    private Point? _anyWalkableCoordinate;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GameMapTerrain"/> class.
@@ -125,6 +125,25 @@ public class GameMapTerrain
     /// <c>null</c> if the map has no walkable tile whatsoever.
     /// </value>
     public Point? AnyWalkableCoordinate => this._anyWalkableCoordinate;
+
+    /// <summary>
+    /// Replaces the whole terrain of the map while it's running, e.g. to show another version of a town during an event.
+    /// </summary>
+    /// <param name="terrainData">The terrain data, in the same format as <see cref="GameMapDefinition.TerrainData"/> (with its 3 bytes of header).</param>
+    public void ReplaceTerrain(byte[]? terrainData)
+    {
+        if (terrainData is { Length: > 3 })
+        {
+            this.ReadTerrainData(terrainData.AsSpan(3));
+        }
+        else
+        {
+            this.ReadTerrainData(DefaultTerrain);
+        }
+
+        this._spawnPoints = this.BuildSpawnPoints(out var anyWalkableCoordinate);
+        this._anyWalkableCoordinate = anyWalkableCoordinate;
+    }
 
     /// <summary>
     /// Gets the first walkable coordinate within the specified gate, if it has one. A gate without a

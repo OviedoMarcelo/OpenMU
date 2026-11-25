@@ -59,6 +59,7 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>PlayerMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Include="PlugIns\ChristmasEvent\Terrain1Navidad.att" LogicalName="MUnique.OpenMU.GameLogic.PlugIns.ChristmasEvent.Terrain1Navidad.att" />
     <EmbeddedResource Update="Properties\PlugInResources.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>PlugInResources.Designer.cs</LastGenOutput>

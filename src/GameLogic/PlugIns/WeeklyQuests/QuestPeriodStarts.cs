@@ -1,4 +1,4 @@
-// <copyright file="QuestPeriodStarts.cs" company="MUnique">
+﻿// <copyright file="QuestPeriodStarts.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -11,6 +11,12 @@ namespace MUnique.OpenMU.GameLogic.PlugIns.WeeklyQuests;
 /// <param name="Daily">The start of the current day.</param>
 public readonly record struct QuestPeriodStarts(DateTime Weekly, DateTime Daily)
 {
+    /// <summary>
+    /// Gets the current day in the time zone of the server, which decides which quests with dates are available.
+    /// If <c>null</c>, the dates of the quests are not checked.
+    /// </summary>
+    public DateOnly? ServerDay { get; init; }
+
     /// <summary>
     /// Gets all distinct period starts, including the one of the quests which are done once.
     /// </summary>

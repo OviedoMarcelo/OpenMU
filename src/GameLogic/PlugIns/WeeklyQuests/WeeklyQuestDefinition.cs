@@ -1,4 +1,4 @@
-// <copyright file="WeeklyQuestDefinition.cs" company="MUnique">
+﻿// <copyright file="WeeklyQuestDefinition.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -42,6 +42,18 @@ public class WeeklyQuestDefinition
     /// </summary>
     [Display(Name = "Activa")]
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the first day (in the time zone of the server) on which the quest is available, e.g. for the quests of an event.
+    /// </summary>
+    [Display(Name = "Disponible desde", Description = "Opcional. Primer día (hora del server) en que se muestra la quest, p. ej. el 1/12 para las quests de Navidad. Vacío: siempre.")]
+    public DateOnly? AvailableFrom { get; set; }
+
+    /// <summary>
+    /// Gets or sets the last day (in the time zone of the server) on which the quest is available, inclusive.
+    /// </summary>
+    [Display(Name = "Disponible hasta", Description = "Opcional. Último día (hora del server, inclusive) en que se muestra la quest, p. ej. el 31/12 para las quests de Navidad. Vacío: siempre.")]
+    public DateOnly? AvailableUntil { get; set; }
 
     /// <summary>
     /// Gets or sets the category, which decides under which tab the quest is shown.
@@ -363,4 +375,20 @@ public class WeeklyQuestDefinition
         IgnoreSameParty = this.IgnoreSameParty,
         VictimCooldownMinutes = this.VictimCooldownMinutes,
     };
+
+    /// <summary>
+    /// Determines whether the quest is available on the specified day, see <see cref="AvailableFrom"/> and <see cref="AvailableUntil"/>.
+    /// </summary>
+    /// <param name="serverDay">The day in the time zone of the server, or <c>null</c> if unknown.</param>
+    /// <returns><c>true</c>, if the quest is available on the day.</returns>
+    public bool IsAvailableOn(DateOnly? serverDay)
+    {
+        if (serverDay is not { } day)
+        {
+            return true;
+        }
+
+        return (this.AvailableFrom is not { } from || day >= from)
+            && (this.AvailableUntil is not { } until || day <= until);
+    }
 }

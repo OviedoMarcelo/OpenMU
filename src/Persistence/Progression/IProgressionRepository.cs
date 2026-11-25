@@ -179,4 +179,13 @@ public interface IProgressionRepository
     /// <param name="pieceNumber">The number of the piece; <c>null</c> to wear none in the slot.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     ValueTask SetWornCosmeticPieceAsync(Guid characterId, byte itemSlot, short? pieceNumber, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds claims of an event, all or none: when one of the keys has already been claimed, nothing is added.
+    /// E.g. the daily gift of Santa Claus is claimed for the account and the IP address together.
+    /// </summary>
+    /// <param name="claims">The claims, with distinct keys.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns><c>true</c>, if all claims have been added; <c>false</c>, if one of the keys had already been claimed.</returns>
+    ValueTask<bool> TryAddEventClaimsAsync(IReadOnlyCollection<EventClaim> claims, CancellationToken cancellationToken = default);
 }

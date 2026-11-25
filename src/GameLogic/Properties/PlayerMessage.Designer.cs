@@ -2516,5 +2516,59 @@ namespace MUnique.OpenMU.GameLogic.Properties {
                 return ResourceManager.GetString("MasterSkillsResetResult", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The Christmas event is not running right now..
+        /// </summary>
+        public static string ChristmasEventNotRunning {
+            get {
+                return ResourceManager.GetString("ChristmasEventNotRunning", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to You are already in Santa Village..
+        /// </summary>
+        public static string AlreadyInSantaVillage {
+            get {
+                return ResourceManager.GetString("AlreadyInSantaVillage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Santa only gives 1 gift per household..
+        /// </summary>
+        public static string SantaGiftAlreadyClaimed {
+            get {
+                return ResourceManager.GetString("SantaGiftAlreadyClaimed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Merry Christmas! Santa Claus gave you a gift..
+        /// </summary>
+        public static string SantaGiftReceived {
+            get {
+                return ResourceManager.GetString("SantaGiftReceived", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Make room in your inventory to receive the gift of Santa Claus..
+        /// </summary>
+        public static string SantaGiftInventoryFull {
+            get {
+                return ResourceManager.GetString("SantaGiftInventoryFull", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Santa Claus couldn't give you the gift. Please try again later..
+        /// </summary>
+        public static string SantaGiftFailed {
+            get {
+                return ResourceManager.GetString("SantaGiftFailed", resourceCulture);
+            }
+        }
     }
 }

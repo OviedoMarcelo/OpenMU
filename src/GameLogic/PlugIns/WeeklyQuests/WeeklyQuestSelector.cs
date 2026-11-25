@@ -1,4 +1,4 @@
-// <copyright file="WeeklyQuestSelector.cs" company="MUnique">
+﻿// <copyright file="WeeklyQuestSelector.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -29,7 +29,7 @@ public static class WeeklyQuestSelector
     public static IReadOnlyList<WeeklyQuestDefinition> GetQuestsOfPeriod(WeeklyQuestsConfiguration configuration, QuestPeriodStarts periods)
     {
         var active = configuration.Quests
-            .Where(q => q.IsActive && !string.IsNullOrWhiteSpace(q.Id) && q.Id != AllCompletedBonusId)
+            .Where(q => q.IsActive && q.IsAvailableOn(periods.ServerDay) && !string.IsNullOrWhiteSpace(q.Id) && q.Id != AllCompletedBonusId)
             .ToList();
         var drawnWeekly = Draw(active, QuestPeriod.Weekly, configuration.QuestsPerWeek, periods.Weekly);
         var drawnDaily = Draw(active, QuestPeriod.Daily, configuration.QuestsPerDay, periods.Daily);

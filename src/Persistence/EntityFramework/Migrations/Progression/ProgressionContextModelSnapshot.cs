@@ -67,6 +67,26 @@ namespace MUnique.OpenMU.Persistence.EntityFramework.Migrations.Progression
                     b.ToTable("ActiveTitle", "progression");
                 });
 
+            modelBuilder.Entity("MUnique.OpenMU.Persistence.Progression.EventClaim", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ClaimedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("EventClaim", "progression");
+                });
+
             modelBuilder.Entity("MUnique.OpenMU.Persistence.Progression.PrestigeProgress", b =>
                 {
                     b.Property<Guid>("CharacterId")

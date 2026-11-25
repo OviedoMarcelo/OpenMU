@@ -1,4 +1,4 @@
-// <copyright file="WeeklyQuestSelectorTest.cs" company="MUnique">
+﻿// <copyright file="WeeklyQuestSelectorTest.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -30,6 +30,25 @@ public class WeeklyQuestSelectorTest
         var quests = WeeklyQuestSelector.GetQuestsOfPeriod(configuration, Periods(Week1));
 
         Assert.That(quests, Has.Count.EqualTo(9));
+    }
+
+    /// <summary>
+    /// Tests that quests with dates are only part of the period between their first and last day, inclusive,
+    /// and that they're not filtered when the day is unknown.
+    /// </summary>
+    [Test]
+    public void QuestsWithDatesAreOnlySelectedOnTheirDays()
+    {
+        var configuration = CreateConfiguration(3);
+        var christmas = configuration.Quests.First();
+        christmas.AvailableFrom = new DateOnly(2026, 12, 1);
+        christmas.AvailableUntil = new DateOnly(2026, 12, 31);
+
+        Assert.That(WeeklyQuestSelector.GetQuestsOfPeriod(configuration, Periods(Week1) with { ServerDay = new DateOnly(2026, 11, 30) }), Does.Not.Contain(christmas));
+        Assert.That(WeeklyQuestSelector.GetQuestsOfPeriod(configuration, Periods(Week1) with { ServerDay = new DateOnly(2026, 12, 1) }), Does.Contain(christmas));
+        Assert.That(WeeklyQuestSelector.GetQuestsOfPeriod(configuration, Periods(Week1) with { ServerDay = new DateOnly(2026, 12, 31) }), Does.Contain(christmas));
+        Assert.That(WeeklyQuestSelector.GetQuestsOfPeriod(configuration, Periods(Week1) with { ServerDay = new DateOnly(2027, 1, 1) }), Does.Not.Contain(christmas));
+        Assert.That(WeeklyQuestSelector.GetQuestsOfPeriod(configuration, Periods(Week1)), Does.Contain(christmas));
     }
 
     /// <summary>
