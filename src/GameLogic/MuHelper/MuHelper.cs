@@ -1,4 +1,4 @@
-// <copyright file="MuHelper.cs" company="MUnique">
+﻿// <copyright file="MuHelper.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -45,6 +45,11 @@ public class MuHelper : AsyncDisposable
         this._player = player;
         this._configuration = this._player.GameContext.FeaturePlugIns.GetPlugIn<MuHelperFeaturePlugIn>()?.Configuration ?? new MuHelperConfiguration();
     }
+
+    /// <summary>
+    /// Gets a value indicating whether the MU Helper is running for the player.
+    /// </summary>
+    public bool IsRunning => this._runTask is not null;
 
     /// <summary>
     /// Start Mu Helper.
