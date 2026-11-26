@@ -1,4 +1,4 @@
-// <copyright file="BotResetHandler.cs" company="MUnique">
+﻿// <copyright file="BotResetHandler.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -176,7 +176,8 @@ internal static class BotResetHandler
             requiredItems = player.Inventory?.Items
                 .Where(item => item.Definition is { } definition
                                && definition.Group == requiredDefinition.Group
-                               && definition.Number == requiredDefinition.Number)
+                               && definition.Number == requiredDefinition.Number
+                               && (configuration.RequiredResetItemLevel is not { } requiredLevel || item.Level == requiredLevel))
                 .Take(resetProgression.RequiredItemAmount)
                 .ToList() ?? [];
             if (requiredItems.Count < resetProgression.RequiredItemAmount)
