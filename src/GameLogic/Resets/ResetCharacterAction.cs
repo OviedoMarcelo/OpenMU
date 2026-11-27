@@ -1,4 +1,4 @@
-// <copyright file="ResetCharacterAction.cs" company="MUnique">
+﻿// <copyright file="ResetCharacterAction.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -169,7 +169,8 @@ public class ResetCharacterAction
         var requiredItems = this._player.Inventory.Items
             .Where(item => item.Definition is { } definition
                            && definition.Group == requiredDefinition.Group
-                           && definition.Number == requiredDefinition.Number)
+                           && definition.Number == requiredDefinition.Number
+                           && (configuration.RequiredResetItemLevel is not { } requiredLevel || item.Level == requiredLevel))
             .Take(requiredItemAmount)
             .ToList();
         if (requiredItems.Count < requiredItemAmount)

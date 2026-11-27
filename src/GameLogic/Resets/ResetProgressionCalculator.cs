@@ -1,4 +1,4 @@
-// <copyright file="ResetProgressionCalculator.cs" company="MUnique">
+﻿// <copyright file="ResetProgressionCalculator.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -19,11 +19,15 @@ public static class ResetProgressionCalculator
     public static ResetProgression Calculate(int currentResetCount, int pointsPerResetOverride, ResetConfiguration configuration)
     {
         var nextResetCount = currentResetCount + 1;
-        var requiredZen = Math.Max(0, configuration.RequiredMoney);
+        // Calculated as long: with a high required money and many resets, the product doesn't fit into an int
+        // and would wrap around to a negative value, which made these resets free.
+        long requiredZenLong = Math.Max(0, configuration.RequiredMoney);
         if (configuration.MultiplyRequiredMoneyByResetCount)
         {
-            requiredZen *= nextResetCount;
+            requiredZenLong *= nextResetCount;
         }
+
+        var requiredZen = (int)Math.Min(requiredZenLong, int.MaxValue);
 
         var pointsForReset = GetPointsForReset(configuration, pointsPerResetOverride, nextResetCount);
         var totalPointsAfterReset = GetTotalPointsAfterReset(configuration, pointsPerResetOverride, nextResetCount, pointsForReset);

@@ -1,4 +1,4 @@
-// <copyright file="CashShopPlugInTest.cs" company="MUnique">
+﻿// <copyright file="CashShopPlugInTest.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -328,10 +328,11 @@ public class CashShopPlugInTest
     }
 
     /// <summary>
-    /// Tests that the example catalog has the best weapon and armor set without sockets per class, and the extras.
+    /// Tests that the example catalog has tiers of weapons and armor sets without sockets per class, +9 with luck,
+    /// where the best ones are the most expensive, and the extras.
     /// </summary>
     [Test]
-    public void ExampleCatalogHasTheBestItemsPerClass()
+    public void ExampleCatalogHasTiersOfItemsPerClass()
     {
         var knight = new CharacterClass { Number = 7, Name = "Blade Master" };
         var wizard = new CharacterClass { Number = 0, Name = "Dark Wizard" };
@@ -356,9 +357,13 @@ public class CashShopPlugInTest
         var configuration = CashShopExampleCatalog.Create(gameConfiguration.Object, null);
 
         var dk = configuration.Products.Where(p => p.Tab == "DK").ToList();
-        Assert.That(dk.Select(p => p.Item!.Name.Value), Is.EqualTo(new[] { "Best Sword", "Best 7", "Best 8", "Best 9", "Best 10", "Best 11" }));
-        Assert.That(dk.All(p => p is { ItemLevel: 13, Luck: true, ExcellentOptionChoices: 2 }), Is.True);
-        Assert.That(dk.Select(p => p.Category).Distinct(), Is.EqualTo(new[] { "Armas", "Set" }));
+        Assert.That(dk.Select(p => p.Item!.Name.Value), Is.EqualTo(new[] { "Old Sword", "Best Sword", "Old 7", "Old 8", "Old 9", "Old 10", "Old 11", "Best 7", "Best 8", "Best 9", "Best 10", "Best 11" }));
+        Assert.That(dk.All(p => p is { ItemLevel: 9, Luck: true }), Is.True);
+        Assert.That(dk.Select(p => p.Category).Distinct(), Is.EqualTo(new[] { "Armas", "Sets" }));
+
+        // Two items get the two strongest tiers: the best one is much more expensive and has two excellent options.
+        Assert.That(dk.Where(p => p.Category == "Armas").Select(p => (p.Price, p.ExcellentOptionChoices)), Is.EqualTo(new[] { (800, (byte)1), (2000, (byte)2) }));
+        Assert.That(dk.Single(p => p.Item!.Name.Value == "Best 8").Price, Is.GreaterThan(2 * dk.Single(p => p.Item!.Name.Value == "Old 8").Price));
         Assert.That(configuration.Products.Where(p => p.Tab == "DW").Select(p => p.Item!.Name.Value), Is.EqualTo(new[] { "Staff" }));
         Assert.That(configuration.Products.Single(p => p.Tab == "Extras").Name, Is.EqualTo("Pack de 10 Bless"));
         Assert.That(configuration.Products.Select(p => p.Number), Is.Unique);

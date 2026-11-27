@@ -50,6 +50,13 @@ public class ResetConfiguration
     public ItemDefinition? RequiredResetItem { get; set; }
 
     /// <summary>
+    /// Gets or sets the item level which the required reset items must have; <c>null</c> for any level.
+    /// For example, a pack of jewels of level 0 is a pack of ten jewels, so with 0 only packs of ten count.
+    /// </summary>
+    [Display(Name = "Required reset item level", Description = "The level which the required reset items must have, empty for any level. A pack of jewels of level 0 is a pack of ten jewels.")]
+    public byte? RequiredResetItemLevel { get; set; }
+
+    /// <summary>
     /// Gets or sets the item costs per reset range.
     /// </summary>
     [Display(Name = nameof(MUnique.OpenMU.GameLogic.Properties.PlugInResources.ResetConfiguration_ItemCostTiers_Name), ResourceType = typeof(MUnique.OpenMU.GameLogic.Properties.PlugInResources))]

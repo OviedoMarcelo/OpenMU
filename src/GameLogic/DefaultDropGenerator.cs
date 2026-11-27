@@ -1,4 +1,4 @@
-// <copyright file="DefaultDropGenerator.cs" company="MUnique">
+﻿// <copyright file="DefaultDropGenerator.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -6,6 +6,8 @@ namespace MUnique.OpenMU.GameLogic;
 
 using MUnique.OpenMU.DataModel.Configuration.Items;
 using MUnique.OpenMU.GameLogic.Attributes;
+using MUnique.OpenMU.GameLogic.Offline;
+using MUnique.OpenMU.GameLogic.PlugIns.Economy;
 using Nito.AsyncEx;
 
 /// <summary>
@@ -39,6 +41,12 @@ public class DefaultDropGenerator : IDropGenerator
 
     private readonly byte _maxItemOptionLevelDrop;
     private readonly byte _excellentItemDropLevelDelta;
+
+    /// <summary>
+    /// The chance multiplier of the valuable drops for the current kill, see <see cref="EconomyConfiguration.AfkValuableDropRate"/>.
+    /// Only accessed while holding <see cref="_lock"/>.
+    /// </summary>
+    private double _valuableDropRate = 1;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultDropGenerator" /> class.
@@ -90,12 +98,18 @@ public class DefaultDropGenerator : IDropGenerator
             this.PartitionDropGroups(await GetQuestItemGroupsAsync(player).ConfigureAwait(false) ?? [], monster);
         }
 
+        var economy = player.GameContext?.FeaturePlugIns.GetPlugIn<EconomyFeaturePlugIn>()?.Configuration;
+        var isAfk = economy is not null && IsAfk(player);
+        this._valuableDropRate = isAfk ? Math.Clamp(economy!.AfkValuableDropRate, 0, 1) : 1;
+
         uint money = 0;
         var (droppedItems, moneyResult) = this.GenerateDrops(monster, gainedExperience);
         if (moneyResult > 0)
         {
-            money = moneyResult;
+            money = ApplyMoneyRate(moneyResult, economy, isAfk);
         }
+
+        this._valuableDropRate = 1;
 
         this._guaranteedDropGroups.Clear();
         this._chanceDropGroups.Clear();
@@ -245,6 +259,37 @@ public class DefaultDropGenerator : IDropGenerator
     /// Determines whether the player has the resets for the drops of the monster. A monster asks
     /// for resets with its <see cref="Stats.Resets"/> attribute; without it, there is no requirement.
     /// </summary>
+    private static bool IsAfk(Player player)
+    {
+        return player is OfflinePlayer || player.MuHelper.IsRunning;
+    }
+
+    private static uint ApplyMoneyRate(uint money, EconomyConfiguration? economy, bool isAfk)
+    {
+        if (economy is null)
+        {
+            return money;
+        }
+
+        double rate = Math.Max(0, economy.MoneyDropRate);
+        if (isAfk)
+        {
+            rate *= Math.Clamp(economy.AfkMoneyDropRate, 0, 1);
+        }
+
+        if (rate <= 0)
+        {
+            return 0;
+        }
+
+        return (uint)Math.Max(1, Math.Min(uint.MaxValue, Math.Round(money * rate)));
+    }
+
+    private static bool IsValuable(DropItemGroup group)
+    {
+        return group.ItemType is SpecialItemType.Jewel or SpecialItemType.Excellent or SpecialItemType.Ancient;
+    }
+
     private static bool HasRequiredResetsForDrops(MonsterDefinition monster, Player player)
     {
         var requiredResets = monster.Attributes?.FirstOrDefault(a => a.AttributeDefinition == Stats.Resets)?.Value ?? 0;
@@ -327,6 +372,12 @@ public class DefaultDropGenerator : IDropGenerator
                 var group = this.SelectRandomGroup(this._chanceDropGroups, totalChance);
                 if (group is null)
                 {
+                    continue;
+                }
+
+                if (this._valuableDropRate < 1 && IsValuable(group) && this._randomizer.NextDouble() >= this._valuableDropRate)
+                {
+                    // Players which let the MU Helper or the offline leveling play for them get less valuable drops.
                     continue;
                 }
 

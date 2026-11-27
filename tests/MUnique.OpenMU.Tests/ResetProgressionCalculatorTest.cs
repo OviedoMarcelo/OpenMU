@@ -115,6 +115,29 @@ public class ResetProgressionCalculatorTest
         Assert.That(progression.TotalPointsAfterReset, Is.EqualTo(600));
     }
 
+    /// <summary>
+    /// Verifies that a required money which multiplied with the reset count doesn't fit into an int
+    /// is capped instead of wrapping around to a negative (free) amount.
+    /// </summary>
+    /// <param name="currentResetCount">The current reset count.</param>
+    /// <param name="expectedZen">The expected required zen.</param>
+    [TestCase(20, 2_100_000_000)]
+    [TestCase(21, int.MaxValue)]
+    [TestCase(42, int.MaxValue)]
+    [TestCase(1000, int.MaxValue)]
+    public void RequiredMoneyDoesNotOverflow(int currentResetCount, int expectedZen)
+    {
+        var configuration = new ResetConfiguration
+        {
+            RequiredMoney = 100_000_000,
+            MultiplyRequiredMoneyByResetCount = true,
+        };
+
+        var progression = ResetProgressionCalculator.Calculate(currentResetCount, 0, configuration);
+
+        Assert.That(progression.RequiredZen, Is.EqualTo(expectedZen));
+    }
+
     private ResetConfiguration CreateTieredConfiguration()
     {
         return new ResetConfiguration
