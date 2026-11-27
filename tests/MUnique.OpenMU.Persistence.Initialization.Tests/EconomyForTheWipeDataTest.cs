@@ -30,6 +30,8 @@ internal class EconomyForTheWipeDataTest
 
     private GameConfiguration _gameConfiguration = null!;
 
+    private DropItemGroup _oldBoxes = null!;
+
     /// <summary>
     /// Creates a season 6 database and applies the update twice, like an admin who installs it again.
     /// </summary>
@@ -45,6 +47,18 @@ internal class EconomyForTheWipeDataTest
 
         // The Guardiana de Icarus is added by its own update, which runs before on the server.
         await new AddIcarusGuardianPlugIn().ApplyUpdateAsync(context, this._gameConfiguration).ConfigureAwait(false);
+
+        // Like the group "Box - Todas" of the server: boxes on all the maps, added in the admin panel.
+        this._oldBoxes = context.CreateNew<DropItemGroup>();
+        this._oldBoxes.Description = "Box - Todas";
+        this._oldBoxes.Chance = 0.001;
+        this._oldBoxes.PossibleItems.Add(this._gameConfiguration.Items.First(i => i.Group == 14 && i.Number == 34));
+        this._gameConfiguration.DropItemGroups.Add(this._oldBoxes);
+        foreach (var map in this._gameConfiguration.Maps.Where(m => m.DropItemGroups.Any(g => g.GetId() == JewelsGroupId)))
+        {
+            map.DropItemGroups.Add(this._oldBoxes);
+        }
+
         await new ApplyEconomyForTheWipePlugIn().ApplyUpdateAsync(context, this._gameConfiguration).ConfigureAwait(false);
         await new ApplyEconomyForTheWipePlugIn().ApplyUpdateAsync(context, this._gameConfiguration).ConfigureAwait(false);
     }
@@ -82,8 +96,8 @@ internal class EconomyForTheWipeDataTest
     {
         var configuration = this.PlugInConfiguration(typeof(EconomyFeaturePlugIn).GUID).GetConfiguration<EconomyConfiguration>(null)!;
         Assert.That(configuration.MoneyDropRate, Is.EqualTo(0.3f));
-        Assert.That(configuration.AfkMoneyDropRate, Is.EqualTo(0.5f));
-        Assert.That(configuration.AfkValuableDropRate, Is.EqualTo(0.5f));
+        Assert.That(configuration.AfkMoneyDropRate, Is.EqualTo(1));
+        Assert.That(configuration.AfkValuableDropRate, Is.EqualTo(1));
     }
 
     /// <summary>
@@ -118,6 +132,23 @@ internal class EconomyForTheWipeDataTest
         var groups = map.DropItemGroups.Where(g => mapJewelIds.Contains(g.GetId())).ToList();
         Assert.That(groups, Has.Count.EqualTo(1));
         Assert.That(groups[0].PossibleItems.Select(i => i.Name.ValueInNeutralLanguage), Does.Contain(jewelName));
+    }
+
+    /// <summary>
+    /// Tests that the boxes drop by level of the monster, on the maps with jewels, and only once per map.
+    /// </summary>
+    [Test]
+    public void BoxesDropByMonsterLevel()
+    {
+        var boxes = Enumerable.Range(30, 3).Select(n => this._gameConfiguration.DropItemGroups.Single(g => g.GetId() == CreateUpdateGroupId((short)n))).ToList();
+        Assert.That(boxes.Select(b => (b.MinimumMonsterLevel, b.MaximumMonsterLevel)), Is.EqualTo(new (byte?, byte?)[] { (61, 89), (90, 109), (110, null) }));
+        Assert.That(boxes.Select(b => b.Chance), Is.EqualTo(new[] { 0.0005, 0.0004, 0.0003 }));
+        Assert.That(boxes.All(b => b.ItemLevel == 3), Is.True);
+        Assert.That(boxes[2].PossibleItems.Select(i => i.Name.ValueInNeutralLanguage), Is.EquivalentTo(new[] { "Blue Ribbon Box", "Blue Chocolate Box" }));
+
+        var aida = this._gameConfiguration.Maps.First(m => m.Number == 33);
+        Assert.That(boxes.All(b => aida.DropItemGroups.Count(g => g == b) == 1), Is.True);
+        Assert.That(this._gameConfiguration.Maps.Any(m => m.DropItemGroups.Contains(this._oldBoxes)), Is.False);
     }
 
     /// <summary>

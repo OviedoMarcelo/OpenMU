@@ -21,7 +21,7 @@ using MUnique.OpenMU.PlugIns;
 
 /// <summary>
 /// Applies the economy of MU Cyber for the wipe of December 2026: a lower experience rate, resets which cost
-/// packs of jewels, less zen per kill and for AFK players, jewels which drop more and differ per map, excellent
+/// packs of jewels, less zen per kill, jewels which drop more and differ per map, excellent
 /// items which can drop, a harder Flame of Condor, more golden invasions and the catalog of the cash shop in tiers.
 /// All values can be adjusted afterwards in the admin panel.
 /// </summary>
@@ -38,7 +38,7 @@ public class ApplyEconomyForTheWipePlugIn : UpdatePlugInBase
     /// <summary>
     /// The plug-in description.
     /// </summary>
-    internal const string PlugInDescription = "Experience x10; resets cost 20M zen per reset plus packs of ten Bless from reset 6 (1 pack), 11 (2) and 16 (3); zen per kill x0.3, and AFK players (MU Helper, offline leveling) get half of the zen and of the jewels; jewels drop with 0.15% and each high map has its own jewel; excellent items drop with 0.005%; the Guardiana de Icarus needs 10 resets and has twice the health; a golden invasion every 3 hours; a more expensive MU Helper; the cash shop with four tiers of +9 items per class (replaces its products).";
+    internal const string PlugInDescription = "Experience x10; boxes by monster level (61-89, 90-109, 110+) instead of all boxes on all maps, and less often; resets cost 20M zen per reset plus packs of ten Bless from reset 6 (1 pack), 11 (2) and 16 (3); zen per kill x0.3 (the same for players with the MU Helper or offline leveling); jewels drop with 0.15% and each high map has its own jewel; excellent items drop with 0.005%; the Guardiana de Icarus needs 10 resets and has twice the health; a golden invasion every 3 hours; a more expensive MU Helper; the cash shop with four tiers of +9 items per class (replaces its products).";
 
     /// <summary>
     /// The experience rate (and master experience rate).
@@ -79,6 +79,24 @@ public class ApplyEconomyForTheWipePlugIn : UpdatePlugInBase
     /// Horn of Uniria. They get their own group, so that they don't take the chance of the jewels.
     /// </summary>
     private static readonly (byte Group, short Number)[] MiscItems = [(14, 9), (14, 10), (13, 0), (13, 1), (13, 2)];
+
+    /// <summary>
+    /// The boxes which monsters drop, by level of the monster, which replace the groups with boxes on all the maps
+    /// ("Box - Todas"): the weaker boxes from weaker monsters, the boxes with more jewels and excellent items only
+    /// from the strongest monsters, and all less often than before (0.1 %).
+    /// The Box of Luck drops as +3, the Heart of Love; the other boxes have no levels.
+    /// </summary>
+    private static readonly (string Name, (byte Group, short Number)[] Items, double Chance, byte MinimumMonsterLevel, byte? MaximumMonsterLevel)[] Boxes =
+    [
+        ("Boxes, monsters 61-89: Heart of Love, Red Ribbon, Pink Chocolate, Cherry Blossom (0.05 %)", [(14, 11), (12, 32), (14, 32), (14, 84)], 0.0005, 61, 89),
+        ("Boxes, monsters 90-109: Heart of Love, Green Ribbon, Red Chocolate (0.04 %)", [(14, 11), (12, 33), (14, 33)], 0.0004, 90, 109),
+        ("Boxes, monsters 110+: Blue Ribbon, Blue Chocolate (0.03 %)", [(12, 34), (14, 34)], 0.0003, 110, null),
+    ];
+
+    /// <summary>
+    /// The items of the <see cref="Boxes"/>.
+    /// </summary>
+    private static readonly (byte Group, short Number)[] BoxItems = [(14, 11), (12, 32), (12, 33), (12, 34), (14, 32), (14, 33), (14, 34), (14, 84)];
 
     /// <summary>
     /// The jewel of each high map, with its additional chance and the numbers of the maps.
@@ -179,7 +197,7 @@ public class ApplyEconomyForTheWipePlugIn : UpdatePlugInBase
         var plugInConfiguration = GetOrCreatePlugInConfiguration(context, gameConfiguration, typeof(EconomyFeaturePlugIn).GUID);
         plugInConfiguration.IsActive = true;
         plugInConfiguration.SetConfiguration(
-            new EconomyConfiguration { MoneyDropRate = 0.3f, AfkMoneyDropRate = 0.5f, AfkValuableDropRate = 0.5f },
+            new EconomyConfiguration { MoneyDropRate = 0.3f, AfkMoneyDropRate = 1, AfkValuableDropRate = 1 },
             new ExistingObjectsReferenceHandler());
     }
 
@@ -242,6 +260,8 @@ public class ApplyEconomyForTheWipePlugIn : UpdatePlugInBase
             }
         }
 
+        ApplyBoxes(context, gameConfiguration);
+
         var excellentGroupId = GuidHelper.CreateGuid<DropItemGroup>(3);
         if (gameConfiguration.DropItemGroups.FirstOrDefault(g => g.GetId() == excellentGroupId) is { } excellentGroup)
         {
@@ -254,6 +274,42 @@ public class ApplyEconomyForTheWipePlugIn : UpdatePlugInBase
                      .Where(g => g.PossibleItems.Any(i => i.Group == 13 && i.Number == 52)))
         {
             flame.Chance = 0.0005;
+        }
+    }
+
+    private static void ApplyBoxes(IContext context, GameConfiguration gameConfiguration)
+    {
+        var boxIds = new HashSet<Guid>(Enumerable.Range(0, Boxes.Length).Select(i => GuidHelper.CreateGuid<DropItemGroup>(GuidBase, (short)(30 + i))));
+        bool IsBox(ItemDefinition item) => BoxItems.Contains((item.Group, item.Number));
+
+        // The maps lose the groups of boxes which were added before (e.g. in the admin panel), and get the boxes by level instead.
+        var maps = gameConfiguration.Maps.Where(m => m.DropItemGroups.Any(g => !boxIds.Contains(g.GetId()) && g.PossibleItems.Any(IsBox))).ToList();
+        foreach (var map in maps)
+        {
+            foreach (var oldGroup in map.DropItemGroups.Where(g => !boxIds.Contains(g.GetId()) && g.PossibleItems.Any(IsBox)).ToList())
+            {
+                map.DropItemGroups.Remove(oldGroup);
+            }
+        }
+
+        if (maps.Count == 0)
+        {
+            // Without boxes before, they drop on the maps with the common jewels group.
+            var jewelGroupId = GuidHelper.CreateGuid<DropItemGroup>(4);
+            maps.AddRange(gameConfiguration.Maps.Where(m => m.DropItemGroups.Any(g => g.GetId() == jewelGroupId)));
+        }
+
+        for (var i = 0; i < Boxes.Length; i++)
+        {
+            var (name, items, chance, minimumLevel, maximumLevel) = Boxes[i];
+            var group = GetOrCreateDropGroup(context, gameConfiguration, (short)(30 + i), name, chance, items);
+            group.ItemLevel = 3;
+            group.MinimumMonsterLevel = minimumLevel;
+            group.MaximumMonsterLevel = maximumLevel;
+            foreach (var map in maps.Where(m => !m.DropItemGroups.Contains(group)))
+            {
+                map.DropItemGroups.Add(group);
+            }
         }
     }
 
