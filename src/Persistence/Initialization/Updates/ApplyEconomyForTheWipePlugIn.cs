@@ -145,7 +145,11 @@ public class ApplyEconomyForTheWipePlugIn : UpdatePlugInBase
 
     private static ItemDefinition? FindItem(GameConfiguration gameConfiguration, (byte Group, short Number) item)
     {
-        return gameConfiguration.Items.FirstOrDefault(i => i.Group == item.Group && i.Number == item.Number);
+        // By the id of the initialization first: on some databases items share their group and number, e.g. the
+        // Ribbon Boxes (12/32-34) have the group 14 there, like the Chocolate Boxes (14/32-34).
+        var id = GuidHelper.CreateGuid<ItemDefinition>(item.Group, item.Number);
+        return gameConfiguration.Items.FirstOrDefault(i => i.GetId() == id)
+               ?? gameConfiguration.Items.FirstOrDefault(i => i.Group == item.Group && i.Number == item.Number);
     }
 
     private static PlugInConfiguration GetOrCreatePlugInConfiguration(IContext context, GameConfiguration gameConfiguration, Guid plugInId)
@@ -280,7 +284,8 @@ public class ApplyEconomyForTheWipePlugIn : UpdatePlugInBase
     private static void ApplyBoxes(IContext context, GameConfiguration gameConfiguration)
     {
         var boxIds = new HashSet<Guid>(Enumerable.Range(0, Boxes.Length).Select(i => GuidHelper.CreateGuid<DropItemGroup>(GuidBase, (short)(30 + i))));
-        bool IsBox(ItemDefinition item) => BoxItems.Contains((item.Group, item.Number));
+        var boxItems = BoxItems.Select(b => FindItem(gameConfiguration, b)).OfType<ItemDefinition>().ToHashSet();
+        bool IsBox(ItemDefinition item) => boxItems.Contains(item);
 
         // The maps lose the groups of boxes which were added before (e.g. in the admin panel), and get the boxes by level instead.
         var maps = gameConfiguration.Maps.Where(m => m.DropItemGroups.Any(g => !boxIds.Contains(g.GetId()) && g.PossibleItems.Any(IsBox))).ToList();

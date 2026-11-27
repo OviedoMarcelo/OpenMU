@@ -48,11 +48,17 @@ internal class EconomyForTheWipeDataTest
         // The Guardiana de Icarus is added by its own update, which runs before on the server.
         await new AddIcarusGuardianPlugIn().ApplyUpdateAsync(context, this._gameConfiguration).ConfigureAwait(false);
 
+        // Like on the server, the Ribbon Boxes (12/32-34) have the group 14, like the Chocolate Boxes (14/32-34).
+        foreach (var ribbon in this._gameConfiguration.Items.Where(i => i.Group == 12 && i.Number is >= 32 and <= 34))
+        {
+            ribbon.Group = 14;
+        }
+
         // Like the group "Box - Todas" of the server: boxes on all the maps, added in the admin panel.
         this._oldBoxes = context.CreateNew<DropItemGroup>();
         this._oldBoxes.Description = "Box - Todas";
         this._oldBoxes.Chance = 0.001;
-        this._oldBoxes.PossibleItems.Add(this._gameConfiguration.Items.First(i => i.Group == 14 && i.Number == 34));
+        this._oldBoxes.PossibleItems.Add(this._gameConfiguration.Items.First(i => i.Name.ValueInNeutralLanguage == "Blue Chocolate Box"));
         this._gameConfiguration.DropItemGroups.Add(this._oldBoxes);
         foreach (var map in this._gameConfiguration.Maps.Where(m => m.DropItemGroups.Any(g => g.GetId() == JewelsGroupId)))
         {
@@ -144,6 +150,7 @@ internal class EconomyForTheWipeDataTest
         Assert.That(boxes.Select(b => (b.MinimumMonsterLevel, b.MaximumMonsterLevel)), Is.EqualTo(new (byte?, byte?)[] { (61, 89), (90, 109), (110, null) }));
         Assert.That(boxes.Select(b => b.Chance), Is.EqualTo(new[] { 0.0005, 0.0004, 0.0003 }));
         Assert.That(boxes.All(b => b.ItemLevel == 3), Is.True);
+        Assert.That(boxes[0].PossibleItems.Select(i => i.Name.ValueInNeutralLanguage), Is.EquivalentTo(new[] { "Box of Luck", "Red Ribbon Box", "Pink Chocolate Box", "Cherry Blossom Play-Box" }));
         Assert.That(boxes[2].PossibleItems.Select(i => i.Name.ValueInNeutralLanguage), Is.EquivalentTo(new[] { "Blue Ribbon Box", "Blue Chocolate Box" }));
 
         var aida = this._gameConfiguration.Maps.First(m => m.Number == 33);
