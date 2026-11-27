@@ -8,6 +8,7 @@ using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging.Abstractions;
 using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.GameLogic.Attributes;
+using MUnique.OpenMU.GameLogic.PlugIns;
 using MUnique.OpenMU.GameLogic.PlugIns.CashShop;
 using MUnique.OpenMU.GameLogic.PlugIns.Economy;
 using MUnique.OpenMU.GameLogic.PlugIns.InvasionEvents;
@@ -65,6 +66,20 @@ internal class EconomyForTheWipeDataTest
             map.DropItemGroups.Add(this._oldBoxes);
         }
 
+        // Like on the server: the Founder bonus is already configured for the beta.
+        var founders = this._gameConfiguration.PlugInConfigurations.FirstOrDefault(c => c.TypeId == typeof(FounderExperienceBonusPlugIn).GUID);
+        if (founders is null)
+        {
+            founders = context.CreateNew<PlugInConfiguration>();
+            founders.TypeId = typeof(FounderExperienceBonusPlugIn).GUID;
+            this._gameConfiguration.PlugInConfigurations.Add(founders);
+        }
+
+        founders.IsActive = true;
+        founders.SetConfiguration(
+            new FounderBonusConfiguration { CutoffDate = new DateTime(2026, 10, 12, 13, 0, 0, DateTimeKind.Utc), BonusMultiplier = 1.05f, TitleId = "fundador", RequireActiveTitle = false },
+            null);
+
         await new ApplyEconomyForTheWipePlugIn().ApplyUpdateAsync(context, this._gameConfiguration).ConfigureAwait(false);
         await new ApplyEconomyForTheWipePlugIn().ApplyUpdateAsync(context, this._gameConfiguration).ConfigureAwait(false);
     }
@@ -75,8 +90,8 @@ internal class EconomyForTheWipeDataTest
     [Test]
     public void ExperienceRatesAreLower()
     {
-        Assert.That(this._gameConfiguration.ExperienceRate, Is.EqualTo(10));
-        Assert.That(this._gameConfiguration.MasterExperienceRate, Is.EqualTo(10));
+        Assert.That(this._gameConfiguration.ExperienceRate, Is.EqualTo(20));
+        Assert.That(this._gameConfiguration.MasterExperienceRate, Is.EqualTo(20));
     }
 
     /// <summary>
@@ -95,13 +110,30 @@ internal class EconomyForTheWipeDataTest
     }
 
     /// <summary>
+    /// Tests that the Founders are the accounts registered before the official launch, and only get the bonus with the title,
+    /// while the bonus and the title stay as they were.
+    /// </summary>
+    [Test]
+    public void FoundersAreRegisteredBeforeTheLaunch()
+    {
+        var plugInConfiguration = this.PlugInConfiguration(typeof(FounderExperienceBonusPlugIn).GUID);
+        var configuration = plugInConfiguration.GetConfiguration<FounderBonusConfiguration>(null)!;
+        Assert.That(configuration.CutoffDate, Is.EqualTo(new DateTime(2026, 12, 8, 3, 0, 0, DateTimeKind.Utc)));
+        Assert.That(configuration.CutoffDate.Kind, Is.EqualTo(DateTimeKind.Utc));
+        Assert.That(configuration.RequireActiveTitle, Is.True);
+        Assert.That(configuration.BonusMultiplier, Is.EqualTo(1.05f));
+        Assert.That(configuration.TitleId, Is.EqualTo("fundador"));
+        Assert.That(plugInConfiguration.IsActive, Is.True);
+    }
+
+    /// <summary>
     /// Tests the configuration of the economy plugin.
     /// </summary>
     [Test]
     public void EconomyIsConfigured()
     {
         var configuration = this.PlugInConfiguration(typeof(EconomyFeaturePlugIn).GUID).GetConfiguration<EconomyConfiguration>(null)!;
-        Assert.That(configuration.MoneyDropRate, Is.EqualTo(0.3f));
+        Assert.That(configuration.MoneyDropRate, Is.EqualTo(0.15f));
         Assert.That(configuration.AfkMoneyDropRate, Is.EqualTo(1));
         Assert.That(configuration.AfkValuableDropRate, Is.EqualTo(1));
     }

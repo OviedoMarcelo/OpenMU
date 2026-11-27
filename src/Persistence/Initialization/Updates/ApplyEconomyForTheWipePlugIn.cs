@@ -11,6 +11,7 @@ using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.DataModel.Configuration.Items;
 using MUnique.OpenMU.GameLogic.Attributes;
 using MUnique.OpenMU.GameLogic.MuHelper;
+using MUnique.OpenMU.GameLogic.PlugIns;
 using MUnique.OpenMU.GameLogic.PlugIns.CashShop;
 using MUnique.OpenMU.GameLogic.PlugIns.Cosmetics;
 using MUnique.OpenMU.GameLogic.PlugIns.Economy;
@@ -20,7 +21,7 @@ using MUnique.OpenMU.Persistence.Initialization.VersionSeasonSix;
 using MUnique.OpenMU.PlugIns;
 
 /// <summary>
-/// Applies the economy of MU Cyber for the wipe of December 2026: a lower experience rate, resets which cost
+/// Applies the economy of MU Cyber for the wipe of December 2026: a lower experience rate, the cutoff of the Founders, resets which cost
 /// packs of jewels, less zen per kill, jewels which drop more and differ per map, excellent
 /// items which can drop, a harder Flame of Condor, more golden invasions and the catalog of the cash shop in tiers.
 /// All values can be adjusted afterwards in the admin panel.
@@ -38,12 +39,22 @@ public class ApplyEconomyForTheWipePlugIn : UpdatePlugInBase
     /// <summary>
     /// The plug-in description.
     /// </summary>
-    internal const string PlugInDescription = "Experience x10; boxes by monster level (61-89, 90-109, 110+) instead of all boxes on all maps, and less often; resets cost 20M zen per reset plus packs of ten Bless from reset 6 (1 pack), 11 (2) and 16 (3); zen per kill x0.3 (the same for players with the MU Helper or offline leveling); jewels drop with 0.15% and each high map has its own jewel; excellent items drop with 0.005%; the Guardiana de Icarus needs 10 resets and has twice the health; a golden invasion every 3 hours; a more expensive MU Helper; the cash shop with four tiers of +9 items per class (replaces its products).";
+    internal const string PlugInDescription = "Experience x20; Founders are the accounts registered before the official launch (2026-12-08, Argentina time) and get their bonus only while their characters show the title; boxes by monster level (61-89, 90-109, 110+) instead of all boxes on all maps, and less often; resets cost 20M zen per reset plus packs of ten Bless from reset 6 (1 pack), 11 (2) and 16 (3); zen per kill x0.15 (the same for players with the MU Helper or offline leveling); jewels drop with 0.15% and each high map has its own jewel; excellent items drop with 0.005%; the Guardiana de Icarus needs 10 resets and has twice the health; a golden invasion every 3 hours; a more expensive MU Helper; the cash shop with four tiers of +9 items per class (replaces its products).";
 
     /// <summary>
     /// The experience rate (and master experience rate).
     /// </summary>
-    internal const float ExperienceRate = 10;
+    internal const float ExperienceRate = 20;
+
+    /// <summary>
+    /// The rate of the zen per kill. The zen depends on the experience: x0.15 at x20 gives the same zen as x0.3 at x10.
+    /// </summary>
+    internal const float MoneyDropRate = 0.15f;
+
+    /// <summary>
+    /// The official launch (2026-12-08 00:00 Argentina time): accounts registered before are Founders.
+    /// </summary>
+    internal static readonly DateTime FounderCutoffDate = new(2026, 12, 8, 3, 0, 0, DateTimeKind.Utc);
 
     /// <summary>
     /// The chance of the common jewels group, which drops the five jewels.
@@ -140,6 +151,7 @@ public class ApplyEconomyForTheWipePlugIn : UpdatePlugInBase
         ApplyIcarusGuardian(gameConfiguration);
         ApplyGoldenInvasion(gameConfiguration);
         ApplyCashShop(context, gameConfiguration);
+        ApplyFounders(context, gameConfiguration);
         return ValueTask.CompletedTask;
     }
 
@@ -201,8 +213,24 @@ public class ApplyEconomyForTheWipePlugIn : UpdatePlugInBase
         var plugInConfiguration = GetOrCreatePlugInConfiguration(context, gameConfiguration, typeof(EconomyFeaturePlugIn).GUID);
         plugInConfiguration.IsActive = true;
         plugInConfiguration.SetConfiguration(
-            new EconomyConfiguration { MoneyDropRate = 0.3f, AfkMoneyDropRate = 1, AfkValuableDropRate = 1 },
+            new EconomyConfiguration { MoneyDropRate = MoneyDropRate, AfkMoneyDropRate = 1, AfkValuableDropRate = 1 },
             new ExistingObjectsReferenceHandler());
+    }
+
+    private static void ApplyFounders(IContext context, GameConfiguration gameConfiguration)
+    {
+        // Only the cutoff and the title condition: the bonus and the title stay as they are configured.
+        var plugInConfiguration = GetOrCreatePlugInConfiguration(context, gameConfiguration, typeof(FounderExperienceBonusPlugIn).GUID);
+        if (string.IsNullOrWhiteSpace(plugInConfiguration.CustomConfiguration)
+            || JsonNode.Parse(plugInConfiguration.CustomConfiguration) is not JsonObject configuration)
+        {
+            plugInConfiguration.SetConfiguration(FounderBonusConfiguration.Default, new ExistingObjectsReferenceHandler());
+            configuration = JsonNode.Parse(plugInConfiguration.CustomConfiguration!)!.AsObject();
+        }
+
+        configuration[nameof(FounderBonusConfiguration.CutoffDate)] = FounderCutoffDate;
+        configuration[nameof(FounderBonusConfiguration.RequireActiveTitle)] = true;
+        plugInConfiguration.CustomConfiguration = configuration.ToJsonString(IndentedJson);
     }
 
     private static void ApplyMuHelper(IContext context, GameConfiguration gameConfiguration)

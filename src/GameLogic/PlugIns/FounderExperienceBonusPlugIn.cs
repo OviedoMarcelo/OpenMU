@@ -11,7 +11,7 @@ using MUnique.OpenMU.PlugIns;
 
 /// <summary>
 /// Rewards the accounts registered before a cutoff date (e.g. everyone who signed up before the beta opened):
-/// a small experience bonus, and a "Founder" title for their characters.
+/// a small experience bonus while their characters show the "Founder" title, and that title.
 /// </summary>
 [PlugIn]
 [Display(Name = "Founder Experience Bonus", Description = "Gives a small experience bonus and a title to accounts registered before a configured cutoff date (e.g. everyone who signed up before the beta).")]
@@ -33,7 +33,9 @@ public class FounderExperienceBonusPlugIn : IExperienceCalculationPlugIn, IPlaye
             return ValueTask.CompletedTask;
         }
 
-        if (player.Account is { } account && account.RegistrationDate < configuration.CutoffDate)
+        if (player.Account is { } account
+            && account.RegistrationDate < configuration.CutoffDate
+            && HasRequiredTitle(player, configuration))
         {
             args.Experience *= configuration.BonusMultiplier;
         }
@@ -75,6 +77,17 @@ public class FounderExperienceBonusPlugIn : IExperienceCalculationPlugIn, IPlaye
         {
             player.Logger.LogError(ex, "Couldn't give the founder title to {character}.", player.SelectedCharacter?.Name);
         }
+    }
+
+    private static bool HasRequiredTitle(Player player, FounderBonusConfiguration configuration)
+    {
+        if (!configuration.RequireActiveTitle || string.IsNullOrWhiteSpace(configuration.TitleId))
+        {
+            return true;
+        }
+
+        return TitleChatCommandPlugIn.GetActivePlugIn(player) is { } achievements
+               && achievements.IsTitleActive(player, configuration.TitleId);
     }
 
     private static bool IsGameMaster(Player player)
