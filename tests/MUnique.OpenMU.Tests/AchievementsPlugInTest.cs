@@ -1,4 +1,4 @@
-// <copyright file="AchievementsPlugInTest.cs" company="MUnique">
+﻿// <copyright file="AchievementsPlugInTest.cs" company="MUnique">
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -172,9 +172,12 @@ public class AchievementsPlugInTest
 
         Assert.That(await plugIn.SetActiveTitleAsync(player, CraftingTitleId).ConfigureAwait(false), Is.EqualTo(TitleChangeResult.Changed));
         Assert.That(PlayerTitles.Get(player)?.Id, Is.EqualTo(CraftingTitleId));
+        Assert.That(plugIn.IsTitleActive(player, CraftingTitleId.ToUpperInvariant()), Is.True);
+        Assert.That(plugIn.IsTitleActive(player, "unknown"), Is.False);
 
         Assert.That(await plugIn.SetActiveTitleAsync(player, null).ConfigureAwait(false), Is.EqualTo(TitleChangeResult.Removed));
         Assert.That(PlayerTitles.Get(player), Is.Null);
+        Assert.That(plugIn.IsTitleActive(player, CraftingTitleId), Is.False);
     }
 
     /// <summary>

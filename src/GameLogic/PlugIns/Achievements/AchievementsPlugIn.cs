@@ -391,6 +391,19 @@ public class AchievementsPlugIn :
     }
 
     /// <summary>
+    /// Determines whether the character of the player currently shows the given title.
+    /// It only looks at the loaded state, so it's cheap enough to be called for every kill.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <param name="titleId">The id of the title.</param>
+    /// <returns><c>true</c>, if the character shows the title; otherwise, <c>false</c>.</returns>
+    public bool IsTitleActive(Player player, string titleId)
+    {
+        return States.TryGetValue(player, out var state)
+               && string.Equals(state.ActiveTitleId, titleId, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// Gets the titles which the player has unlocked.
     /// </summary>
     /// <param name="player">The player.</param>

@@ -50,6 +50,7 @@ public static partial class SpanishHelp
         // Founder Experience Bonus plugin (Plugins page).
         Add(e, "FounderBonusConfiguration.CutoffDate", "Fecha y hora (en UTC) hasta la cual una cuenta cuenta como Fundadora.", "Tiene que coincidir con la apertura de la beta que muestra la web (variable BETA_OPENS_AT), convertida a UTC. Por ejemplo, 12/10 10:00 hora Argentina es 12/10 13:00 UTC.");
         Add(e, "FounderBonusConfiguration.BonusMultiplier", "Multiplicador de experiencia extra para las cuentas Fundadoras. 1.05 es +5%.", "Se aplica sobre la experiencia normal y la de Master Level, encima de las demás bonificaciones. Ponerlo en 1.00 deja el plugin activo sin dar ningún extra.");
+        Add(e, "FounderBonusConfiguration.RequireActiveTitle", "Si el bonus de experiencia necesita que el personaje tenga puesto el título de Fundador.", "Marcado: el +5% solo corre mientras el personaje muestra ese título (se cambia con /titulo). Desmarcado: lo reciben todas las cuentas Fundadoras, tengan el título puesto o no.");
         Add(e, "FounderBonusConfiguration.TitleId", "Id del título que reciben los personajes de cuentas Fundadoras al entrar al juego.", "Tiene que existir en la lista de títulos del plugin Achievements (por ejemplo, Id \"fundador\" con el texto \"Fundador\"). Los GM no lo reciben. Si el personaje no muestra otro título, se le activa solo. Vacío: no se da ningún título.");
 
         // Server Announcements plugin (Plugins page).

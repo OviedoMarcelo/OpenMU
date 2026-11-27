@@ -41,4 +41,10 @@ public class FounderBonusConfiguration
     /// </summary>
     [Display(Name = "Title Id", Description = "Id del título que reciben los personajes de cuentas Fundadoras al entrar al juego (no los GM). Tiene que existir en los títulos del plugin Achievements. Vacío: sin título.")]
     public string TitleId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the bonus is only given while the character shows the title of <see cref="TitleId"/>.
+    /// </summary>
+    [Display(Name = "Require Active Title", Description = "Si está marcado, el bonus de experiencia solo se da mientras el personaje tenga puesto el título de Fundador (con /titulo). Si el Title Id está vacío, no se pide nada.")]
+    public bool RequireActiveTitle { get; set; } = true;
 }
